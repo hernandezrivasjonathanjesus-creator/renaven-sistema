@@ -20,3 +20,4 @@ idna==3.18
 urllib3==2.7.0
 certifi==2026.5.20
 gunicorn
+psycopg2-binary
