@@ -3679,6 +3679,16 @@ def start_scheduler():
     scheduler_thread.start()
     logger.info("[SCHEDULER] Scheduler de tasa BCV iniciado (cada 6 horas)")
 
+    # ==================== INICIALIZACIÓN PARA RENDER (GUNICORN) ====================
+with app.app_context():
+    try:
+        init_connection_pool()
+        init_db()
+        print("✅ Base de datos inicializada al arrancar la app")
+    except Exception as e:
+        print(f"❌ Error al inicializar la base de datos: {e}")
+# ==============================================================================
+
 # ==================== INICIO DE LA APLICACIÓN ====================
 if __name__ == '__main__':
     import webbrowser
