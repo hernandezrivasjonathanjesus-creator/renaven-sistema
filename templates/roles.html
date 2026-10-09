@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Roles - RENAVEN</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ========== PALETA PREDETERMINADA (IGUAL QUE EL DASHBOARD) ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+            --shadow-color: rgba(132,182,244,0.2);
+            --transition-base: all 0.25s ease-in-out;
+        }
+
+        /* ========== TEMAS PASTEL ========== */
+        body.theme-rosa { --renaven-azul-fuerte: #fbc4d5; --renaven-azul-cielo: #fce4ec; --renaven-blanco: #fef9f0; --renaven-gris-fondo: #fdf6f8; --renaven-borde: #fbc4d5; }
+        body.theme-rosa .sidebar { background: #fdd0b5; border-right-color: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link.active { background: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link:hover { background: #fce4ec; }
+        body.theme-rosa .card-header { background: #fbc4d5 !important; border-bottom-color: #fdd0b5 !important; }
+        body.theme-rosa .btn-success { background: #fbc4d5 !important; border-color: #fdd0b5 !important; }
+        body.theme-rosa .btn-success:hover { background: #fdd0b5 !important; }
+        body.theme-rosa .btn-primary { background: #fbc4d5 !important; border-color: #fdd0b5 !important; }
+        body.theme-rosa .btn-primary:hover { background: #fdd0b5 !important; }
+        body.theme-rosa .form-check-input:checked { background-color: #fbc4d5; border-color: #fdd0b5; }
+        body.theme-rosa .modal-header { background: #fbc4d5 !important; border-bottom-color: #fdd0b5 !important; }
+        body.theme-rosa .form-control:focus { border-color: #fbc4d5; box-shadow: 0 0 0 0.2rem rgba(251,196,213,0.4); }
+
+        body.theme-celeste { --renaven-azul-fuerte: #b5d8eb; --renaven-azul-cielo: #d6ecf5; --renaven-blanco: #f9fdff; --renaven-gris-fondo: #f4faff; --renaven-borde: #b5d8eb; }
+        body.theme-celeste .sidebar { background: #a8d0e6; border-right-color: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link.active { background: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link:hover { background: #d6ecf5; }
+        body.theme-celeste .card-header { background: #b5d8eb !important; border-bottom-color: #a8d0e6 !important; }
+        body.theme-celeste .btn-success { background: #b5d8eb !important; border-color: #a8d0e6 !important; }
+        body.theme-celeste .btn-success:hover { background: #a8d0e6 !important; }
+        body.theme-celeste .btn-primary { background: #b5d8eb !important; border-color: #a8d0e6 !important; }
+        body.theme-celeste .btn-primary:hover { background: #a8d0e6 !important; }
+        body.theme-celeste .form-check-input:checked { background-color: #b5d8eb; border-color: #a8d0e6; }
+        body.theme-celeste .modal-header { background: #b5d8eb !important; border-bottom-color: #a8d0e6 !important; }
+        body.theme-celeste .form-control:focus { border-color: #b5d8eb; box-shadow: 0 0 0 0.2rem rgba(181,216,235,0.4); }
+
+        body.theme-menta { --renaven-azul-fuerte: #b5e6c3; --renaven-azul-cielo: #d8f0e0; --renaven-blanco: #f6fcf8; --renaven-gris-fondo: #f2faf5; --renaven-borde: #b5e6c3; }
+        body.theme-menta .sidebar { background: #a8dbb8; border-right-color: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link.active { background: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link:hover { background: #d8f0e0; }
+        body.theme-menta .card-header { background: #b5e6c3 !important; border-bottom-color: #a8dbb8 !important; }
+        body.theme-menta .btn-success { background: #b5e6c3 !important; border-color: #a8dbb8 !important; }
+        body.theme-menta .btn-success:hover { background: #a8dbb8 !important; }
+        body.theme-menta .btn-primary { background: #b5e6c3 !important; border-color: #a8dbb8 !important; }
+        body.theme-menta .btn-primary:hover { background: #a8dbb8 !important; }
+        body.theme-menta .form-check-input:checked { background-color: #b5e6c3; border-color: #a8dbb8; }
+        body.theme-menta .modal-header { background: #b5e6c3 !important; border-bottom-color: #a8dbb8 !important; }
+        body.theme-menta .form-control:focus { border-color: #b5e6c3; box-shadow: 0 0 0 0.2rem rgba(181,230,195,0.4); }
+
+        body.theme-amarillo { --renaven-azul-fuerte: #f9e7b2; --renaven-azul-cielo: #fdf3d5; --renaven-blanco: #fffef9; --renaven-gris-fondo: #fefcf5; --renaven-borde: #f9e7b2; }
+        body.theme-amarillo .sidebar { background: #f5dc9a; border-right-color: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link.active { background: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link:hover { background: #fdf3d5; }
+        body.theme-amarillo .card-header { background: #f9e7b2 !important; border-bottom-color: #f5dc9a !important; }
+        body.theme-amarillo .btn-success { background: #f9e7b2 !important; border-color: #f5dc9a !important; }
+        body.theme-amarillo .btn-success:hover { background: #f5dc9a !important; }
+        body.theme-amarillo .btn-primary { background: #f9e7b2 !important; border-color: #f5dc9a !important; }
+        body.theme-amarillo .btn-primary:hover { background: #f5dc9a !important; }
+        body.theme-amarillo .form-check-input:checked { background-color: #f9e7b2; border-color: #f5dc9a; }
+        body.theme-amarillo .modal-header { background: #f9e7b2 !important; border-bottom-color: #f5dc9a !important; }
+        body.theme-amarillo .form-control:focus { border-color: #f9e7b2; box-shadow: 0 0 0 0.2rem rgba(249,231,178,0.4); }
+
+        body.theme-lila { --renaven-azul-fuerte: #d4c4f0; --renaven-azul-cielo: #e8defa; --renaven-blanco: #fcfaff; --renaven-gris-fondo: #f8f5fe; --renaven-borde: #d4c4f0; }
+        body.theme-lila .sidebar { background: #c9b7e8; border-right-color: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link.active { background: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link:hover { background: #e8defa; }
+        body.theme-lila .card-header { background: #d4c4f0 !important; border-bottom-color: #c9b7e8 !important; }
+        body.theme-lila .btn-success { background: #d4c4f0 !important; border-color: #c9b7e8 !important; }
+        body.theme-lila .btn-success:hover { background: #c9b7e8 !important; }
+        body.theme-lila .btn-primary { background: #d4c4f0 !important; border-color: #c9b7e8 !important; }
+        body.theme-lila .btn-primary:hover { background: #c9b7e8 !important; }
+        body.theme-lila .form-check-input:checked { background-color: #d4c4f0; border-color: #c9b7e8; }
+        body.theme-lila .modal-header { background: #d4c4f0 !important; border-bottom-color: #c9b7e8 !important; }
+        body.theme-lila .form-control:focus { border-color: #d4c4f0; box-shadow: 0 0 0 0.2rem rgba(212,196,240,0.4); }
+
+        body.theme-durazno { --renaven-azul-fuerte: #fdd0b5; --renaven-azul-cielo: #fee5d0; --renaven-blanco: #fffcf9; --renaven-gris-fondo: #fef8f3; --renaven-borde: #fdd0b5; }
+        body.theme-durazno .sidebar { background: #f5c2a4; border-right-color: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link.active { background: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link:hover { background: #fee5d0; }
+        body.theme-durazno .card-header { background: #fdd0b5 !important; border-bottom-color: #f5c2a4 !important; }
+        body.theme-durazno .btn-success { background: #fdd0b5 !important; border-color: #f5c2a4 !important; }
+        body.theme-durazno .btn-success:hover { background: #f5c2a4 !important; }
+        body.theme-durazno .btn-primary { background: #fdd0b5 !important; border-color: #f5c2a4 !important; }
+        body.theme-durazno .btn-primary:hover { background: #f5c2a4 !important; }
+        body.theme-durazno .form-check-input:checked { background-color: #fdd0b5; border-color: #f5c2a4; }
+        body.theme-durazno .modal-header { background: #fdd0b5 !important; border-bottom-color: #f5c2a4 !important; }
+        body.theme-durazno .form-control:focus { border-color: #fdd0b5; box-shadow: 0 0 0 0.2rem rgba(253,208,181,0.4); }
+
+        /* ========== TODAS LAS LETRAS EN NEGRITA ========== */
+        *:not([class*="fa-"]) { font-weight: bold !important; }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] { font-weight: 400 !important; }
+        .fas, .fa-solid { font-weight: 900 !important; }
+
+        /* ========== FONDO CON IMAGEN ========== */
+        body {
+            background-image: url("{{ url_for('static', filename='img/fereteria.jpeg') }}");
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            min-height: 100vh;
+            position: relative;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            color: var(--renaven-texto);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(255, 255, 255, 0.4);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        body.bg-black-solid { background-image: none !important; background-color: #000000 !important; }
+        body.bg-black-solid::before { display: none; }
+        body.bg-white-solid { background-image: none !important; background-color: #FFFFFF !important; }
+        body.bg-white-solid::before { display: none; }
+        body.bg-image-default { background-image: url("{{ url_for('static', filename='img/fereteria.jpeg') }}") !important; background-size: cover !important; background-position: center center !important; background-repeat: no-repeat !important; background-attachment: fixed !important; }
+        body.bg-image-default::before { display: block; }
+
+        .container-fluid { position: relative; z-index: 1; }
+
+        *:focus { outline: 3px solid #FFD700 !important; outline-offset: 2px !important; }
+
+        .skip-link {
+            position: absolute; top: -40px; left: 0;
+            background: var(--renaven-azul-fuerte); color: #000;
+            padding: 8px 16px; z-index: 1000;
+            text-decoration: none; border-radius: 0 0 8px 0; font-weight: bold;
+        }
+        .skip-link:focus { top: 0; }
+
+        /* ========== SIDEBAR ========== */
+        .sidebar {
+            min-height: 100vh; background: var(--renaven-azul-fuerte);
+            border-right: 2px solid var(--renaven-azul-cielo);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .sidebar .nav-link {
+            margin: 5px 0; border-radius: 50px; transition: all 0.3s;
+            padding: 10px 15px; color: #000 !important;
+        }
+        .sidebar .nav-link i { color: #000 !important; }
+        .sidebar .nav-link:hover { background: var(--renaven-azul-cielo); transform: translateX(8px); color: #000 !important; }
+        .sidebar .nav-link:hover i { color: #000 !important; }
+        .sidebar .nav-link.active { background: var(--renaven-azul-cielo); box-shadow: 0 4px 12px rgba(0,0,0,0.2); border: 1px solid var(--renaven-borde); color: #000 !important; }
+        .sidebar .nav-link.active i { color: #000 !important; }
+        .sidebar h5 { margin-top: 2px; color: #000 !important; }
+        .sidebar small { color: #000 !important; }
+        .sidebar-logo {
+            width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
+            margin-bottom: 10px; border: 3px solid var(--renaven-azul-cielo);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease; background: var(--renaven-blanco);
+        }
+        .sidebar-logo:hover { transform: scale(1.05); }
+
+        /* ========== TARJETAS DE ROLES ========== */
+        .card {
+            border-radius: 20px !important;
+            border: 2px solid var(--renaven-borde) !important;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(4px);
+        }
+        .card:hover { transform: translateY(-5px); }
+        .card-header {
+            background: var(--renaven-azul-cielo) !important;
+            padding: 15px 20px !important;
+            border: none;
+            border-bottom: 2px solid var(--renaven-borde) !important;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .card-header h4 { margin: 0; font-weight: bold; color: #000 !important; }
+        .card-header h4 i { margin-right: 10px; color: var(--renaven-azul-fuerte); }
+
+        /* ========== PERMISOS (CHECKBOXES) ========== */
+        .form-check { margin-bottom: 10px; padding-left: 1.8rem; }
+        .form-check-input {
+            border-radius: 5px;
+            border: 2px solid var(--renaven-borde);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 1.2rem; height: 1.2rem; margin-top: 0.15rem;
+            background-color: var(--renaven-blanco);
+        }
+        .form-check-input:checked { background-color: var(--renaven-azul-fuerte); border-color: var(--renaven-borde); }
+        .form-check-input:focus { border-color: var(--renaven-azul-fuerte); box-shadow: 0 0 0 0.2rem rgba(132,182,244,0.25); }
+        .form-check-label { font-weight: 500; cursor: pointer; color: #000 !important; }
+
+        /* ========== BOTONES ========== */
+        .btn-success {
+            background: var(--renaven-azul-fuerte) !important;
+            border: 2px solid var(--renaven-borde) !important;
+            border-radius: 50px !important;
+            padding: 10px 25px !important;
+            transition: all 0.3s ease; font-weight: bold; color: #000 !important;
+        }
+        .btn-success:hover {
+            background: var(--renaven-azul-cielo) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            color: #000 !important;
+        }
+        .btn-primary {
+            background: var(--renaven-azul-fuerte) !important;
+            border: 2px solid var(--renaven-borde) !important;
+            border-radius: 50px !important;
+            padding: 8px 20px !important;
+            transition: all 0.3s ease; color: #000 !important;
+        }
+        .btn-primary:hover {
+            background: var(--renaven-azul-cielo) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            color: #000 !important;
+        }
+        .btn-secondary {
+            border-radius: 50px !important;
+            padding: 8px 20px !important;
+            background: #6c757d !important;
+            border: 2px solid var(--renaven-borde) !important;
+            color: #000 !important;
+        }
+        .btn-secondary:hover { background: #5a6268 !important; transform: translateY(-2px); color: #000 !important; }
+
+        /* ========== ALERTAS ========== */
+        .alert {
+            border-radius: 20px;
+            border: 2px solid var(--renaven-borde) !important;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(4px);
+            color: #000 !important;
+        }
+        .alert-success { border-left: 5px solid var(--renaven-azul-fuerte); }
+        .alert-danger { border-left: 5px solid #DC3545; }
+        .alert-info { border-left: 5px solid var(--renaven-azul-cielo); }
+
+        /* ========== MODAL ========== */
+        .modal-content {
+            border-radius: 20px !important;
+            overflow: hidden;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(4px);
+            border: 2px solid var(--renaven-borde) !important;
+        }
+        .modal-header {
+            background: var(--renaven-azul-cielo) !important;
+            border: none;
+            border-bottom: 2px solid var(--renaven-borde) !important;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .modal-header .btn-close { filter: brightness(0.3); }
+
+        /* ========== FORMULARIOS ========== */
+        .form-control {
+            border-radius: 50px !important;
+            border: 2px solid var(--renaven-borde) !important;
+            background: var(--renaven-blanco);
+            padding: 10px 18px;
+            color: #000 !important;
+        }
+        .form-control:focus {
+            border-color: var(--renaven-azul-fuerte);
+            box-shadow: 0 0 0 0.2rem rgba(132,182,244,0.25);
+        }
+        .form-control::placeholder { opacity: 0.5; }
+        .form-label { font-weight: 500; color: #000 !important; }
+
+        /* ========== TÍTULOS ========== */
+        h2 { font-weight: bold; }
+        h2 i { color: var(--renaven-azul-fuerte); }
+        hr { border-top: 2px solid var(--renaven-borde); margin-bottom: 25px; opacity: 0.3; }
+        .text-muted { opacity: 0.7; color: #000 !important; }
+
+        /* ========== GRID DE PERMISOS ========== */
+        .permissions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--renaven-gris-fondo); }
+        ::-webkit-scrollbar-thumb { background: var(--renaven-azul-cielo); border-radius: 10px; border: 1px solid var(--renaven-borde); }
+
+        .btn-close { filter: brightness(0.3); }
+        .btn-close:hover { filter: brightness(0.1); }
+
+        @media (max-width: 768px) {
+            .permissions-grid { grid-template-columns: 1fr; }
+            .card-header h4 { font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body class="bg-image-default">
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <div class="container-fluid" id="main-content" role="main">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 p-0 sidebar no-print">
+                <div class="text-center py-4">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/80x80?text=R'">
+                    <h5 class="mt-2">RENAVEN</h5>
+                    <small>{{ session.get('role', 'Usuario') }}</small>
+                </div>
+                <nav class="nav flex-column px-3" aria-label="Menú principal">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a>
+                    <a class="nav-link" href="{{ url_for('facturacion') }}"><i class="fas fa-shopping-cart me-2"></i> Facturación</a>
+                    <a class="nav-link" href="{{ url_for('inventory') }}"><i class="fas fa-boxes me-2"></i> Inventario</a>
+                    <a class="nav-link active" href="{{ url_for('manage_roles') }}"><i class="fas fa-users-cog me-2"></i> Roles</a>
+                    <a class="nav-link" href="{{ url_for('manage_users') }}"><i class="fas fa-user-plus me-2"></i> Usuarios</a>
+                    <hr>
+                    <a class="nav-link text-danger" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i> Salir</a>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 p-4">
+                <!-- HEADER (sin botón de accesibilidad) -->
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+                    <h1 class="fs-2"><i class="fas fa-users-cog"></i> Gestión de Roles</h1>
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addRoleModal">
+                            <i class="fas fa-plus me-2"></i> Nuevo Rol
+                        </button>
+                    </div>
+                </div>
+                <hr>
+
+                <!-- Mensajes flash -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Tarjetas de roles -->
+                {% for role in roles %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2 class="h4"><i class="fas fa-tag"></i> {{ role.name }}</h2>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('update_role_permissions') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="role_name" value="{{ role.name }}">
+
+                            <div class="permissions-grid">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="inventory" id="inventory_{{ loop.index }}" {% if role.permissions.inventory %}checked{% endif %}>
+                                    <label class="form-check-label" for="inventory_{{ loop.index }}"><i class="fas fa-boxes"></i> Inventario</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="edit_products" id="edit_products_{{ loop.index }}" {% if role.permissions.edit_products %}checked{% endif %}>
+                                    <label class="form-check-label" for="edit_products_{{ loop.index }}"><i class="fas fa-edit"></i> Editar Productos</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="buy" id="buy_{{ loop.index }}" {% if role.permissions.buy %}checked{% endif %}>
+                                    <label class="form-check-label" for="buy_{{ loop.index }}"><i class="fas fa-shopping-cart"></i> Compras</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="sell" id="sell_{{ loop.index }}" {% if role.permissions.sell %}checked{% endif %}>
+                                    <label class="form-check-label" for="sell_{{ loop.index }}"><i class="fas fa-dollar-sign"></i> Ventas</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="users" id="users_{{ loop.index }}" {% if role.permissions.users %}checked{% endif %}>
+                                    <label class="form-check-label" for="users_{{ loop.index }}"><i class="fas fa-users"></i> Usuarios</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="roles" id="roles_{{ loop.index }}" {% if role.permissions.roles %}checked{% endif %}>
+                                    <label class="form-check-label" for="roles_{{ loop.index }}"><i class="fas fa-crown"></i> Roles</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="reports" id="reports_{{ loop.index }}" {% if role.permissions.reports %}checked{% endif %}>
+                                    <label class="form-check-label" for="reports_{{ loop.index }}"><i class="fas fa-chart-bar"></i> Reportes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="exchange_rate" id="exchange_rate_{{ loop.index }}" {% if role.permissions.exchange_rate %}checked{% endif %}>
+                                    <label class="form-check-label" for="exchange_rate_{{ loop.index }}"><i class="fas fa-dollar-sign"></i> Tasa Cambio</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="cash_closure" id="cash_closure_{{ loop.index }}" {% if role.permissions.cash_closure %}checked{% endif %}>
+                                    <label class="form-check-label" for="cash_closure_{{ loop.index }}"><i class="fas fa-cash-register"></i> Cierre de Caja</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="view_sales" id="view_sales_{{ loop.index }}" {% if role.permissions.view_sales %}checked{% endif %}>
+                                    <label class="form-check-label" for="view_sales_{{ loop.index }}"><i class="fas fa-chart-line"></i> Ver Ventas</label>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary mt-4">
+                                <i class="fas fa-save me-2"></i> Actualizar Permisos ({{ role.name }})
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info text-center" role="alert">
+                    <i class="fas fa-info-circle"></i> No hay roles registrados. Crea un nuevo rol usando el botón <strong>"Nuevo Rol"</strong>.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Agregar Rol -->
+    <div class="modal fade" id="addRoleModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ url_for('add_role') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-plus"></i> Nuevo Rol</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="role_name" class="form-label"><i class="fas fa-tag"></i> Nombre del Rol</label>
+                            <input type="text" id="role_name" name="role_name" class="form-control" required placeholder="Ej: Supervisor, Vendedor, Administrador">
+                            <small class="text-muted">El nombre debe ser único y descriptivo</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Crear Rol</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== ACCESIBILIDAD GLOBAL (SIN BOTÓN) ==========
+        // Se ejecuta ANTES del DOMContentLoaded para evitar parpadeo
+        (function() {
+            var savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                document.documentElement.classList.add(savedTheme);
+            }
+            var savedBg = localStorage.getItem('backgroundMode');
+            if (savedBg === 'black') document.documentElement.classList.add('bg-black-solid');
+            if (savedBg === 'white') document.documentElement.classList.add('bg-white-solid');
+            var savedFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            document.documentElement.style.fontSize = (13 * savedFontSize / 100) + 'px';
+        })();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // ---- Aplicar tema y fondo guardado ----
+            function applyTheme(themeClass) {
+                document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                document.documentElement.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                if (themeClass) {
+                    document.body.classList.add(themeClass);
+                    document.documentElement.classList.add(themeClass);
+                }
+            }
+
+            function applyBackground(mode) {
+                document.body.classList.remove('bg-black-solid', 'bg-white-solid', 'bg-image-default');
+                if (mode === 'black') document.body.classList.add('bg-black-solid');
+                else if (mode === 'white') document.body.classList.add('bg-white-solid');
+                else document.body.classList.add('bg-image-default');
+            }
+
+            var savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) applyTheme(savedTheme);
+
+            var savedBg = localStorage.getItem('backgroundMode');
+            applyBackground(savedBg || 'image');
+
+            // ---- Tamaño de fuente ----
+            var currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            function applyFontSize() {
+                document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                document.documentElement.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+            applyFontSize();
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

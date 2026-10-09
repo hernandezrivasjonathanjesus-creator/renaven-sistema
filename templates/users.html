@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Usuarios - RENAVEN</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ========== PALETA PREDETERMINADA ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+            --renaven-verde: #84b6f4;
+            --shadow-color: rgba(132,182,244,0.2);
+            --transition-base: all 0.25s ease-in-out;
+        }
+
+        /* ========== TEMAS PASTEL ========== */
+        body.theme-rosa { --renaven-azul-fuerte: #fbc4d5; --renaven-azul-cielo: #fce4ec; --renaven-blanco: #fef9f0; --renaven-gris-fondo: #fdf6f8; --renaven-borde: #fbc4d5; }
+        body.theme-rosa .sidebar { background: #fdd0b5; border-right-color: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link.active { background: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link:hover { background: #fce4ec; }
+        body.theme-rosa .table-dark { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .table-dark th { border-color: #fbc4d5 !important; }
+        body.theme-rosa .btn-success { background: #fbc4d5 !important; border-color: #fdd0b5 !important; }
+        body.theme-rosa .btn-success:hover { background: #fdd0b5 !important; }
+        body.theme-rosa .btn-warning { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .btn-warning:hover { background: #fbc4d5 !important; }
+        body.theme-rosa .btn-danger { background: #fdd0b5 !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .btn-danger:hover { background: #fbc4d5 !important; }
+        body.theme-rosa .btn-info { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .btn-info:hover { background: #fbc4d5 !important; }
+        body.theme-rosa .badge.bg-success { background: #fbc4d5 !important; border-color: #fdd0b5 !important; }
+        body.theme-rosa .badge.bg-danger { background: #fdd0b5 !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .modal-header.bg-success { background: #fbc4d5 !important; border-color: #fdd0b5 !important; }
+        body.theme-rosa .modal-header.bg-danger { background: #fdd0b5 !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .modal-header.bg-info { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .role-badge { background: #fce4ec; border-color: #fbc4d5; }
+        body.theme-rosa .form-control:focus { border-color: #fbc4d5; box-shadow: 0 0 0 0.2rem rgba(251,196,213,0.4); }
+
+        body.theme-celeste { --renaven-azul-fuerte: #b5d8eb; --renaven-azul-cielo: #d6ecf5; --renaven-blanco: #f9fdff; --renaven-gris-fondo: #f4faff; --renaven-borde: #b5d8eb; }
+        body.theme-celeste .sidebar { background: #a8d0e6; border-right-color: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link.active { background: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link:hover { background: #d6ecf5; }
+        body.theme-celeste .table-dark { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .table-dark th { border-color: #b5d8eb !important; }
+        body.theme-celeste .btn-success { background: #b5d8eb !important; border-color: #a8d0e6 !important; }
+        body.theme-celeste .btn-success:hover { background: #a8d0e6 !important; }
+        body.theme-celeste .btn-warning { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .btn-warning:hover { background: #b5d8eb !important; }
+        body.theme-celeste .btn-danger { background: #a8d0e6 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .btn-danger:hover { background: #b5d8eb !important; }
+        body.theme-celeste .btn-info { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .btn-info:hover { background: #b5d8eb !important; }
+        body.theme-celeste .badge.bg-success { background: #b5d8eb !important; border-color: #a8d0e6 !important; }
+        body.theme-celeste .badge.bg-danger { background: #a8d0e6 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .modal-header.bg-success { background: #b5d8eb !important; border-color: #a8d0e6 !important; }
+        body.theme-celeste .modal-header.bg-danger { background: #a8d0e6 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .modal-header.bg-info { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .role-badge { background: #d6ecf5; border-color: #b5d8eb; }
+        body.theme-celeste .form-control:focus { border-color: #b5d8eb; box-shadow: 0 0 0 0.2rem rgba(181,216,235,0.4); }
+
+        body.theme-menta { --renaven-azul-fuerte: #b5e6c3; --renaven-azul-cielo: #d8f0e0; --renaven-blanco: #f6fcf8; --renaven-gris-fondo: #f2faf5; --renaven-borde: #b5e6c3; }
+        body.theme-menta .sidebar { background: #a8dbb8; border-right-color: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link.active { background: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link:hover { background: #d8f0e0; }
+        body.theme-menta .table-dark { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .table-dark th { border-color: #b5e6c3 !important; }
+        body.theme-menta .btn-success { background: #b5e6c3 !important; border-color: #a8dbb8 !important; }
+        body.theme-menta .btn-success:hover { background: #a8dbb8 !important; }
+        body.theme-menta .btn-warning { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .btn-warning:hover { background: #b5e6c3 !important; }
+        body.theme-menta .btn-danger { background: #a8dbb8 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .btn-danger:hover { background: #b5e6c3 !important; }
+        body.theme-menta .btn-info { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .btn-info:hover { background: #b5e6c3 !important; }
+        body.theme-menta .badge.bg-success { background: #b5e6c3 !important; border-color: #a8dbb8 !important; }
+        body.theme-menta .badge.bg-danger { background: #a8dbb8 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .modal-header.bg-success { background: #b5e6c3 !important; border-color: #a8dbb8 !important; }
+        body.theme-menta .modal-header.bg-danger { background: #a8dbb8 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .modal-header.bg-info { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .role-badge { background: #d8f0e0; border-color: #b5e6c3; }
+        body.theme-menta .form-control:focus { border-color: #b5e6c3; box-shadow: 0 0 0 0.2rem rgba(181,230,195,0.4); }
+
+        body.theme-amarillo { --renaven-azul-fuerte: #f9e7b2; --renaven-azul-cielo: #fdf3d5; --renaven-blanco: #fffef9; --renaven-gris-fondo: #fefcf5; --renaven-borde: #f9e7b2; }
+        body.theme-amarillo .sidebar { background: #f5dc9a; border-right-color: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link.active { background: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link:hover { background: #fdf3d5; }
+        body.theme-amarillo .table-dark { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .table-dark th { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .btn-success { background: #f9e7b2 !important; border-color: #f5dc9a !important; }
+        body.theme-amarillo .btn-success:hover { background: #f5dc9a !important; }
+        body.theme-amarillo .btn-warning { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .btn-warning:hover { background: #f9e7b2 !important; }
+        body.theme-amarillo .btn-danger { background: #f5dc9a !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .btn-danger:hover { background: #f9e7b2 !important; }
+        body.theme-amarillo .btn-info { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .btn-info:hover { background: #f9e7b2 !important; }
+        body.theme-amarillo .badge.bg-success { background: #f9e7b2 !important; border-color: #f5dc9a !important; }
+        body.theme-amarillo .badge.bg-danger { background: #f5dc9a !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .modal-header.bg-success { background: #f9e7b2 !important; border-color: #f5dc9a !important; }
+        body.theme-amarillo .modal-header.bg-danger { background: #f5dc9a !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .modal-header.bg-info { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .role-badge { background: #fdf3d5; border-color: #f9e7b2; }
+        body.theme-amarillo .form-control:focus { border-color: #f9e7b2; box-shadow: 0 0 0 0.2rem rgba(249,231,178,0.4); }
+
+        body.theme-lila { --renaven-azul-fuerte: #d4c4f0; --renaven-azul-cielo: #e8defa; --renaven-blanco: #fcfaff; --renaven-gris-fondo: #f8f5fe; --renaven-borde: #d4c4f0; }
+        body.theme-lila .sidebar { background: #c9b7e8; border-right-color: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link.active { background: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link:hover { background: #e8defa; }
+        body.theme-lila .table-dark { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .table-dark th { border-color: #d4c4f0 !important; }
+        body.theme-lila .btn-success { background: #d4c4f0 !important; border-color: #c9b7e8 !important; }
+        body.theme-lila .btn-success:hover { background: #c9b7e8 !important; }
+        body.theme-lila .btn-warning { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .btn-warning:hover { background: #d4c4f0 !important; }
+        body.theme-lila .btn-danger { background: #c9b7e8 !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .btn-danger:hover { background: #d4c4f0 !important; }
+        body.theme-lila .btn-info { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .btn-info:hover { background: #d4c4f0 !important; }
+        body.theme-lila .badge.bg-success { background: #d4c4f0 !important; border-color: #c9b7e8 !important; }
+        body.theme-lila .badge.bg-danger { background: #c9b7e8 !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .modal-header.bg-success { background: #d4c4f0 !important; border-color: #c9b7e8 !important; }
+        body.theme-lila .modal-header.bg-danger { background: #c9b7e8 !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .modal-header.bg-info { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .role-badge { background: #e8defa; border-color: #d4c4f0; }
+        body.theme-lila .form-control:focus { border-color: #d4c4f0; box-shadow: 0 0 0 0.2rem rgba(212,196,240,0.4); }
+
+        body.theme-durazno { --renaven-azul-fuerte: #fdd0b5; --renaven-azul-cielo: #fee5d0; --renaven-blanco: #fffcf9; --renaven-gris-fondo: #fef8f3; --renaven-borde: #fdd0b5; }
+        body.theme-durazno .sidebar { background: #f5c2a4; border-right-color: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link.active { background: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link:hover { background: #fee5d0; }
+        body.theme-durazno .table-dark { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .table-dark th { border-color: #fdd0b5 !important; }
+        body.theme-durazno .btn-success { background: #fdd0b5 !important; border-color: #f5c2a4 !important; }
+        body.theme-durazno .btn-success:hover { background: #f5c2a4 !important; }
+        body.theme-durazno .btn-warning { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .btn-warning:hover { background: #fdd0b5 !important; }
+        body.theme-durazno .btn-danger { background: #f5c2a4 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .btn-danger:hover { background: #fdd0b5 !important; }
+        body.theme-durazno .btn-info { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .btn-info:hover { background: #fdd0b5 !important; }
+        body.theme-durazno .badge.bg-success { background: #fdd0b5 !important; border-color: #f5c2a4 !important; }
+        body.theme-durazno .badge.bg-danger { background: #f5c2a4 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .modal-header.bg-success { background: #fdd0b5 !important; border-color: #f5c2a4 !important; }
+        body.theme-durazno .modal-header.bg-danger { background: #f5c2a4 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .modal-header.bg-info { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .role-badge { background: #fee5d0; border-color: #fdd0b5; }
+        body.theme-durazno .form-control:focus { border-color: #fdd0b5; box-shadow: 0 0 0 0.2rem rgba(253,208,181,0.4); }
+
+        *:not([class*="fa-"]) { font-weight: bold !important; }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] { font-weight: 400 !important; }
+        .fas, .fa-solid { font-weight: 900 !important; }
+
+        /* ========== FONDO ========== */
+        body {
+            background-image: url("{{ url_for('static', filename='img/fereteria.jpeg') }}");
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            min-height: 100vh;
+            position: relative;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            color: var(--renaven-texto);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(255, 255, 255, 0.4);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        body.bg-black-solid { background-image: none !important; background-color: #000000 !important; }
+        body.bg-black-solid::before { display: none; }
+        body.bg-white-solid { background-image: none !important; background-color: #FFFFFF !important; }
+        body.bg-white-solid::before { display: none; }
+        body.bg-image-default { background-image: url("{{ url_for('static', filename='img/fereteria.jpeg') }}") !important; background-size: cover !important; background-position: center center !important; background-repeat: no-repeat !important; background-attachment: fixed !important; }
+        body.bg-image-default::before { display: block; }
+
+        .container-fluid { position: relative; z-index: 1; }
+
+        *:focus { outline: 3px solid #FFD700 !important; outline-offset: 2px !important; }
+
+        .skip-link {
+            position: absolute; top: -40px; left: 0;
+            background: var(--renaven-azul-fuerte); color: #000;
+            padding: 8px 16px; z-index: 1000;
+            text-decoration: none; border-radius: 0 0 8px 0; font-weight: bold;
+        }
+        .skip-link:focus { top: 0; }
+
+        /* ========== SIDEBAR ========== */
+        .sidebar {
+            min-height: 100vh; background: var(--renaven-azul-fuerte);
+            border-right: 2px solid var(--renaven-azul-cielo);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .sidebar .nav-link {
+            margin: 5px 0; border-radius: 50px; transition: all 0.3s;
+            padding: 10px 15px; color: #000 !important;
+        }
+        .sidebar .nav-link i { color: #000 !important; }
+        .sidebar .nav-link:hover { background: var(--renaven-azul-cielo); transform: translateX(8px); color: #000 !important; }
+        .sidebar .nav-link:hover i { color: #000 !important; }
+        .sidebar .nav-link.active { background: var(--renaven-azul-cielo); box-shadow: 0 4px 12px rgba(0,0,0,0.2); border: 1px solid var(--renaven-borde); color: #000 !important; }
+        .sidebar .nav-link.active i { color: #000 !important; }
+        .sidebar h5 { margin-top: 2px; color: #000 !important; }
+        .sidebar small { color: #000 !important; }
+        .sidebar-logo {
+            width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
+            margin-bottom: 10px; border: 3px solid var(--renaven-azul-cielo);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease; background: var(--renaven-blanco);
+        }
+        .sidebar-logo:hover { transform: scale(1.05); }
+
+        /* ========== TABLA ========== */
+        .table {
+            border-radius: 20px; overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(4px);
+            border: 2px solid var(--renaven-borde);
+        }
+        .table-dark { background: var(--renaven-azul-cielo) !important; border-color: var(--renaven-borde); }
+        .table-dark th {
+            background: transparent;
+            border-bottom: 2px solid var(--renaven-borde);
+            padding: 12px; font-weight: 600;
+            color: #000 !important;
+            border-color: var(--renaven-borde) !important;
+        }
+        .table-striped tbody tr:nth-of-type(odd) { background-color: rgba(255,255,255,0.5); }
+        .table tbody tr:hover { background-color: rgba(46,134,193,0.1); }
+        .table td, .table th { border-color: var(--renaven-borde) !important; color: #000 !important; }
+
+        /* ========== BADGES ========== */
+        .badge {
+            border-radius: 50px; padding: 6px 12px; font-weight: 500;
+            border: 1px solid var(--renaven-borde); color: #000 !important;
+        }
+        .badge.bg-danger { background: #84b6f4 !important; color: #000 !important; }
+        .badge.bg-success { background: var(--renaven-verde) !important; color: #000 !important; }
+
+        /* ========== BOTONES ========== */
+        .btn-success {
+            background: var(--renaven-verde) !important;
+            border: 2px solid var(--renaven-borde) !important;
+            border-radius: 50px !important;
+            padding: 10px 25px !important;
+            transition: all 0.3s ease; font-weight: bold; color: #000 !important;
+        }
+        .btn-success:hover {
+            background: var(--renaven-azul-cielo) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            color: #000 !important;
+        }
+        .btn-warning {
+            background: var(--renaven-azul-cielo) !important;
+            border: 2px solid var(--renaven-borde) !important;
+            border-radius: 50px !important;
+            padding: 5px 12px !important;
+            margin: 2px; transition: all 0.3s ease; color: #000 !important;
+        }
+        .btn-warning:hover { transform: translateY(-2px); background: var(--renaven-azul-fuerte) !important; color: #000 !important; }
+        .btn-danger {
+            background: #84b6f4 !important;
+            border: 2px solid var(--renaven-borde) !important;
+            border-radius: 50px !important;
+            padding: 5px 12px !important;
+            margin: 2px; transition: all 0.3s ease; color: #000 !important;
+        }
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            background: var(--renaven-azul-cielo) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            color: #000 !important;
+        }
+        .btn-info {
+            background: var(--renaven-azul-cielo) !important;
+            border: 2px solid var(--renaven-borde) !important;
+            border-radius: 50px !important;
+            padding: 5px 12px !important;
+            margin: 2px; transition: all 0.3s ease; color: #000 !important;
+        }
+        .btn-info:hover { transform: translateY(-2px); background: var(--renaven-azul-fuerte) !important; color: #000 !important; }
+        .btn-secondary {
+            border-radius: 50px !important;
+            padding: 8px 20px !important;
+            background: #6c757d !important;
+            border: 2px solid var(--renaven-borde) !important;
+            color: #000 !important;
+        }
+        .btn-secondary:hover { background: #5a6268 !important; transform: translateY(-2px); color: #000 !important; }
+
+        /* ========== ALERTAS ========== */
+        .alert {
+            border-radius: 20px;
+            border: 2px solid var(--renaven-borde) !important;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(4px);
+            color: #000 !important;
+        }
+        .alert-success { border-left: 5px solid var(--renaven-verde); }
+        .alert-danger { border-left: 5px solid #DC3545; }
+        .alert-info { border-left: 5px solid #0dcaf0; }
+
+        /* ========== MODALES ========== */
+        .modal-content {
+            border-radius: 20px !important;
+            overflow: hidden;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(4px);
+            border: 2px solid var(--renaven-borde) !important;
+        }
+        .modal-header {
+            border: none;
+            border-bottom: 2px solid var(--renaven-borde) !important;
+        }
+        .modal-header.bg-success { background: var(--renaven-verde) !important; }
+        .modal-header.bg-danger { background: #DC3545 !important; }
+        .modal-header.bg-info { background: #0dcaf0 !important; }
+        .modal-header .btn-close { filter: brightness(0.3); }
+
+        /* ========== FORMULARIOS ========== */
+        .form-control, .form-select {
+            border-radius: 50px !important;
+            border: 2px solid var(--renaven-borde) !important;
+            background: var(--renaven-blanco);
+            padding: 10px 18px;
+            transition: all 0.3s ease;
+            color: #000 !important;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--renaven-azul-fuerte);
+            box-shadow: 0 0 0 0.2rem rgba(132,182,244,0.25);
+            background: var(--renaven-blanco);
+        }
+        .form-control::placeholder { opacity: 0.5; }
+        .form-label { font-weight: 500; color: #000 !important; }
+
+        h2 { font-weight: bold; }
+        h2 i { color: var(--renaven-azul-fuerte); }
+        hr { border-top: 2px solid var(--renaven-borde); margin-bottom: 25px; opacity: 0.3; }
+        .text-muted { opacity: 0.7; color: #000 !important; }
+
+        .role-badge {
+            background: var(--renaven-azul-cielo);
+            border: 1px solid var(--renaven-borde);
+            border-radius: 50px;
+            padding: 4px 12px;
+            display: inline-block;
+            font-size: 0.85rem; color: #000 !important;
+        }
+
+        .attempts-low, .attempts-medium, .attempts-high { font-weight: bold; color: #000 !important; }
+
+        .password-strength {
+            height: 4px; border-radius: 5px;
+            background: var(--renaven-gris-fondo);
+            border: 1px solid var(--renaven-borde);
+            transition: all 0.3s ease;
+        }
+
+        .btn-close { filter: brightness(0.3); }
+        .btn-close:hover { filter: brightness(0.1); }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--renaven-gris-fondo); }
+        ::-webkit-scrollbar-thumb { background: var(--renaven-azul-cielo); border-radius: 10px; border: 1px solid var(--renaven-borde); }
+
+        /* ========== FIX DEL BACKDROP DE BOOTSTRAP ========== */
+        .modal-backdrop {
+            z-index: 1040 !important;
+        }
+        .modal {
+            z-index: 1050 !important;
+        }
+
+        @media (max-width: 768px) {
+            .table { font-size: 12px; }
+            .btn-warning, .btn-danger, .btn-info { padding: 3px 8px !important; font-size: 10px; }
+        }
+    </style>
+</head>
+<body class="bg-image-default">
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <div class="container-fluid" id="main-content" role="main">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 p-0 sidebar no-print">
+                <div class="text-center py-4">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/80x80?text=R'">
+                    <h5 class="mt-2">RENAVEN</h5>
+                    <small>{{ session.get('role', 'Usuario') }}</small>
+                </div>
+                <nav class="nav flex-column px-3" aria-label="Menú principal">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a>
+                    <a class="nav-link" href="{{ url_for('facturacion') }}"><i class="fas fa-shopping-cart me-2"></i> Facturación</a>
+                    <a class="nav-link" href="{{ url_for('inventory') }}"><i class="fas fa-boxes me-2"></i> Inventario</a>
+                    <a class="nav-link" href="{{ url_for('manage_roles') }}"><i class="fas fa-users-cog me-2"></i> Roles</a>
+                    <a class="nav-link active" href="{{ url_for('manage_users') }}"><i class="fas fa-user-plus me-2"></i> Usuarios</a>
+                    <hr>
+                    <a class="nav-link text-danger" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i> Salir</a>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+                    <h1 class="fs-2"><i class="fas fa-users"></i> Gestión de Usuarios</h1>
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                            <i class="fas fa-plus me-2"></i> Nuevo Usuario
+                        </button>
+                    </div>
+                </div>
+                <hr>
+
+                <!-- Mensajes flash -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Tabla de usuarios -->
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped" aria-label="Tabla de usuarios del sistema">
+                        <thead class="table-dark">
+                            <tr>
+                                <th scope="col"><i class="fas fa-user"></i> Usuario</th>
+                                <th scope="col"><i class="fas fa-tag"></i> Rol</th>
+                                <th scope="col"><i class="fas fa-shield-alt"></i> Intentos</th>
+                                <th scope="col"><i class="fas fa-circle"></i> Estado</th>
+                                <th scope="col"><i class="fas fa-cogs"></i> Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if users %}
+                                {% for user in users %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-user-circle"></i>
+                                        <strong>{{ user.username }}</strong>
+                                        {% if user.email %}
+                                        <br><small class="text-muted"><i class="fas fa-envelope"></i> {{ user.email }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="role-badge" aria-label="Rol: {{ user.role }}">
+                                            <i class="fas fa-crown"></i> {{ user.role }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% set attempts = user.failed_attempts|default(0) %}
+                                        {% if attempts == 0 %}
+                                            <span class="attempts-low"><i class="fas fa-check-circle"></i> {{ attempts }}/3</span>
+                                        {% elif attempts <= 2 %}
+                                            <span class="attempts-medium"><i class="fas fa-exclamation-triangle"></i> {{ attempts }}/3</span>
+                                        {% else %}
+                                            <span class="attempts-high"><i class="fas fa-times-circle"></i> {{ attempts }}/3</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user.locked_until and user.locked_until > time.time() %}
+                                            <span class="badge bg-danger"><i class="fas fa-lock"></i> Bloqueado</span>
+                                        {% else %}
+                                            <span class="badge bg-success"><i class="fas fa-check-circle"></i> Activo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <!-- Cambiar Contraseña -->
+                                        <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#changePasswordModal{{ user.id }}" aria-label="Cambiar contraseña de {{ user.username }}">
+                                            <i class="fas fa-key"></i> Clave
+                                        </button>
+
+                                        <!-- Desbloquear (si está bloqueado) -->
+                                        {% if user.locked_until and user.locked_until > time.time() %}
+                                            <a href="{{ url_for('unlock_user', user_id=user.id) }}" class="btn btn-warning btn-sm" aria-label="Desbloquear usuario {{ user.username }}">
+                                                <i class="fas fa-unlock-alt"></i> Desbloquear
+                                            </a>
+                                        {% endif %}
+
+                                        <!-- Eliminar -->
+                                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ user.id }}" aria-label="Eliminar usuario {{ user.username }}">
+                                            <i class="fas fa-trash-alt"></i> Eliminar
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5">
+                                        <i class="fas fa-users fa-3x mb-3 d-block"></i>
+                                        No hay usuarios registrados.<br>
+                                        Haga clic en <strong>"Nuevo Usuario"</strong> para agregar.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- MODALES FUERA DE LA TABLA (EVITA PROBLEMAS DE ANIDACIÓN)        -->
+    <!-- ================================================================ -->
+
+    {% if users %}
+        {% for user in users %}
+            <!-- MODAL CAMBIAR CONTRASEÑA -->
+            <div class="modal fade" id="changePasswordModal{{ user.id }}" tabindex="-1" aria-labelledby="changePasswordLabel{{ user.id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form method="POST" action="{{ url_for('change_user_password', user_id=user.id) }}" autocomplete="off">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="modal-header bg-info">
+                                <h5 class="modal-title" id="changePasswordLabel{{ user.id }}">
+                                    <i class="fas fa-key"></i> Cambiar Contraseña
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-info mb-3" style="border-left: 5px solid #0dcaf0;">
+                                    <i class="fas fa-user-circle me-2"></i>
+                                    Cambiando contraseña de: <strong>{{ user.username }}</strong>
+                                    <br><small>Rol: {{ user.role }}</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="new_password_{{ user.id }}" class="form-label">
+                                        <i class="fas fa-lock"></i> Nueva Contraseña *
+                                    </label>
+                                    <input type="password" name="new_password" id="new_password_{{ user.id }}" class="form-control password-input" required minlength="16" placeholder="Mínimo 16 caracteres">
+                                    <small class="text-muted">
+                                        Mínimo 16 caracteres, incluyendo MAYÚSCULA, minúscula y carácter especial
+                                    </small>
+                                    <div class="password-strength mt-2"></div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="confirm_password_{{ user.id }}" class="form-label">
+                                        <i class="fas fa-lock"></i> Confirmar Contraseña *
+                                    </label>
+                                    <input type="password" name="confirm_password" id="confirm_password_{{ user.id }}" class="form-control" required minlength="16" placeholder="Repita la nueva contraseña">
+                                </div>
+
+                                <div class="alert alert-warning mb-0 py-2">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    <small>Al cambiar la contraseña, el usuario también será desbloqueado automáticamente.</small>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-info">
+                                    <i class="fas fa-save me-1"></i> Cambiar Contraseña
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL ELIMINAR -->
+            <div class="modal fade" id="deleteModal{{ user.id }}" tabindex="-1" aria-labelledby="deleteLabel{{ user.id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form method="POST" action="{{ url_for('delete_user', user_id=user.id) }}" autocomplete="off">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="modal-header bg-danger">
+                                <h5 class="modal-title" id="deleteLabel{{ user.id }}">
+                                    <i class="fas fa-exclamation-triangle"></i> Eliminar Usuario
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="text-center mb-3">
+                                    <i class="fas fa-user-times fa-3x" style="color: #DC3545;"></i>
+                                </div>
+                                <p>¿Está seguro de eliminar al usuario <strong>{{ user.username }}</strong>?</p>
+                                <p class="text-muted small">Esta acción no se puede deshacer.</p>
+                                <label for="confirm_password_del_{{ user.id }}" class="form-label mt-3">
+                                    <i class="fas fa-lock"></i> Ingrese su contraseña para confirmar:
+                                </label>
+                                <input type="password" name="confirm_password" id="confirm_password_del_{{ user.id }}" class="form-control" required placeholder="Su contraseña">
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-danger">Eliminar Usuario</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Modal Agregar Usuario -->
+    <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success">
+                    <h5 class="modal-title" id="addUserLabel"><i class="fas fa-user-plus"></i> Nuevo Usuario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form method="POST" action="{{ url_for('add_user') }}" autocomplete="off">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="username" class="form-label"><i class="fas fa-user"></i> Usuario</label>
+                            <input type="text" id="username" name="username" class="form-control" required placeholder="Ej: vendedor1, admin">
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label"><i class="fas fa-envelope"></i> Correo Electrónico</label>
+                            <input type="email" id="email" name="email" class="form-control" placeholder="usuario@correo.com">
+                            <small class="text-muted">Opcional, pero recomendado para recuperación de contraseña</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label"><i class="fas fa-lock"></i> Contraseña (mínimo 16 caracteres)</label>
+                            <input type="password" name="password" id="newPassword" class="form-control password-input" required minlength="16">
+                            <small class="text-muted">Mínimo 16 caracteres, incluyendo mayúsculas, minúsculas y caracteres especiales</small>
+                            <div class="password-strength mt-2"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="roleSelect" class="form-label"><i class="fas fa-tag"></i> Rol</label>
+                            <select id="roleSelect" name="role" class="form-select">
+                                {% for role in roles %}
+                                <option value="{{ role.name }}">{{ role.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Crear Usuario</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== ACCESIBILIDAD GLOBAL ==========
+        (function() {
+            var savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                document.documentElement.classList.add(savedTheme);
+            }
+            var savedBg = localStorage.getItem('backgroundMode');
+            if (savedBg === 'black') document.documentElement.classList.add('bg-black-solid');
+            if (savedBg === 'white') document.documentElement.classList.add('bg-white-solid');
+            var savedFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            document.documentElement.style.fontSize = (13 * savedFontSize / 100) + 'px';
+        })();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // ---- Aplicar tema y fondo guardado ----
+            function applyTheme(themeClass) {
+                document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                document.documentElement.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                if (themeClass) {
+                    document.body.classList.add(themeClass);
+                    document.documentElement.classList.add(themeClass);
+                }
+            }
+
+            function applyBackground(mode) {
+                document.body.classList.remove('bg-black-solid', 'bg-white-solid', 'bg-image-default');
+                if (mode === 'black') document.body.classList.add('bg-black-solid');
+                else if (mode === 'white') document.body.classList.add('bg-white-solid');
+                else document.body.classList.add('bg-image-default');
+            }
+
+            var savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) applyTheme(savedTheme);
+
+            var savedBg = localStorage.getItem('backgroundMode');
+            applyBackground(savedBg || 'image');
+
+            // ---- Tamaño de fuente ----
+            var currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            function applyFontSize() {
+                document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                document.documentElement.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+            applyFontSize();
+
+            // ========== VALIDACIÓN DE CONTRASEÑA EN TIEMPO REAL ==========
+            document.querySelectorAll('.password-input').forEach(function(input) {
+                input.addEventListener('input', function() {
+                    const pwd = this.value;
+                    const strengthBar = this.parentElement.querySelector('.password-strength');
+                    if (!strengthBar) return;
+
+                    let strength = 0;
+                    if (pwd.length >= 16) strength++;
+                    if (/\d/.test(pwd)) strength++;
+                    if (/[A-Z]/.test(pwd)) strength++;
+                    if (/[a-z]/.test(pwd)) strength++;
+                    if (/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?/]/.test(pwd)) strength++;
+
+                    if (strength <= 2) {
+                        strengthBar.style.background = "#DC3545";
+                        strengthBar.style.width = '25%';
+                    } else if (strength === 3) {
+                        strengthBar.style.background = "#fd7e14";
+                        strengthBar.style.width = '50%';
+                    } else if (strength === 4) {
+                        strengthBar.style.background = "#28a745";
+                        strengthBar.style.width = '75%';
+                    } else if (strength >= 5) {
+                        strengthBar.style.background = "#1e7e34";
+                        strengthBar.style.width = '100%';
+                    } else {
+                        strengthBar.style.background = "var(--renaven-gris-fondo)";
+                        strengthBar.style.width = '0%';
+                    }
+                });
+            });
+
+            // ============================================================
+            // FIX DEL BACKDROP: LIMPIAR CUANDO SE CIERRA CUALQUIER MODAL
+            // ============================================================
+            document.querySelectorAll('.modal').forEach(function(modalElement) {
+                modalElement.addEventListener('hidden.bs.modal', function () {
+                    // Eliminar backdrops huérfanos
+                    document.querySelectorAll('.modal-backdrop').forEach(function(backdrop) {
+                        backdrop.remove();
+                    });
+                    // Limpiar el <body> de las clases de Bootstrap
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                });
+            });
+
+            // ============================================================
+            // VALIDACIÓN ANTES DE ENVIAR CAMBIO DE CONTRASEÑA
+            // ============================================================
+            document.querySelectorAll('form[action*="change_user_password"]').forEach(function(form) {
+                form.addEventListener('submit', function(e) {
+                    const newPass = form.querySelector('input[name="new_password"]').value;
+                    const confirmPass = form.querySelector('input[name="confirm_password"]').value;
+
+                    if (newPass.length < 16) {
+                        e.preventDefault();
+                        alert('⚠️ La contraseña debe tener mínimo 16 caracteres.');
+                        return false;
+                    }
+                    if (!/[A-Z]/.test(newPass)) {
+                        e.preventDefault();
+                        alert('⚠️ La contraseña debe contener al menos una letra MAYÚSCULA.');
+                        return false;
+                    }
+                    if (!/[a-z]/.test(newPass)) {
+                        e.preventDefault();
+                        alert('⚠️ La contraseña debe contener al menos una letra minúscula.');
+                        return false;
+                    }
+                    if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?/]/.test(newPass)) {
+                        e.preventDefault();
+                        alert('⚠️ La contraseña debe contener al menos un carácter especial.');
+                        return false;
+                    }
+                    if (newPass !== confirmPass) {
+                        e.preventDefault();
+                        alert('⚠️ Las contraseñas no coinciden.');
+                        return false;
+                    }
+                    // Deshabilitar botón para evitar doble envío
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Procesando...';
+                    }
+                    return true;
+                });
+            });
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

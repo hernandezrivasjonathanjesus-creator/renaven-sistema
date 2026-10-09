@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Productos Eliminados - RENAVEN</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ========== PALETA PREDETERMINADA (ORIGINAL LOGIN) ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-gris-claro: #e2e8f0;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+            --shadow-color: rgba(132,182,244,0.2);
+            --transition-base: all 0.25s ease-in-out;
+        }
+
+        /* ========== TEMAS PASTEL INDIVIDUALES (SIN ALTO CONTRASTE) ========== */
+        /* 1. Rosa pastel */
+        body.theme-rosa {
+            --renaven-azul-fuerte: #fbc4d5;
+            --renaven-azul-cielo: #fce4ec;
+            --renaven-blanco: #fef9f0;
+            --renaven-gris-fondo: #fdf6f8;
+            --renaven-borde: #fbc4d5;
+        }
+        body.theme-rosa .sidebar { background: #fdd0b5; border-right-color: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link.active { background: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link:hover { background: #fce4ec; }
+        body.theme-rosa .card-stats { background: #fce4ec; border-color: #fbc4d5; }
+        body.theme-rosa .table-dark { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .table-dark th { border-color: #fbc4d5 !important; }
+        body.theme-rosa .badge-motivo { background: #fce4ec; border-color: #fbc4d5; color: #000 !important; }
+        body.theme-rosa .deleted-badge { background: #fdd0b5; border-color: #fbc4d5; color: #000 !important; }
+        body.theme-rosa .btn-print { background: #fdd0b5 !important; border-color: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .btn-print:hover { background: #fbc4d5 !important; }
+        body.theme-rosa .btn-secondary { background: #fce4ec !important; border-color: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .btn-secondary:hover { background: #fdd0b5 !important; }
+        body.theme-rosa .btn-primary { background: #fbc4d5 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-rosa .btn-primary:hover { background: #fdd0b5 !important; }
+        body.theme-rosa .alert-info { background: #fce4ec !important; border-color: #fbc4d5 !important; border-left-color: #fdd0b5 !important; }
+        body.theme-rosa .logo-circle { border-color: #fbc4d5 !important; }
+        body.theme-rosa .sidebar-logo { border-color: #fbc4d5 !important; }
+        body.theme-rosa .exchange-rate-info { background: #fce4ec; border-color: #fbc4d5; }
+
+        /* 2. Celeste pastel */
+        body.theme-celeste {
+            --renaven-azul-fuerte: #b5d8eb;
+            --renaven-azul-cielo: #d6ecf5;
+            --renaven-blanco: #f9fdff;
+            --renaven-gris-fondo: #f4faff;
+            --renaven-borde: #b5d8eb;
+        }
+        body.theme-celeste .sidebar { background: #a8d0e6; border-right-color: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link.active { background: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link:hover { background: #d6ecf5; }
+        body.theme-celeste .card-stats { background: #d6ecf5; border-color: #b5d8eb; }
+        body.theme-celeste .table-dark { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .table-dark th { border-color: #b5d8eb !important; }
+        body.theme-celeste .badge-motivo { background: #d6ecf5; border-color: #b5d8eb; color: #000 !important; }
+        body.theme-celeste .deleted-badge { background: #a8d0e6; border-color: #b5d8eb; color: #000 !important; }
+        body.theme-celeste .btn-print { background: #a8d0e6 !important; border-color: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .btn-print:hover { background: #b5d8eb !important; }
+        body.theme-celeste .btn-secondary { background: #d6ecf5 !important; border-color: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .btn-secondary:hover { background: #a8d0e6 !important; }
+        body.theme-celeste .btn-primary { background: #b5d8eb !important; border-color: #a8d0e6 !important; color: #000 !important; }
+        body.theme-celeste .btn-primary:hover { background: #a8d0e6 !important; }
+        body.theme-celeste .alert-info { background: #d6ecf5 !important; border-color: #b5d8eb !important; border-left-color: #a8d0e6 !important; }
+        body.theme-celeste .logo-circle { border-color: #b5d8eb !important; }
+        body.theme-celeste .sidebar-logo { border-color: #b5d8eb !important; }
+        body.theme-celeste .exchange-rate-info { background: #d6ecf5; border-color: #b5d8eb; }
+
+        /* 3. Menta pastel */
+        body.theme-menta {
+            --renaven-azul-fuerte: #b5e6c3;
+            --renaven-azul-cielo: #d8f0e0;
+            --renaven-blanco: #f6fcf8;
+            --renaven-gris-fondo: #f2faf5;
+            --renaven-borde: #b5e6c3;
+        }
+        body.theme-menta .sidebar { background: #a8dbb8; border-right-color: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link.active { background: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link:hover { background: #d8f0e0; }
+        body.theme-menta .card-stats { background: #d8f0e0; border-color: #b5e6c3; }
+        body.theme-menta .table-dark { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .table-dark th { border-color: #b5e6c3 !important; }
+        body.theme-menta .badge-motivo { background: #d8f0e0; border-color: #b5e6c3; color: #000 !important; }
+        body.theme-menta .deleted-badge { background: #a8dbb8; border-color: #b5e6c3; color: #000 !important; }
+        body.theme-menta .btn-print { background: #a8dbb8 !important; border-color: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .btn-print:hover { background: #b5e6c3 !important; }
+        body.theme-menta .btn-secondary { background: #d8f0e0 !important; border-color: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .btn-secondary:hover { background: #a8dbb8 !important; }
+        body.theme-menta .btn-primary { background: #b5e6c3 !important; border-color: #a8dbb8 !important; color: #000 !important; }
+        body.theme-menta .btn-primary:hover { background: #a8dbb8 !important; }
+        body.theme-menta .alert-info { background: #d8f0e0 !important; border-color: #b5e6c3 !important; border-left-color: #a8dbb8 !important; }
+        body.theme-menta .logo-circle { border-color: #b5e6c3 !important; }
+        body.theme-menta .sidebar-logo { border-color: #b5e6c3 !important; }
+        body.theme-menta .exchange-rate-info { background: #d8f0e0; border-color: #b5e6c3; }
+
+        /* 4. Amarillo pastel */
+        body.theme-amarillo {
+            --renaven-azul-fuerte: #f9e7b2;
+            --renaven-azul-cielo: #fdf3d5;
+            --renaven-blanco: #fffef9;
+            --renaven-gris-fondo: #fefcf5;
+            --renaven-borde: #f9e7b2;
+        }
+        body.theme-amarillo .sidebar { background: #f5dc9a; border-right-color: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link.active { background: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link:hover { background: #fdf3d5; }
+        body.theme-amarillo .card-stats { background: #fdf3d5; border-color: #f9e7b2; }
+        body.theme-amarillo .table-dark { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .table-dark th { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .badge-motivo { background: #fdf3d5; border-color: #f9e7b2; color: #000 !important; }
+        body.theme-amarillo .deleted-badge { background: #f5dc9a; border-color: #f9e7b2; color: #000 !important; }
+        body.theme-amarillo .btn-print { background: #f5dc9a !important; border-color: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .btn-print:hover { background: #f9e7b2 !important; }
+        body.theme-amarillo .btn-secondary { background: #fdf3d5 !important; border-color: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .btn-secondary:hover { background: #f5dc9a !important; }
+        body.theme-amarillo .btn-primary { background: #f9e7b2 !important; border-color: #f5dc9a !important; color: #000 !important; }
+        body.theme-amarillo .btn-primary:hover { background: #f5dc9a !important; }
+        body.theme-amarillo .alert-info { background: #fdf3d5 !important; border-color: #f9e7b2 !important; border-left-color: #f5dc9a !important; }
+        body.theme-amarillo .logo-circle { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .sidebar-logo { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .exchange-rate-info { background: #fdf3d5; border-color: #f9e7b2; }
+
+        /* 5. Lila pastel */
+        body.theme-lila {
+            --renaven-azul-fuerte: #d4c4f0;
+            --renaven-azul-cielo: #e8defa;
+            --renaven-blanco: #fcfaff;
+            --renaven-gris-fondo: #f8f5fe;
+            --renaven-borde: #d4c4f0;
+        }
+        body.theme-lila .sidebar { background: #c9b7e8; border-right-color: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link.active { background: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link:hover { background: #e8defa; }
+        body.theme-lila .card-stats { background: #e8defa; border-color: #d4c4f0; }
+        body.theme-lila .table-dark { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .table-dark th { border-color: #d4c4f0 !important; }
+        body.theme-lila .badge-motivo { background: #e8defa; border-color: #d4c4f0; color: #000 !important; }
+        body.theme-lila .deleted-badge { background: #c9b7e8; border-color: #d4c4f0; color: #000 !important; }
+        body.theme-lila .btn-print { background: #c9b7e8 !important; border-color: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .btn-print:hover { background: #d4c4f0 !important; }
+        body.theme-lila .btn-secondary { background: #e8defa !important; border-color: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .btn-secondary:hover { background: #c9b7e8 !important; }
+        body.theme-lila .btn-primary { background: #d4c4f0 !important; border-color: #c9b7e8 !important; color: #000 !important; }
+        body.theme-lila .btn-primary:hover { background: #c9b7e8 !important; }
+        body.theme-lila .alert-info { background: #e8defa !important; border-color: #d4c4f0 !important; border-left-color: #c9b7e8 !important; }
+        body.theme-lila .logo-circle { border-color: #d4c4f0 !important; }
+        body.theme-lila .sidebar-logo { border-color: #d4c4f0 !important; }
+        body.theme-lila .exchange-rate-info { background: #e8defa; border-color: #d4c4f0; }
+
+        /* 6. Durazno pastel */
+        body.theme-durazno {
+            --renaven-azul-fuerte: #fdd0b5;
+            --renaven-azul-cielo: #fee5d0;
+            --renaven-blanco: #fffcf9;
+            --renaven-gris-fondo: #fef8f3;
+            --renaven-borde: #fdd0b5;
+        }
+        body.theme-durazno .sidebar { background: #f5c2a4; border-right-color: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link.active { background: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link:hover { background: #fee5d0; }
+        body.theme-durazno .card-stats { background: #fee5d0; border-color: #fdd0b5; }
+        body.theme-durazno .table-dark { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .table-dark th { border-color: #fdd0b5 !important; }
+        body.theme-durazno .badge-motivo { background: #fee5d0; border-color: #fdd0b5; color: #000 !important; }
+        body.theme-durazno .deleted-badge { background: #f5c2a4; border-color: #fdd0b5; color: #000 !important; }
+        body.theme-durazno .btn-print { background: #f5c2a4 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .btn-print:hover { background: #fdd0b5 !important; }
+        body.theme-durazno .btn-secondary { background: #fee5d0 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .btn-secondary:hover { background: #f5c2a4 !important; }
+        body.theme-durazno .btn-primary { background: #fdd0b5 !important; border-color: #f5c2a4 !important; color: #000 !important; }
+        body.theme-durazno .btn-primary:hover { background: #f5c2a4 !important; }
+        body.theme-durazno .alert-info { background: #fee5d0 !important; border-color: #fdd0b5 !important; border-left-color: #f5c2a4 !important; }
+        body.theme-durazno .logo-circle { border-color: #fdd0b5 !important; }
+        body.theme-durazno .sidebar-logo { border-color: #fdd0b5 !important; }
+        body.theme-durazno .exchange-rate-info { background: #fee5d0; border-color: #fdd0b5; }
+
+        /* ========== TODAS LAS LETRAS EN NEGRITA (excepto iconos) ========== */
+        *:not([class*="fa-"]) {
+            font-weight: bold !important;
+        }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+            font-weight: 400 !important;
+        }
+        .fas, .fa-solid {
+            font-weight: 900 !important;
+        }
+
+        /* FORZAR TODOS LOS TEXTOS A NEGRO */
+        body, body * {
+            color: var(--renaven-texto) !important;
+        }
+        ::placeholder, input::placeholder, textarea::placeholder {
+            color: #9ca3af !important;
+            opacity: 1;
+        }
+        a {
+            text-decoration: none;
+        }
+        a:hover {
+            color: var(--renaven-azul-fuerte) !important;
+            text-decoration: underline;
+        }
+
+        body {
+            background: var(--renaven-gris-fondo);
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            color: var(--renaven-texto);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .logo-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--renaven-borde);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease, border-color 0.3s;
+            background: var(--renaven-blanco);
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .logo-circle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        @media print {
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                font-size: 10pt;
+            }
+            .sidebar, .no-print, .btn-print, .btn-secondary,
+            .btn, .card-stats, .alert, .btn-close, .modal,
+            .modal-backdrop, .deleted-badge, .skip-link {
+                display: none !important;
+            }
+            .col-md-10 {
+                width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .container-fluid, .row {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .print-header {
+                display: block !important;
+                text-align: center;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #000;
+            }
+            .print-header img {
+                max-width: 60px;
+                border-radius: 50%;
+                margin-bottom: 5px;
+                border: 1px solid #000;
+            }
+            .print-header h2 {
+                font-size: 16pt;
+                margin: 5px 0;
+                color: #000 !important;
+            }
+            .print-header p {
+                margin: 3px 0;
+                font-size: 9pt;
+                color: #000 !important;
+            }
+            .table, .table th, .table td {
+                border: 1px solid black !important;
+                border-collapse: collapse !important;
+            }
+            .table-dark th {
+                background: #ddd !important;
+                color: black !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .badge-motivo {
+                border: 1px solid #ffc107 !important;
+                background: #fff3cd !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            table {
+                page-break-inside: avoid;
+            }
+            thead {
+                display: table-header-group;
+            }
+            .table-responsive {
+                overflow: visible !important;
+            }
+            .print-footer {
+                display: block !important;
+                margin-top: 20px;
+                padding-top: 10px;
+                border-top: 1px solid #000;
+                text-align: center;
+                font-size: 8pt;
+                color: #000 !important;
+            }
+            .logo-circle {
+                width: 60px;
+                height: 60px;
+                margin: 0 auto;
+            }
+        }
+
+        .print-header {
+            display: none;
+        }
+        .print-footer {
+            display: none;
+        }
+
+        .exchange-rate-info {
+            background: var(--renaven-blanco);
+            border: 2px solid var(--renaven-borde);
+            border-radius: 50px;
+            padding: 4px 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: #000 !important;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        /* ========== SIDEBAR ========== */
+        .sidebar {
+            min-height: 100vh;
+            background: var(--renaven-azul-fuerte);
+            border-right: 2px solid var(--renaven-azul-cielo);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .sidebar .nav-link {
+            margin: 4px 0;
+            border-radius: 50px;
+            padding: 8px 15px;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+            color: #000 !important;
+        }
+        .sidebar .nav-link i {
+            color: #000 !important;
+        }
+        .sidebar .nav-link:hover {
+            background: var(--renaven-azul-cielo);
+            transform: translateX(5px);
+            color: #000 !important;
+        }
+        .sidebar .nav-link:hover i {
+            color: #000 !important;
+        }
+        .sidebar .nav-link.active {
+            background: var(--renaven-azul-cielo);
+            border: 1px solid var(--renaven-borde);
+            color: #000 !important;
+        }
+        .sidebar .nav-link.active i {
+            color: #000 !important;
+        }
+        .sidebar h5, .sidebar small {
+            color: #000 !important;
+        }
+        .sidebar-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 10px;
+            border: 3px solid var(--renaven-azul-cielo);
+            background: var(--renaven-blanco);
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            transition: border-color 0.3s;
+        }
+
+        /* ========== BOTONES ========== */
+        .btn {
+            border-radius: 50px !important;
+            border: 2px solid var(--renaven-borde) !important;
+            font-weight: 600;
+            color: #000 !important;
+        }
+        .btn-print {
+            background: #28a745 !important;
+            color: #000 !important;
+        }
+        .btn-print:hover {
+            background: var(--renaven-azul-cielo) !important;
+            color: #000 !important;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: #6c757d !important;
+            color: #000 !important;
+        }
+        .btn-secondary:hover {
+            background: #5a6268 !important;
+            color: #000 !important;
+        }
+        .btn-primary {
+            background: var(--renaven-azul-fuerte) !important;
+            color: #000 !important;
+        }
+        .btn-primary:hover {
+            background: var(--renaven-azul-cielo) !important;
+            color: #000 !important;
+        }
+
+        /* ========== TABLA ========== */
+        .table {
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            background: var(--renaven-blanco);
+            border: 1px solid var(--renaven-borde);
+            color: #000 !important;
+            transition: border-color 0.3s;
+        }
+        .table-dark {
+            background: var(--renaven-azul-fuerte) !important;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .table-dark th {
+            background: transparent;
+            padding: 12px;
+            font-weight: 600;
+            color: #000 !important;
+        }
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: var(--renaven-gris-fondo);
+        }
+        .table td, .table th {
+            border-color: var(--renaven-borde) !important;
+            vertical-align: middle;
+            color: #000 !important;
+            transition: border-color 0.3s;
+        }
+
+        /* ========== TARJETAS DE ESTADÍSTICAS ========== */
+        .card-stats {
+            background: var(--renaven-blanco);
+            border: 2px solid var(--renaven-borde);
+            border-radius: 15px;
+            transition: transform 0.3s, background 0.3s, border-color 0.3s;
+            color: #000 !important;
+        }
+        .card-stats:hover {
+            transform: translateY(-5px);
+        }
+        .card-stats h3, .card-stats p {
+            color: #000 !important;
+        }
+        .card-stats i {
+            color: var(--renaven-azul-fuerte) !important;
+        }
+
+        /* ========== BADGES ========== */
+        .badge-motivo {
+            background: var(--renaven-azul-cielo);
+            color: #000 !important;
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            border: 1px solid var(--renaven-borde);
+            display: inline-block;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .badge-motivo i {
+            color: #000 !important;
+        }
+        .deleted-badge {
+            background: #28a745;
+            color: #000 !important;
+            padding: 3px 8px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            border: 1px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        /* ========== ALERTAS ========== */
+        .alert-info {
+            background: var(--renaven-azul-cielo) !important;
+            border: 2px solid var(--renaven-borde) !important;
+            border-left: 5px solid var(--renaven-azul-fuerte) !important;
+            border-radius: 20px;
+            color: #000 !important;
+            transition: background 0.3s, border-color 0.3s, border-left-color 0.3s;
+        }
+        .alert-info i, .alert-info strong, .alert-info span {
+            color: #000 !important;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: #000 !important;
+        }
+        h2 i {
+            color: var(--renaven-azul-fuerte) !important;
+        }
+        .text-muted {
+            opacity: 0.7;
+            color: #000 !important;
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .col-md-10 {
+            padding: 15px !important;
+        }
+        .title-with-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .title-with-logo {
+                flex-direction: column;
+                text-align: center;
+            }
+            .header-top {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .table-responsive {
+                font-size: 11px;
+            }
+            .badge-motivo {
+                font-size: 0.65rem;
+                padding: 3px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <div class="container-fluid" id="main-content" role="main">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 p-0 sidebar no-print">
+                <div class="text-center py-4">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/80x80?text=R'">
+                    <h5 class="mt-2">RENAVEN</h5>
+                    <small>{{ session.get('role', 'Usuario') }}</small>
+                </div>
+                <nav class="nav flex-column px-3" aria-label="Menú principal">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a>
+                    <a class="nav-link" href="{{ url_for('facturacion') }}"><i class="fas fa-shopping-cart me-2"></i> Facturación</a>
+                    <a class="nav-link" href="{{ url_for('inventory') }}"><i class="fas fa-boxes me-2"></i> Inventario</a>
+                    <a class="nav-link" href="{{ url_for('daily_closure') }}"><i class="fas fa-chart-line me-2"></i> Cierre Diario</a>
+                    <a class="nav-link" href="{{ url_for('cash_closure') }}"><i class="fas fa-cash-register me-2"></i> Cierre de Caja</a>
+                    <a class="nav-link" href="{{ url_for('ventas_mes') }}"><i class="fas fa-calendar-alt me-2"></i> Ventas del Mes</a>
+                    <a class="nav-link" href="{{ url_for('monthly_profit') }}"><i class="fas fa-chart-pie me-2"></i> Ganancias</a>
+                    <a class="nav-link active" href="{{ url_for('deleted_products') }}"><i class="fas fa-trash-alt me-2"></i> Eliminados</a>
+                    {% if session.get('role') == 'Dueño' %}
+                    <a class="nav-link" href="{{ url_for('manage_roles') }}"><i class="fas fa-users-cog me-2"></i> Roles</a>
+                    <a class="nav-link" href="{{ url_for('manage_users') }}"><i class="fas fa-user-plus me-2"></i> Usuarios</a>
+                    <a class="nav-link" href="{{ url_for('exchange_rate') }}"><i class="fas fa-dollar-sign me-2"></i> Tasa</a>
+                    {% endif %}
+                    <hr>
+                    <a class="nav-link text-danger" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i> Salir</a>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 p-4">
+                <div class="header-top">
+                    <div class="title-with-logo">
+                        <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="logo-circle">
+                        <h1 class="fs-2"><i class="fas fa-trash-alt"></i> Productos Eliminados</h1>
+                    </div>
+                    <div class="exchange-rate-info no-print">
+                        <i class="fas fa-calendar-alt"></i>
+                        <strong>Reporte:</strong>
+                        <span>{{ now|default('') }}</span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4 no-print flex-wrap gap-2">
+                    <div>
+                        <span class="deleted-badge">HISTORIAL DE ELIMINACIONES</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button onclick="window.print()" class="btn-print me-2"><i class="fas fa-print me-2"></i> Imprimir Registro</button>
+                        <a href="{{ url_for('inventory') }}" class="btn btn-secondary"><i class="fas fa-arrow-left me-2"></i> Volver al Inventario</a>
+                    </div>
+                </div>
+
+                <!-- Encabezado para impresión -->
+                <div class="print-header">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" onerror="this.src='https://via.placeholder.com/60x60?text=R'">
+                    <h2>RENAVEN OAKMONT, C.A.</h2>
+                    <p>RIF: J-41323725-3 | CALLE 1 ANDRES BELLO N°01-06, SECTOR FRANCISCO DE MIRANDA II</p>
+                    <p>PUNTA CARDON - PUNTO FIJO - FALCON | Tel: (0412) 123-4567</p>
+                    <div><strong>REPORTE DE PRODUCTOS ELIMINADOS</strong></div>
+                    <p>Fecha de reporte: {{ now|default('') }}</p>
+                    <hr>
+                </div>
+
+                <!-- Estadísticas -->
+                {% set total_eliminados = deleted|default([])|length %}
+
+                <div class="row mb-4 no-print">
+                    <div class="col-md-4 col-sm-6 mb-3">
+                        <div class="card-stats p-3 text-center">
+                            <i class="fas fa-trash-alt fa-2x mb-2"></i>
+                            <h3 class="mb-0">{{ total_eliminados }}</h3>
+                            <p class="text-muted mb-0">Total Eliminados</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-6 mb-3">
+                        <div class="card-stats p-3 text-center">
+                            <i class="fas fa-user fa-2x mb-2"></i>
+                            <h3 class="mb-0">--</h3>
+                            <p class="text-muted mb-0">Usuarios (desde backend)</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-6 mb-3">
+                        <div class="card-stats p-3 text-center">
+                            <i class="fas fa-boxes fa-2x mb-2"></i>
+                            <h3 class="mb-0">--</h3>
+                            <p class="text-muted mb-0">Unidades (desde backend)</p>
+                        </div>
+                    </div>
+                </div>
+
+                {% if deleted and deleted|length > 0 %}
+                <div class="alert alert-info mb-3 no-print">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Historial:</strong> Productos eliminados con su respectiva justificación.
+                </div>
+                {% endif %}
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Código</th>
+                                <th>Producto</th>
+                                <th>Categoría</th>
+                                <th class="text-end">Stock</th>
+                                <th class="text-end">Precio</th>
+                                <th>Motivo Eliminación</th>
+                                <th>Eliminado por</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if deleted and deleted|length > 0 %}
+                                {% for item in deleted %}
+                                <tr>
+                                    <td class="text-center">{{ item.original_id|default('') }}</td>
+                                    <td>{{ item.barcode|default('-') }}</td>
+                                    <td><strong>{{ item.name|default('Producto') }}</strong></td>
+                                    <td>{{ item.category|default('-') }}</td>
+                                    <td class="text-end">{{ item.stock|default(0)|float|format_number }}</td>
+                                    <td class="text-end">$ {{ item.price|default(0)|float|format_usd }}</td>
+                                    <td>
+                                        <span class="badge-motivo">
+                                            <i class="fas fa-quote-left me-1"></i>
+                                            {{ item.motivo_eliminacion|default('No especificado') }}
+                                        </span>
+                                    </td>
+                                    <td><i class="fas fa-user-circle me-1"></i> {{ item.usuario_elimino|default('Sistema') }}</td>
+                                    <td>{{ item.fecha_eliminacion[:19] if item.fecha_eliminacion else '-' }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center py-5">
+                                        <i class="fas fa-trash-alt fa-3x mb-3 d-block" style="color: #ccc;"></i>
+                                        <h2 class="h4">No hay productos eliminados</h2>
+                                        <p class="text-muted">Cuando elimines productos con justificación, aparecerán aquí.</p>
+                                        <a href="{{ url_for('inventory') }}" class="btn btn-primary mt-2">
+                                            <i class="fas fa-boxes me-2"></i> Ir al Inventario
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pie de impresión -->
+                <div class="print-footer">
+                    <p>Reporte generado automáticamente por el Sistema RENAVEN</p>
+                    <p>Total de productos eliminados: {{ deleted|default([])|length }}</p>
+                    <p>Este documento es un registro histórico de productos eliminados del inventario</p>
+                    <p>Generado por: {{ session.get('username', 'Usuario') }} | {{ now|default('') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== CARGA DE TEMA GUARDADO Y CONFIGURACIÓN DE FUENTE ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            // ---- Temas pastel ----
+            function applyTheme(themeClass) {
+                document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                if (themeClass) {
+                    document.body.classList.add(themeClass);
+                }
+                localStorage.setItem('selectedTheme', themeClass || '');
+            }
+
+            const savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            }
+
+            // ---- Tamaño de fuente (base 13px) ----
+            let currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            function applyFontSize() {
+                document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+            applyFontSize();
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

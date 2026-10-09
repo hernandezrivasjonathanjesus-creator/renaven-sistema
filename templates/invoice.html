@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Factura N° {{ "{:04d}".format(invoice_number|int) if invoice_number else "0000" }} - RENAVEN</title>
+    <style>
+        /* ========== CONFIGURACIÓN TAMAÑO CARTA ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @page {
+            size: letter;
+            margin: 0.2in;
+        }
+
+        /* ========== PALETA PREDETERMINADA (ORIGINAL LOGIN) ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-gris-claro: #e2e8f0;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+            --renaven-verde: #28a745;
+            --renaven-oro: #FFD700;
+            --renaven-rojo: #dc2626;
+            --renaven-nota-credito: #6f42c1;
+            --shadow-color: rgba(132,182,244,0.2);
+            --transition-base: all 0.25s ease-in-out;
+        }
+
+        /* ========== TEMAS PASTEL INDIVIDUALES (SIN ALTO CONTRASTE) ========== */
+        /* 1. Rosa pastel */
+        body.theme-rosa {
+            --renaven-azul-fuerte: #fbc4d5;
+            --renaven-azul-cielo: #fce4ec;
+            --renaven-blanco: #fef9f0;
+            --renaven-gris-fondo: #fdf6f8;
+            --renaven-borde: #fbc4d5;
+        }
+        body.theme-rosa .invoice-header { background: linear-gradient(135deg, #fbc4d5, #fdd0b5) !important; border-bottom-color: #fdd0b5 !important; }
+        body.theme-rosa .container { border-color: #fbc4d5 !important; }
+        body.theme-rosa .invoice-subtitle { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .company-info { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .client-info { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .table th { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .table td { border-color: #fbc4d5 !important; }
+        body.theme-rosa .total-row { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .descuento-row { background: #fdd0b5 !important; }
+        body.theme-rosa .descuento-row td { color: #000 !important; }
+        body.theme-rosa .nota-credito-row { background: #fce4ec !important; }
+        body.theme-rosa .nota-credito-row td { color: #000 !important; }
+        body.theme-rosa .footer { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .btn-primary { background: #fbc4d5 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-rosa .btn-primary:hover { background: #fdd0b5 !important; }
+        body.theme-rosa .btn-success { background: #fdd0b5 !important; border-color: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .btn-success:hover { background: #fbc4d5 !important; }
+        body.theme-rosa .btn-secondary { background: #fdd0b5 !important; border-color: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .btn-secondary:hover { background: #fbc4d5 !important; }
+        body.theme-rosa .company-logo { border-color: #fbc4d5 !important; }
+        body.theme-rosa .payment-detail { border-color: #fbc4d5 !important; }
+        body.theme-rosa .payment-detail-item { border-color: #fce4ec !important; }
+
+        /* 2. Celeste pastel */
+        body.theme-celeste {
+            --renaven-azul-fuerte: #b5d8eb;
+            --renaven-azul-cielo: #d6ecf5;
+            --renaven-blanco: #f9fdff;
+            --renaven-gris-fondo: #f4faff;
+            --renaven-borde: #b5d8eb;
+        }
+        body.theme-celeste .invoice-header { background: linear-gradient(135deg, #b5d8eb, #a8d0e6) !important; border-bottom-color: #a8d0e6 !important; }
+        body.theme-celeste .container { border-color: #b5d8eb !important; }
+        body.theme-celeste .invoice-subtitle { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .company-info { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .client-info { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .table th { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .table td { border-color: #b5d8eb !important; }
+        body.theme-celeste .total-row { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .descuento-row { background: #a8d0e6 !important; }
+        body.theme-celeste .descuento-row td { color: #000 !important; }
+        body.theme-celeste .nota-credito-row { background: #d6ecf5 !important; }
+        body.theme-celeste .nota-credito-row td { color: #000 !important; }
+        body.theme-celeste .footer { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .btn-primary { background: #b5d8eb !important; border-color: #a8d0e6 !important; color: #000 !important; }
+        body.theme-celeste .btn-primary:hover { background: #a8d0e6 !important; }
+        body.theme-celeste .btn-success { background: #a8d0e6 !important; border-color: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .btn-success:hover { background: #b5d8eb !important; }
+        body.theme-celeste .btn-secondary { background: #a8d0e6 !important; border-color: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .btn-secondary:hover { background: #b5d8eb !important; }
+        body.theme-celeste .company-logo { border-color: #b5d8eb !important; }
+        body.theme-celeste .payment-detail { border-color: #b5d8eb !important; }
+        body.theme-celeste .payment-detail-item { border-color: #d6ecf5 !important; }
+
+        /* 3. Menta pastel */
+        body.theme-menta {
+            --renaven-azul-fuerte: #b5e6c3;
+            --renaven-azul-cielo: #d8f0e0;
+            --renaven-blanco: #f6fcf8;
+            --renaven-gris-fondo: #f2faf5;
+            --renaven-borde: #b5e6c3;
+        }
+        body.theme-menta .invoice-header { background: linear-gradient(135deg, #b5e6c3, #a8dbb8) !important; border-bottom-color: #a8dbb8 !important; }
+        body.theme-menta .container { border-color: #b5e6c3 !important; }
+        body.theme-menta .invoice-subtitle { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .company-info { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .client-info { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .table th { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .table td { border-color: #b5e6c3 !important; }
+        body.theme-menta .total-row { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .descuento-row { background: #a8dbb8 !important; }
+        body.theme-menta .descuento-row td { color: #000 !important; }
+        body.theme-menta .nota-credito-row { background: #d8f0e0 !important; }
+        body.theme-menta .nota-credito-row td { color: #000 !important; }
+        body.theme-menta .footer { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .btn-primary { background: #b5e6c3 !important; border-color: #a8dbb8 !important; color: #000 !important; }
+        body.theme-menta .btn-primary:hover { background: #a8dbb8 !important; }
+        body.theme-menta .btn-success { background: #a8dbb8 !important; border-color: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .btn-success:hover { background: #b5e6c3 !important; }
+        body.theme-menta .btn-secondary { background: #a8dbb8 !important; border-color: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .btn-secondary:hover { background: #b5e6c3 !important; }
+        body.theme-menta .company-logo { border-color: #b5e6c3 !important; }
+        body.theme-menta .payment-detail { border-color: #b5e6c3 !important; }
+        body.theme-menta .payment-detail-item { border-color: #d8f0e0 !important; }
+
+        /* 4. Amarillo pastel */
+        body.theme-amarillo {
+            --renaven-azul-fuerte: #f9e7b2;
+            --renaven-azul-cielo: #fdf3d5;
+            --renaven-blanco: #fffef9;
+            --renaven-gris-fondo: #fefcf5;
+            --renaven-borde: #f9e7b2;
+        }
+        body.theme-amarillo .invoice-header { background: linear-gradient(135deg, #f9e7b2, #f5dc9a) !important; border-bottom-color: #f5dc9a !important; }
+        body.theme-amarillo .container { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .invoice-subtitle { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .company-info { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .client-info { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .table th { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .table td { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .total-row { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .descuento-row { background: #f5dc9a !important; }
+        body.theme-amarillo .descuento-row td { color: #000 !important; }
+        body.theme-amarillo .nota-credito-row { background: #fdf3d5 !important; }
+        body.theme-amarillo .nota-credito-row td { color: #000 !important; }
+        body.theme-amarillo .footer { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .btn-primary { background: #f9e7b2 !important; border-color: #f5dc9a !important; color: #000 !important; }
+        body.theme-amarillo .btn-primary:hover { background: #f5dc9a !important; }
+        body.theme-amarillo .btn-success { background: #f5dc9a !important; border-color: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .btn-success:hover { background: #f9e7b2 !important; }
+        body.theme-amarillo .btn-secondary { background: #f5dc9a !important; border-color: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .btn-secondary:hover { background: #f9e7b2 !important; }
+        body.theme-amarillo .company-logo { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .payment-detail { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .payment-detail-item { border-color: #fdf3d5 !important; }
+
+        /* 5. Lila pastel */
+        body.theme-lila {
+            --renaven-azul-fuerte: #d4c4f0;
+            --renaven-azul-cielo: #e8defa;
+            --renaven-blanco: #fcfaff;
+            --renaven-gris-fondo: #f8f5fe;
+            --renaven-borde: #d4c4f0;
+        }
+        body.theme-lila .invoice-header { background: linear-gradient(135deg, #d4c4f0, #c9b7e8) !important; border-bottom-color: #c9b7e8 !important; }
+        body.theme-lila .container { border-color: #d4c4f0 !important; }
+        body.theme-lila .invoice-subtitle { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .company-info { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .client-info { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .table th { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .table td { border-color: #d4c4f0 !important; }
+        body.theme-lila .total-row { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .descuento-row { background: #c9b7e8 !important; }
+        body.theme-lila .descuento-row td { color: #000 !important; }
+        body.theme-lila .nota-credito-row { background: #e8defa !important; }
+        body.theme-lila .nota-credito-row td { color: #000 !important; }
+        body.theme-lila .footer { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .btn-primary { background: #d4c4f0 !important; border-color: #c9b7e8 !important; color: #000 !important; }
+        body.theme-lila .btn-primary:hover { background: #c9b7e8 !important; }
+        body.theme-lila .btn-success { background: #c9b7e8 !important; border-color: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .btn-success:hover { background: #d4c4f0 !important; }
+        body.theme-lila .btn-secondary { background: #c9b7e8 !important; border-color: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .btn-secondary:hover { background: #d4c4f0 !important; }
+        body.theme-lila .company-logo { border-color: #d4c4f0 !important; }
+        body.theme-lila .payment-detail { border-color: #d4c4f0 !important; }
+        body.theme-lila .payment-detail-item { border-color: #e8defa !important; }
+
+        /* 6. Durazno pastel */
+        body.theme-durazno {
+            --renaven-azul-fuerte: #fdd0b5;
+            --renaven-azul-cielo: #fee5d0;
+            --renaven-blanco: #fffcf9;
+            --renaven-gris-fondo: #fef8f3;
+            --renaven-borde: #fdd0b5;
+        }
+        body.theme-durazno .invoice-header { background: linear-gradient(135deg, #fdd0b5, #f5c2a4) !important; border-bottom-color: #f5c2a4 !important; }
+        body.theme-durazno .container { border-color: #fdd0b5 !important; }
+        body.theme-durazno .invoice-subtitle { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .company-info { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .client-info { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .table th { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .table td { border-color: #fdd0b5 !important; }
+        body.theme-durazno .total-row { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .descuento-row { background: #f5c2a4 !important; }
+        body.theme-durazno .descuento-row td { color: #000 !important; }
+        body.theme-durazno .nota-credito-row { background: #fee5d0 !important; }
+        body.theme-durazno .nota-credito-row td { color: #000 !important; }
+        body.theme-durazno .footer { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .btn-primary { background: #fdd0b5 !important; border-color: #f5c2a4 !important; color: #000 !important; }
+        body.theme-durazno .btn-primary:hover { background: #f5c2a4 !important; }
+        body.theme-durazno .btn-success { background: #f5c2a4 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .btn-success:hover { background: #fdd0b5 !important; }
+        body.theme-durazno .btn-secondary { background: #f5c2a4 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .btn-secondary:hover { background: #fdd0b5 !important; }
+        body.theme-durazno .company-logo { border-color: #fdd0b5 !important; }
+        body.theme-durazno .payment-detail { border-color: #fdd0b5 !important; }
+        body.theme-durazno .payment-detail-item { border-color: #fee5d0 !important; }
+
+        /* ========== TODAS LAS LETRAS EN NEGRITA (excepto iconos) ========== */
+        *:not([class*="fa-"]) {
+            font-weight: bold !important;
+        }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+            font-weight: 400 !important;
+        }
+        .fas, .fa-solid {
+            font-weight: 900 !important;
+        }
+
+        /* ========== NAVEGACIÓN POR TECLADO ========== */
+        *:focus {
+            outline: 3px solid #FFD700 !important;
+            outline-offset: 2px !important;
+        }
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--renaven-azul-fuerte);
+            color: #000;
+            padding: 8px 16px;
+            z-index: 1000;
+            text-decoration: none;
+            border-radius: 0 0 8px 0;
+            font-weight: bold;
+        }
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* FORZAR TODAS LAS LETRAS EN NEGRO */
+        body, body * {
+            color: var(--renaven-texto) !important;
+        }
+        ::placeholder, input::placeholder {
+            color: #9ca3af !important;
+        }
+
+        body {
+            background: #e0e0e0;
+            font-family: Arial, sans-serif;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            font-size: 13px;
+            color: var(--renaven-texto);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+            background: var(--renaven-blanco);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border: 2px solid var(--renaven-borde);
+            transition: border-color 0.3s, background 0.3s;
+        }
+
+        @media print {
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .container {
+                max-width: 100% !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                border: 2px solid #000 !important;
+            }
+            .no-print { display: none !important; }
+            .btn, button, .footer .btn { display: none !important; }
+            .skip-link { display: none !important; }
+            * {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            body, p, span, div, td, th, .company-info, .client-info {
+                font-size: 12pt !important;
+            }
+            .table td, .table th {
+                padding: 6px 8px !important;
+            }
+            .invoice-header {
+                padding: 10px 15px !important;
+            }
+            .company-info, .client-info {
+                padding: 10px 15px !important;
+            }
+            .company-logo {
+                width: 45px;
+                height: 45px;
+            }
+        }
+
+        .invoice-header {
+            background: linear-gradient(135deg, var(--renaven-azul-fuerte), var(--renaven-azul-cielo));
+            padding: 15px 20px;
+            border-bottom: 3px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .company-logo {
+            width: 65px;
+            height: 65px;
+            object-fit: cover;
+            border-radius: 50%;
+            background: var(--renaven-blanco);
+            padding: 4px;
+            border: 2px solid var(--renaven-borde);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, border-color 0.3s;
+        }
+        .company-logo:hover {
+            transform: scale(1.05);
+        }
+        .invoice-title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .invoice-subtitle {
+            font-size: 16px;
+            font-weight: bold;
+            background: var(--renaven-azul-cielo);
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 50px;
+            border: 1px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .company-info {
+            background: var(--renaven-azul-cielo);
+            padding: 10px 20px;
+            border-bottom: 2px solid var(--renaven-borde);
+            font-size: 11pt;
+            text-align: center;
+            line-height: 1.4;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .client-info {
+            background: var(--renaven-gris-fondo);
+            padding: 12px 20px;
+            border-bottom: 2px solid var(--renaven-borde);
+            font-size: 11pt;
+            line-height: 1.5;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11pt;
+            margin: 0;
+        }
+        .table th {
+            background: var(--renaven-azul-cielo);
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .table td {
+            padding: 8px 8px;
+            border: 1px solid var(--renaven-borde);
+            transition: border-color 0.3s;
+        }
+        .text-end {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .total-row {
+            background: var(--renaven-azul-cielo);
+            font-weight: bold;
+            border-top: 2px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .total-row td {
+            font-weight: bold;
+        }
+        .descuento-row {
+            background: #fee2e2;
+        }
+        .descuento-row td {
+            color: #991b1b !important;
+        }
+        .nota-credito-row {
+            background: #f0e6ff;
+        }
+        .nota-credito-row td {
+            color: #4a148c !important;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 12px;
+            padding: 12px 20px;
+            border-top: 2px solid var(--renaven-borde);
+            font-size: 10pt;
+            line-height: 1.4;
+            background: var(--renaven-gris-fondo);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .btn {
+            border-radius: 50px;
+            padding: 8px 20px;
+            margin: 5px;
+            font-size: 11px;
+            font-weight: bold;
+            border: 2px solid var(--renaven-borde);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: var(--renaven-azul-fuerte);
+            color: #000 !important;
+        }
+        .btn-primary:hover {
+            background: var(--renaven-azul-cielo);
+            transform: translateY(-2px);
+            color: #000 !important;
+        }
+        .btn-success {
+            background: var(--renaven-verde);
+            color: #000 !important;
+        }
+        .btn-success:hover {
+            background: #1e7e34;
+            transform: translateY(-2px);
+            color: #000 !important;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: #000 !important;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            color: #000 !important;
+        }
+        .text-muted {
+            opacity: 0.6;
+        }
+        .table-responsive {
+            padding: 0 20px;
+            overflow-x: auto;
+        }
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .col-6 {
+            width: 50%;
+            padding: 0 5px;
+        }
+        small {
+            font-size: 10pt;
+        }
+        .invoice-header small {
+            opacity: 0.8;
+            color: #000 !important;
+        }
+        strong {
+            font-weight: bold;
+        }
+
+        /* Estilo para el detalle de pagos */
+        .payment-detail {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-top: 10px;
+            border: 1px solid var(--renaven-borde);
+            transition: border-color 0.3s;
+        }
+        .payment-detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid #e0e0e0;
+            transition: border-color 0.3s;
+        }
+        .payment-detail-item:last-child {
+            border-bottom: none;
+        }
+        .payment-detail-item .label {
+            font-weight: 500;
+        }
+        .payment-detail-item .value {
+            font-weight: bold;
+        }
+        .payment-detail-item.devolucion {
+            color: var(--renaven-rojo);
+        }
+        .payment-detail-item.nota-credito {
+            color: var(--renaven-nota-credito);
+        }
+        .payment-detail-item.vuelto {
+            color: var(--renaven-verde);
+        }
+
+        @media (max-width: 768px) {
+            .invoice-title {
+                font-size: 18px;
+            }
+            .invoice-subtitle {
+                font-size: 12px;
+            }
+            .col-6 {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+            .table th, .table td {
+                font-size: 9pt;
+                padding: 6px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== SKIP LINK ========== -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <div class="container" id="main-content" role="main">
+        <!-- ENCABEZADO CON LOGO CIRCULAR -->
+        <div class="invoice-header">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                <div style="width: 80px;">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN - Sistema de Facturación" class="company-logo" onerror="this.src='https://via.placeholder.com/65x65?text=R'">
+                </div>
+                <div style="text-align: center; flex: 1;">
+                    <div class="invoice-title">FACTURA</div>
+                    <div class="invoice-subtitle">N° {{ "{:04d}".format(invoice_number|int) if invoice_number else "0000" }}</div>
+                </div>
+                <div style="text-align: right; width: 130px;">
+                    <small><strong>Fecha:</strong><br>{{ current_date.split()[0] if current_date else "---" }}</small><br>
+                    <small><strong>Usuario:</strong> {{ session.get('username', 'User') if session else 'User' }}</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- DATOS EMPRESA -->
+        <div class="company-info">
+            <strong>
+                {% if company and company.name %}
+                    {{ company.name }}
+                {% else %}
+                    RENAVEN OAKMONT, C.A.
+                {% endif %}
+            </strong>
+            | RIF: {% if company and company.rif %}{{ company.rif }}{% else %}J-41323725-3{% endif %}
+            | Tel: {% if company and company.phone %}{{ company.phone }}{% else %}0412-1234567{% endif %}
+            <br>
+            {% if company and company.address %}{{ company.address }}{% else %}CALLE 1 ANDRES BELLO N°01-06{% endif %}
+            , {% if company and company.city %}{{ company.city }}{% else %}Punto Fijo{% endif %} - {% if company and company.state %}{{ company.state }}{% else %}Falcón{% endif %}
+        </div>
+
+        <!-- DATOS CLIENTE -->
+        <div class="client-info">
+            <div class="row">
+                <div class="col-6">
+                    <strong>👤 Cliente:</strong> {{ client_name|default("Cliente General") }}<br>
+                    <strong>📄 Cédula/RIF:</strong> {{ client_id|default("No especificado") }}
+                </div>
+                <div class="col-6">
+                    <strong>📞 Teléfono:</strong> {{ client_phone|default('No registrado') }}<br>
+                    <strong>📍 Dirección:</strong> {{ client_address|default("No especificada") }}
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA DE PRODUCTOS -->
+        <div class="table-responsive">
+            <table class="table" aria-label="Tabla de productos de la factura">
+                <thead>
+                    <tr>
+                        <th scope="col" style="width: 10%">Cant</th>
+                        <th scope="col" style="width: 10%">Unidad</th>
+                        <th scope="col" style="width: 45%">Descripción</th>
+                        <th scope="col" style="width: 17%">Precio USD</th>
+                        <th scope="col" style="width: 18%">Total USD</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if cart and cart|length > 0 %}
+                        {% for item in cart %}
+                        <tr>
+                            <td class="text-center" aria-label="Cantidad: {{ item.quantity|default(0)|format_number }}">{{ item.quantity|default(0)|format_number }}</td>
+                            <td class="text-center" aria-label="Unidad: {{ item.unit|default('unidad') }}">{{ item.unit|default('unidad') }}</td>
+                            <td class="text-start" aria-label="Producto: {{ item.name|default('Producto') }}">{{ item.name|default('Producto') }}</td>
+                            <td class="text-end" aria-label="Precio unitario: ${{ item.price|default(0)|format_usd }}">$ {{ item.price|default(0)|format_usd }}</td>
+                            <td class="text-end" aria-label="Total: ${{ (item.price|default(0) * item.quantity|default(0))|format_usd }}">$ {{ (item.price|default(0) * item.quantity|default(0))|format_usd }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">No hay productos en esta factura</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" class="text-end"><strong>Subtotal:</strong></td>
+                        <td class="text-end" aria-label="Subtotal: ${{ subtotal|default(0)|format_usd }}">$ {{ subtotal|default(0)|format_usd }}</td>
+                    </tr>
+
+                    <!-- ========== FILA DE DEVOLUCIÓN / NOTA DE CRÉDITO ========== -->
+                    {% set devolucion_usd = pagos.devolucion_usd|default(0) %}
+                    {% set nota_credito_usd = pagos.nota_credito_usd|default(0) %}
+                    {% set total_descuento_devolucion = devolucion_usd + nota_credito_usd %}
+
+                    {% if total_descuento_devolucion > 0 %}
+                    <tr class="descuento-row">
+                        <td colspan="4" class="text-end"><strong>Descuento por Devolución / Nota de Crédito:</strong></td>
+                        <td class="text-end" aria-label="Descuento: -${{ total_descuento_devolucion|format_usd }}">
+                            <strong>-$ {{ total_descuento_devolucion|format_usd }}</strong>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- ========== FILA DE DESCUENTO POR PAGO EN USD/ZELLE (5%) ========== -->
+                    {% if pagos and pagos.descuento_usd|default(0) > 0 %}
+                    <tr>
+                        <td colspan="4" class="text-end"><strong>Descuento ({{ discount_percent|default(5) }}%):</strong></td>
+                        <td class="text-end" aria-label="Descuento: -${{ pagos.descuento_usd|format_usd }}">
+                            <strong>-$ {{ pagos.descuento_usd|format_usd }}</strong>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <tr>
+                        <td colspan="4" class="text-end"><strong>IVA (16%):</strong></td>
+                        <td class="text-end" aria-label="IVA: ${{ tax|default(0)|format_usd }}">$ {{ tax|default(0)|format_usd }}</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td colspan="4" class="text-end"><strong>TOTAL USD:</strong></td>
+                        <td class="text-end" aria-label="Total en dólares: ${{ total_usd|default(0)|format_usd }}"><strong>$ {{ total_usd|default(0)|format_usd }}</strong></td>
+                    </tr>
+                    <tr class="total-row">
+                        <td colspan="4" class="text-end"><strong>TOTAL Bs.:</strong></td>
+                        <td class="text-end" aria-label="Total en bolívares: Bs. {{ total_bs|default(0)|format_bs }}"><strong>Bs. {{ total_bs|default(0)|format_bs }}</strong></td>
+                    </tr>
+
+                    <!-- ========== DETALLE DE MÉTODOS DE PAGO ========== -->
+                    {% if payment_method or pagos %}
+                    <tr>
+                        <td colspan="5" style="border-top: 2px solid var(--renaven-borde); padding-top: 10px;">
+                            <div class="payment-detail">
+                                <strong>💰 Detalle de Pagos</strong>
+                                <div style="margin-top: 5px;">
+
+                                    <!-- Efectivo Bs -->
+                                    {% if pagos.efectivo_bs|default(0) > 0 %}
+                                    <div class="payment-detail-item">
+                                        <span class="label">💵 Efectivo Bs</span>
+                                        <span class="value">Bs. {{ pagos.efectivo_bs|format_bs }}</span>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Efectivo USD -->
+                                    {% if pagos.efectivo_usd|default(0) > 0 %}
+                                    <div class="payment-detail-item">
+                                        <span class="label">💵 Efectivo USD</span>
+                                        <span class="value">$ {{ pagos.efectivo_usd|format_usd }}</span>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Zelle -->
+                                    {% if pagos.zelle|default(0) > 0 %}
+                                    <div class="payment-detail-item">
+                                        <span class="label">🏦 Zelle</span>
+                                        <span class="value">$ {{ pagos.zelle|format_usd }}</span>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Binance -->
+                                    {% if pagos.binance|default(0) > 0 %}
+                                    <div class="payment-detail-item">
+                                        <span class="label">🪙 Binance</span>
+                                        <span class="value">$ {{ pagos.binance|format_usd }}</span>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Pago Móvil -->
+                                    {% if pagos.movil|default(0) > 0 %}
+                                    <div class="payment-detail-item">
+                                        <span class="label">📱 Pago Móvil</span>
+                                        <span class="value">Bs. {{ pagos.movil|format_bs }}</span>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Transferencia -->
+                                    {% if pagos.transferencia|default(0) > 0 %}
+                                    <div class="payment-detail-item">
+                                        <span class="label">🔄 Transferencia</span>
+                                        <span class="value">Bs. {{ pagos.transferencia|format_bs }}</span>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Tarjeta -->
+                                    {% if pagos.tarjeta|default(0) > 0 %}
+                                    <div class="payment-detail-item">
+                                        <span class="label">💳 Tarjeta</span>
+                                        <span class="value">Bs. {{ pagos.tarjeta|format_bs }}</span>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- ===== NOTA DE CRÉDITO ===== -->
+                                    {% if pagos.nota_credito_usd|default(0) > 0 %}
+                                    <div class="payment-detail-item nota-credito">
+                                        <span class="label">📄 Nota de Crédito</span>
+                                        <span class="value">-$ {{ pagos.nota_credito_usd|format_usd }}</span>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- ===== DEVOLUCIÓN ===== -->
+                                    {% if pagos.devolucion_usd|default(0) > 0 %}
+                                    <div class="payment-detail-item devolucion">
+                                        <span class="label">↩️ Devolución</span>
+                                        <span class="value">-$ {{ pagos.devolucion_usd|format_usd }}</span>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- ===== VUELTO ===== -->
+                                    {% if pagos.cambio_usd|default(0) > 0 %}
+                                    <div class="payment-detail-item vuelto">
+                                        <span class="label">💰 Vuelto</span>
+                                        <span class="value">$ {{ pagos.cambio_usd|format_usd }} (Bs. {{ pagos.cambio_bs|format_bs }})</span>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Tasa de cambio -->
+                                    {% if pagos.tasa|default(0) > 0 %}
+                                    <div class="payment-detail-item" style="border-top: 1px solid #ccc; margin-top: 6px; padding-top: 6px; opacity: 0.7; font-size: 0.9rem;">
+                                        <span class="label">Tasa de cambio</span>
+                                        <span class="value">1 USD = Bs. {{ pagos.tasa|format_bs }}</span>
+                                    </div>
+                                    {% endif %}
+
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- PIE DE PÁGINA -->
+        <div class="footer">
+            ✅ ¡Gracias por su compra! | RENAVEN OAKMONT, C.A. - RIF: J-41323725-3<br>
+            📄 Documento generado electrónicamente - Válido como comprobante fiscal
+        </div>
+
+        <!-- BOTONES (solo pantalla) -->
+        <div class="text-center no-print" style="padding: 15px;">
+            <button class="btn btn-primary" onclick="window.print()" aria-label="Imprimir factura">
+                🖨️ Imprimir Factura
+            </button>
+            <a href="{{ url_for('facturacion') }}" class="btn btn-success" style="text-decoration: none;" aria-label="Ir a nueva venta">
+                ➕ Nueva Venta
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary" style="text-decoration: none;" aria-label="Ir al Dashboard">
+                📊 Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // ========== CARGA DE TEMA GUARDADO Y CONFIGURACIÓN DE FUENTE ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            // ---- Temas pastel ----
+            function applyTheme(themeClass) {
+                document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                if (themeClass) {
+                    document.body.classList.add(themeClass);
+                }
+                localStorage.setItem('selectedTheme', themeClass || '');
+            }
+
+            const savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            }
+
+            // ---- Fondo de pantalla ----
+            const savedBg = localStorage.getItem('backgroundMode');
+            if (savedBg === 'black') {
+                document.body.style.background = '#000000';
+            } else if (savedBg === 'white') {
+                document.body.style.background = '#FFFFFF';
+            } else {
+                document.body.style.background = '#e0e0e0';
+            }
+
+            // ---- Tamaño de fuente (base 13px) ----
+            let currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            function applyFontSize() {
+                document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+            // Aplicar el tamaño guardado
+            applyFontSize();
+        });
+    </script>
+</body>
+</html>

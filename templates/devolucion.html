@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Comprobante de Devolución N° {{ "{:04d}".format(return_number|int) if return_number else "0000" }} - RENAVEN</title>
+    <!-- ========== FONTAWESOME Y BOOTSTRAP ========== -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @page {
+            size: letter;
+            margin: 0.2in;
+        }
+
+        /* ========== PALETA RENAVEN (azul cielo + azul más fuerte) ========== */
+        :root {
+            --renaven-azul-fuerte: #2E86C1;   /* azul más fuerte */
+            --renaven-azul-cielo: #87CEEB;    /* azul cielo */
+            --renaven-blanco: #FFFFFF;
+            --renaven-gris-fondo: #F0F4F8;
+            --renaven-gris-claro: #E2E8F0;
+            --renaven-texto: #000000;         /* texto negro */
+            --renaven-borde: #000000;         /* bordes negros */
+            --renaven-verde: #28a745;
+            --renaven-oro: #FFD700;
+            --renaven-rojo: #dc2626;
+            --shadow-color: rgba(46,134,193,0.2);
+            --transition-base: all 0.25s ease-in-out;
+        }
+
+        /* ========== ACCESIBILIDAD - MODO ALTO CONTRASTE ========== */
+        body.high-contrast {
+            filter: contrast(1.5) brightness(1.1);
+        }
+
+        body.high-contrast .container,
+        body.high-contrast .invoice-header,
+        body.high-contrast .company-info,
+        body.high-contrast .client-info,
+        body.high-contrast .reason-box,
+        body.high-contrast .footer,
+        body.high-contrast .saldo-card {
+            background: black !important;
+            color: white !important;
+            border: 2px solid yellow !important;
+        }
+
+        body.high-contrast .table th,
+        body.high-contrast .total-row {
+            background: black !important;
+            color: yellow !important;
+            border: 1px solid yellow !important;
+        }
+
+        body.high-contrast .btn-primary,
+        body.high-contrast .btn-secondary {
+            background: yellow !important;
+            color: black !important;
+            border: 2px solid white !important;
+        }
+
+        body.high-contrast .badge-return {
+            background: black !important;
+            color: yellow !important;
+            border: 1px solid yellow !important;
+        }
+
+        /* ========== NAVEGACIÓN POR TECLADO ========== */
+        *:focus {
+            outline: 3px solid #FFD700 !important;
+            outline-offset: 2px !important;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--renaven-azul-fuerte);
+            color: white;
+            padding: 8px 16px;
+            z-index: 1000;
+            text-decoration: none;
+            border-radius: 0 0 8px 0;
+            font-weight: bold;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* ========== BOTÓN DE ACCESIBILIDAD FLOTANTE ========== */
+        .accessibility-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 999;
+            background: var(--renaven-azul-fuerte);
+            color: white;
+            border: 2px solid white;
+            border-radius: 50px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
+
+        .accessibility-btn:hover {
+            background: var(--renaven-azul-cielo);
+            transform: scale(1.05);
+        }
+
+        /* ========== MENÚ ACCESIBILIDAD ========== */
+        .accessibility-menu {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            z-index: 999;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 10px;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 160px;
+            border: 1px solid #ddd;
+        }
+
+        .accessibility-menu button {
+            background: none;
+            border: none;
+            padding: 8px 12px;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #000 !important;
+        }
+
+        .accessibility-menu button:hover {
+            background: var(--renaven-gris-claro);
+        }
+
+        /* ===== FORZAR TODOS LOS TEXTOS A NEGRO ===== */
+        body, body * {
+            color: var(--renaven-texto) !important;
+        }
+
+        /* Excepción para placeholders */
+        ::placeholder, input::placeholder, textarea::placeholder {
+            color: #9ca3af !important;
+            opacity: 1;
+        }
+
+        body {
+            background: var(--renaven-gris-fondo);
+            font-family: Arial, sans-serif;   /* Arial como en el login */
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+            background: var(--renaven-blanco);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border: 2px solid var(--renaven-borde);
+        }
+
+        @media print {
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .container {
+                max-width: 100% !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                border: 2px solid #000 !important;
+            }
+            .no-print { display: none !important; }
+            .btn, button { display: none !important; }
+            .accessibility-btn, .accessibility-menu, .skip-link { display: none !important; }
+            * {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            body, p, span, div, td, th {
+                font-size: 12pt !important;
+            }
+            .company-logo {
+                width: 45px;
+                height: 45px;
+            }
+        }
+
+        /* HEADER CON COLOR CORPORATIVO */
+        .invoice-header {
+            background: linear-gradient(135deg, var(--renaven-azul-fuerte), var(--renaven-azul-cielo));
+            padding: 15px 20px;
+            border-bottom: 3px solid var(--renaven-borde);
+        }
+
+        /* Logo circular */
+        .company-logo {
+            width: 65px;
+            height: 65px;
+            object-fit: cover;
+            border-radius: 50%;
+            background: var(--renaven-blanco);
+            padding: 4px;
+            border: 2px solid var(--renaven-borde);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .company-logo:hover {
+            transform: scale(1.05);
+        }
+
+        .invoice-title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .invoice-subtitle {
+            font-size: 16px;
+            font-weight: bold;
+            background: var(--renaven-azul-cielo);
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 50px;
+            border: 1px solid var(--renaven-borde);
+        }
+
+        .company-info {
+            background: var(--renaven-azul-cielo);
+            padding: 10px 20px;
+            border-bottom: 2px solid var(--renaven-borde);
+            font-size: 11pt;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .client-info {
+            background: var(--renaven-gris-fondo);
+            padding: 12px 20px;
+            border-bottom: 2px solid var(--renaven-borde);
+            font-size: 11pt;
+            line-height: 1.5;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11pt;
+            margin: 0;
+        }
+
+        .table th {
+            background: linear-gradient(135deg, var(--renaven-azul-fuerte), var(--renaven-azul-cielo));
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid var(--renaven-borde);
+        }
+
+        .table td {
+            padding: 8px 8px;
+            border: 1px solid var(--renaven-borde);
+        }
+
+        .text-end {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .total-row {
+            background: var(--renaven-azul-cielo);
+            font-weight: bold;
+            border-top: 2px solid var(--renaven-borde);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 12px;
+            padding: 12px 20px;
+            border-top: 2px solid var(--renaven-borde);
+            font-size: 10pt;
+            line-height: 1.4;
+            background: var(--renaven-gris-fondo);
+        }
+
+        .reason-box {
+            background: #fef3c7;
+            padding: 12px 15px;
+            margin: 15px 20px;
+            border-radius: 10px;
+            border-left: 5px solid var(--renaven-azul-fuerte);
+            border: 2px solid var(--renaven-borde);
+            font-size: 11pt;
+        }
+
+        .btn {
+            border-radius: 50px;
+            padding: 8px 20px;
+            margin: 5px;
+            font-size: 11px;
+            font-weight: bold;
+            border: 2px solid var(--renaven-borde);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--renaven-azul-fuerte);
+            color: #000 !important;
+        }
+
+        .btn-primary:hover {
+            background: var(--renaven-azul-cielo);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            color: #000 !important;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: #000 !important;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            color: #000 !important;
+        }
+
+        .table-responsive {
+            padding: 0 20px;
+            overflow-x: auto;
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .col-6 {
+            width: 50%;
+            padding: 0 5px;
+        }
+
+        .col-md-4 {
+            flex: 0 0 33.333333%;
+            max-width: 33.333333%;
+            padding: 0 5px;
+        }
+
+        .col-12 {
+            flex: 0 0 100%;
+            max-width: 100%;
+            padding: 0 5px;
+        }
+
+        small {
+            font-size: 10pt;
+        }
+
+        .badge-return {
+            background: var(--renaven-azul-cielo);
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 8px;
+            border: 1px solid var(--renaven-borde);
+        }
+
+        .numero-bs {
+            font-weight: bold;
+        }
+
+        .numero-usd {
+            font-weight: bold;
+        }
+
+        .logo-container {
+            width: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        a {
+            text-decoration: none;
+            color: #000 !important;
+        }
+
+        .invoice-header small {
+            opacity: 0.8;
+            color: #000 !important;
+        }
+
+        strong {
+            font-weight: bold;
+        }
+
+        /* ========== TARJETAS DE SALDO ========== */
+        .saldo-card {
+            border-radius: 16px;
+            padding: 12px 16px;
+            color: #000 !important;
+            transition: transform 0.25s, box-shadow 0.25s;
+            cursor: default;
+            margin: 15px 20px;
+            border: 1px solid var(--renaven-borde);
+        }
+
+        .saldo-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px -8px rgba(0,0,0,0.2);
+        }
+
+        .saldo-card .saldo-label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            font-weight: 500;
+            color: #000 !important;
+        }
+
+        .saldo-card .saldo-monto {
+            font-size: 1.6rem;
+            font-weight: 800;
+            line-height: 1.2;
+            color: #000 !important;
+        }
+
+        .saldo-card .saldo-sub {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            color: #000 !important;
+        }
+
+        .saldo-bs {
+            background: linear-gradient(135deg, var(--renaven-azul-cielo), var(--renaven-azul-fuerte));
+        }
+
+        .saldo-usd {
+            background: linear-gradient(135deg, var(--renaven-azul-cielo), var(--renaven-azul-fuerte));
+        }
+
+        .saldo-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        @media (max-width: 768px) {
+            .accessibility-btn {
+                bottom: 10px;
+                right: 10px;
+                padding: 6px 12px;
+                font-size: 10px;
+            }
+            .accessibility-menu {
+                bottom: 70px;
+                right: 10px;
+            }
+            .invoice-title {
+                font-size: 18px;
+            }
+            .invoice-subtitle {
+                font-size: 12px;
+            }
+            .col-6 {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+            .col-md-4 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+            .table th, .table td {
+                font-size: 9pt;
+                padding: 6px 4px;
+            }
+            .logo-container {
+                width: 55px;
+            }
+            .company-logo {
+                width: 45px;
+                height: 45px;
+            }
+            .saldo-card .saldo-monto {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== SKIP LINK Y BOTONES DE ACCESIBILIDAD ========== -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+    <button class="accessibility-btn" id="accessibilityToggle" aria-label="Abrir menú de accesibilidad">🌓 Accesibilidad</button>
+    <div class="accessibility-menu" id="accessibilityMenu">
+        <button id="highContrastBtn">🌓 Alto Contraste</button>
+        <button id="increaseFontBtn">🔍 Aumentar Texto</button>
+        <button id="decreaseFontBtn">🔍 Disminuir Texto</button>
+        <button id="resetFontBtn">⟳ Restablecer</button>
+        <hr style="margin: 5px 0;">
+        <button id="closeAccessibilityMenu">✖ Cerrar</button>
+    </div>
+
+    <div class="container" id="main-content" role="main">
+        <!-- HEADER -->
+        <div class="invoice-header">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                <div class="logo-container">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="company-logo" onerror="this.src='https://via.placeholder.com/65x65?text=R'">
+                </div>
+                <div style="text-align: center; flex: 1;">
+                    <div class="invoice-title">COMPROBANTE DE DEVOLUCIÓN</div>
+                    <div class="invoice-subtitle">N° {{ "{:04d}".format(return_number|int) if return_number else "0000" }}</div>
+                </div>
+                <div style="text-align: right; width: 130px;">
+                    <small><strong>Fecha:</strong><br>{{ current_date.split()[0] if current_date else "---" }}</small><br>
+                    <small><strong>Usuario:</strong> {{ session.get('username', 'User') if session else 'User' }}</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- DATOS DE LA EMPRESA Y CLIENTE -->
+        <div class="company-info">
+            <strong>{{ company.name if company and company.name else 'RENAVEN OAKMONT, C.A.' }}</strong>
+            | RIF: {{ company.rif if company and company.rif else 'J-41323725-3' }}
+            | Tel: {{ company.phone if company and company.phone else '0412-1234567' }}
+            <br>
+            {{ company.address if company and company.address else 'CALLE 1 ANDRES BELLO N°01-06' }}
+            , {{ company.city if company and company.city else 'Punto Fijo' }} - {{ company.state if company and company.state else 'Falcón' }}
+        </div>
+
+        <div class="client-info">
+            <div class="row">
+                <div class="col-6">
+                    <strong>👤 Cliente:</strong> {{ client_name|default("Cliente General") }}<br>
+                    <strong>📄 Cédula/RIF:</strong> {{ client_id|default("No especificado") }}
+                </div>
+                <div class="col-6">
+                    <strong>📞 Teléfono:</strong> {{ client_phone|default('No registrado') }}<br>
+                    <strong>📍 Dirección:</strong> {{ client_address|default("No especificada") }}
+                </div>
+            </div>
+        </div>
+
+        <!-- SALDOS -->
+        <div class="row" style="margin: 10px 0;">
+            <div class="col-md-4 col-6">
+                <div class="saldo-card saldo-bs">
+                    <div class="saldo-label"><i class="fas fa-cash-stack me-1" aria-hidden="true"></i> Saldo Actual (Bs.)</div>
+                    <div class="saldo-monto" id="saldoBsDisplay" aria-live="polite">Bs. {{ saldo_bs|default(0)|format_bs }}</div>
+                    <div class="saldo-sub">Actualizado en tiempo real</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-6">
+                <div class="saldo-card saldo-usd">
+                    <div class="saldo-label"><i class="fas fa-currency-dollar me-1" aria-hidden="true"></i> Saldo Actual (USD)</div>
+                    <div class="saldo-monto" id="saldoUsdDisplay" aria-live="polite">${{ saldo_usd|default(0)|format_usd_venezuela }}</div>
+                    <div class="saldo-sub">Actualizado en tiempo real</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-12">
+                <div class="saldo-card saldo-success">
+                    <div class="saldo-label"><i class="fas fa-check-circle me-1" aria-hidden="true"></i> Devolución Procesada</div>
+                    <div class="saldo-monto" style="font-size: 1.2rem;">
+                        ✅ N° {{ "{:04d}".format(return_number|int) if return_number else "0000" }}
+                    </div>
+                    <div class="saldo-sub">Monto devuelto: ${{ total_usd|default(0)|format_usd_venezuela }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== TABLA CON IVA ========== -->
+        <div class="table-responsive">
+            <table class="table" aria-label="Tabla de productos devueltos">
+                <thead>
+                    <tr>
+                        <th scope="col" style="width: 8%">Factura Orig.</th>
+                        <th scope="col" style="width: 8%">Dev. N°</th>
+                        <th scope="col" style="width: 28%">Producto</th>
+                        <th scope="col" style="width: 8%">Cant.</th>
+                        <th scope="col" style="width: 12%">Precio Unit. (sin IVA)</th>
+                        <th scope="col" style="width: 12%">IVA Unit.</th>
+                        <th scope="col" style="width: 12%">Total (con IVA)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if items and items|length > 0 %}
+                        {% for item in items %}
+                        <tr>
+                            <td class="text-center">{{ "{:04d}".format(original_invoice|int) if original_invoice else "----" }}</td>
+                            <td class="text-center">{{ "{:04d}".format(return_number|int) if return_number else "----" }}</td>
+                            <td>{{ item.name|default('Producto') }}</td>
+                            <td class="text-center">{{ item.quantity|default(0)|format_number }} {% if item.sale_type == 'weight' %}Kg{% endif %}</td>
+                            <!-- Precio sin IVA (base) -->
+                            <td class="text-end">$ {{ item.price_without_tax|default(0)|format_usd_venezuela }}</td>
+                            <!-- IVA unitario -->
+                            <td class="text-end">$ {{ item.tax_amount|default(0)|format_usd_venezuela }}</td>
+                            <!-- Total con IVA -->
+                            <td class="text-end">$ {{ (item.total_with_tax)|default(0)|format_usd_venezuela }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">No hay productos en esta devolución</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+                <tfoot>
+                    <!-- Subtotal (sin IVA) -->
+                    <tr class="total-row">
+                        <td colspan="6" class="text-end"><strong>SUBTOTAL (sin IVA):</strong></td>
+                        <td class="text-end"><strong>$ {{ subtotal_usd|default(0)|format_usd_venezuela }}</strong></td>
+                    </tr>
+                    <!-- IVA (con tasa) -->
+                    <tr class="total-row iva-row">
+                        <td colspan="6" class="text-end">
+                            <strong>IVA ({{ tasa_iva|default(16) }}%):</strong>
+                        </td>
+                        <td class="text-end"><strong>$ {{ iva_usd|default(0)|format_usd_venezuela }}</strong></td>
+                    </tr>
+                    <!-- Total devuelto (Subtotal + IVA) -->
+                    <tr class="total-row" style="background: var(--renaven-azul-fuerte); color: #000 !important;">
+                        <td colspan="6" class="text-end"><strong>TOTAL DEVUELTO (incluye IVA):</strong></td>
+                        <td class="text-end"><strong>$ {{ total_usd|default(0)|format_usd_venezuela }}</strong></td>
+                    </tr>
+                    <!-- Total en Bs. -->
+                    <tr class="total-row" style="background: var(--renaven-azul-cielo); color: #000 !important;">
+                        <td colspan="6" class="text-end"><strong>TOTAL DEVUELTO Bs.:</strong></td>
+                        <td class="text-end"><strong>Bs. {{ total_bs|default(0)|format_bs }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- MOTIVO Y FOOTER -->
+        <div class="reason-box">
+            <strong>📝 Motivo de la Devolución:</strong><br>
+            {{ reason if reason else "No especificado" }}
+        </div>
+
+        <div class="footer">
+            <span class="badge-return">⚠️ DOCUMENTO DE DEVOLUCIÓN ⚠️</span><br>
+            <small>Este comprobante certifica la devolución de productos de la factura N° {{ "{:04d}".format(original_invoice|int) if original_invoice else "----" }}</small><br>
+            <small>RENAVEN OAKMONT, C.A. - RIF: J-41323725-3</small>
+        </div>
+
+        <div class="text-center no-print" style="padding: 15px;">
+            <button class="btn btn-primary" onclick="window.print()" aria-label="Imprimir comprobante de devolución">
+                🖨️ Imprimir Comprobante
+            </button>
+            <a href="{{ url_for('facturacion') }}" class="btn btn-secondary" style="text-decoration: none;" aria-label="Volver a facturación">
+                ← Volver a Facturación
+            </a>
+        </div>
+    </div>
+
+    <!-- ========== SCRIPTS ========== -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ========== ACCESIBILIDAD ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            // Menú de accesibilidad
+            const toggleBtn = document.getElementById('accessibilityToggle');
+            const menu = document.getElementById('accessibilityMenu');
+            const closeMenuBtn = document.getElementById('closeAccessibilityMenu');
+
+            function toggleMenu() {
+                if (menu.style.display === 'none' || menu.style.display === '') {
+                    menu.style.display = 'flex';
+                } else {
+                    menu.style.display = 'none';
+                }
+            }
+
+            if (toggleBtn) toggleBtn.addEventListener('click', toggleMenu);
+            if (closeMenuBtn) closeMenuBtn.addEventListener('click', () => {
+                menu.style.display = 'none';
+            });
+
+            document.addEventListener('click', function(e) {
+                if (menu && toggleBtn && !menu.contains(e.target) && !toggleBtn.contains(e.target)) {
+                    menu.style.display = 'none';
+                }
+            });
+
+            // Alto contraste
+            const highContrastBtn = document.getElementById('highContrastBtn');
+
+            function toggleHighContrast() {
+                document.body.classList.toggle('high-contrast');
+                localStorage.setItem('highContrast', document.body.classList.contains('high-contrast'));
+            }
+
+            if (highContrastBtn) highContrastBtn.addEventListener('click', toggleHighContrast);
+
+            if (localStorage.getItem('highContrast') === 'true') {
+                document.body.classList.add('high-contrast');
+            }
+
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'h') {
+                    e.preventDefault();
+                    toggleHighContrast();
+                }
+            });
+
+            // Tamaño de fuente
+            let currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+
+            function applyFontSize() {
+                document.body.style.fontSize = currentFontSize + '%';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+
+            const increaseBtn = document.getElementById('increaseFontBtn');
+            const decreaseBtn = document.getElementById('decreaseFontBtn');
+            const resetBtn = document.getElementById('resetFontBtn');
+
+            if (increaseBtn) {
+                increaseBtn.addEventListener('click', () => {
+                    if (currentFontSize < 150) {
+                        currentFontSize += 10;
+                        applyFontSize();
+                    }
+                });
+            }
+
+            if (decreaseBtn) {
+                decreaseBtn.addEventListener('click', () => {
+                    if (currentFontSize > 70) {
+                        currentFontSize -= 10;
+                        applyFontSize();
+                    }
+                });
+            }
+
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                    currentFontSize = 100;
+                    applyFontSize();
+                });
+            }
+
+            applyFontSize();
+
+            // ========== FUNCIONES DE SALDO EN TIEMPO REAL ==========
+            let saldoBs = parseFloat('{{ saldo_bs|default(0) }}');
+            let saldoUsd = parseFloat('{{ saldo_usd|default(0) }}');
+
+            function formatNumberUSDVenezuela(numero, decimals = 2) {
+                if (isNaN(numero) || numero === null || numero === '') return '0,00';
+                numero = Math.round(numero * 100) / 100;
+
+                let partes = numero.toFixed(decimals).split('.');
+                let entero = parseInt(partes[0]);
+                let decimal = partes[1];
+
+                let enteroFormateado = entero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                return `${enteroFormateado},${decimal}`;
+            }
+
+            function formatNumberVenezuela(numero, decimals = 2) {
+                if (isNaN(numero) || numero === null || numero === '') return '0,00';
+                numero = Math.round(numero * 100) / 100;
+
+                let partes = numero.toFixed(decimals).split('.');
+                let entero = parseInt(partes[0]);
+                let decimal = partes[1];
+
+                let enteroFormateado = entero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                return `${enteroFormateado},${decimal}`;
+            }
+
+            function actualizarSaldo() {
+                let saldoBsDisplay = document.getElementById('saldoBsDisplay');
+                let saldoUsdDisplay = document.getElementById('saldoUsdDisplay');
+
+                if (saldoBsDisplay) saldoBsDisplay.innerHTML = 'Bs. ' + formatNumberVenezuela(saldoBs);
+                if (saldoUsdDisplay) saldoUsdDisplay.innerHTML = '$' + formatNumberUSDVenezuela(saldoUsd);
+            }
+
+            async function fetchSaldoActual() {
+                try {
+                    var response = await fetch('/api/saldo_actual', {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+
+                    var data = await response.json();
+
+                    if (data.success) {
+                        saldoBs = parseFloat(data.saldo_bs) || 0;
+                        saldoUsd = parseFloat(data.saldo_usd) || 0;
+                        actualizarSaldo();
+                        return true;
+                    }
+                    return false;
+                } catch (error) {
+                    console.error('❌ Error obteniendo saldo:', error.message);
+                    return false;
+                }
+            }
+
+            // Inicializar saldo
+            actualizarSaldo();
+            fetchSaldoActual();
+
+            // Actualizar saldo cada 30 segundos
+            setInterval(function() {
+                fetchSaldoActual();
+            }, 30000);
+        });
+    </script>
+</body>
+</html>

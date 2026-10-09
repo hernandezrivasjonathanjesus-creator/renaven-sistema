@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Cierre del Día - RENAVEN</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ========== PALETA PREDETERMINADA (ORIGINAL LOGIN) ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-gris-claro: #e2e8f0;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+            --shadow-color: rgba(132,182,244,0.2);
+            --transition-base: all 0.25s ease-in-out;
+        }
+
+        /* ========== TEMAS PASTEL INDIVIDUALES (SIN ALTO CONTRASTE) ========== */
+        /* 1. Rosa pastel */
+        body.theme-rosa {
+            --renaven-azul-fuerte: #fbc4d5;
+            --renaven-azul-cielo: #fce4ec;
+            --renaven-blanco: #fef9f0;
+            --renaven-gris-fondo: #fdf6f8;
+            --renaven-borde: #fbc4d5;
+        }
+        body.theme-rosa .sidebar { background: #fdd0b5; border-right-color: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link.active { background: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link:hover { background: #fce4ec; }
+        body.theme-rosa .card-header { background: #fbc4d5 !important; border-bottom-color: #fdd0b5 !important; }
+        body.theme-rosa .card-header.bg-warning { background: #fdd0b5 !important; border-bottom-color: #fbc4d5 !important; }
+        body.theme-rosa .card-header.bg-secondary { background: #fce4ec !important; border-bottom-color: #fbc4d5 !important; }
+        body.theme-rosa .saldo-bs { background: linear-gradient(135deg, #fce4ec, #fbc4d5) !important; }
+        body.theme-rosa .saldo-usd { background: linear-gradient(135deg, #fce4ec, #fbc4d5) !important; }
+        body.theme-rosa .total-card { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .total-card .badge.bg-warning { background: #fdd0b5 !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .total-card .badge.bg-success { background: #fbc4d5 !important; border-color: #fdd0b5 !important; }
+        body.theme-rosa .payment-card { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .payment-efectivo { border-left-color: #28a745 !important; }
+        body.theme-rosa .payment-usd { border-left-color: #fbc4d5 !important; }
+        body.theme-rosa .payment-zelle { border-left-color: #FFD700 !important; }
+        body.theme-rosa .payment-movil { border-left-color: #9C27B0 !important; }
+        body.theme-rosa .payment-transferencia { border-left-color: #9C27B0 !important; }
+        body.theme-rosa .payment-tarjeta { border-left-color: #E91E63 !important; }
+        body.theme-rosa .payment-devoluciones { border-left-color: #fdd0b5 !important; }
+        body.theme-rosa .table-dark { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .table-dark th { border-color: #fbc4d5 !important; }
+        body.theme-rosa tfoot { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .btn-primary { background: #fbc4d5 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-rosa .btn-primary:hover { background: #fdd0b5 !important; }
+        body.theme-rosa .btn-secondary { background: #fdd0b5 !important; border-color: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .btn-secondary:hover { background: #fbc4d5 !important; }
+        body.theme-rosa .btn-dark { background: #fbc4d5 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-rosa .btn-dark:hover { background: #fdd0b5 !important; }
+        body.theme-rosa .btn-primary-custom { background: #fbc4d5 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-rosa .btn-primary-custom:hover { background: #fdd0b5 !important; }
+        body.theme-rosa .badge { border-color: #fbc4d5 !important; }
+        body.theme-rosa .badge.bg-success { background: #fbc4d5 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-rosa .badge.bg-warning { background: #fdd0b5 !important; border-color: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .badge.bg-secondary { background: #fce4ec !important; border-color: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .alert-info { background: #fce4ec !important; border-color: #fbc4d5 !important; border-left-color: #fdd0b5 !important; }
+        body.theme-rosa .alert-success { border-left-color: #28a745 !important; }
+        body.theme-rosa .alert-danger { border-left-color: #dc3545 !important; }
+        body.theme-rosa .result-sobrante { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .result-faltante { background: #fdd0b5 !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .result-cuadrado { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .logo-circle { border-color: #fbc4d5 !important; }
+        body.theme-rosa .logo-circle-small { border-color: #fbc4d5 !important; }
+        body.theme-rosa .sidebar-logo { border-color: #fbc4d5 !important; }
+        body.theme-rosa .caja-cerrada-badge { background: #fbc4d5 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-rosa .form-control:focus { border-color: #fbc4d5; box-shadow: 0 0 0 0.2rem rgba(251,196,213,0.4); }
+
+        /* 2. Celeste pastel */
+        body.theme-celeste {
+            --renaven-azul-fuerte: #b5d8eb;
+            --renaven-azul-cielo: #d6ecf5;
+            --renaven-blanco: #f9fdff;
+            --renaven-gris-fondo: #f4faff;
+            --renaven-borde: #b5d8eb;
+        }
+        body.theme-celeste .sidebar { background: #a8d0e6; border-right-color: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link.active { background: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link:hover { background: #d6ecf5; }
+        body.theme-celeste .card-header { background: #b5d8eb !important; border-bottom-color: #a8d0e6 !important; }
+        body.theme-celeste .card-header.bg-warning { background: #a8d0e6 !important; border-bottom-color: #b5d8eb !important; }
+        body.theme-celeste .card-header.bg-secondary { background: #d6ecf5 !important; border-bottom-color: #b5d8eb !important; }
+        body.theme-celeste .saldo-bs { background: linear-gradient(135deg, #d6ecf5, #b5d8eb) !important; }
+        body.theme-celeste .saldo-usd { background: linear-gradient(135deg, #d6ecf5, #b5d8eb) !important; }
+        body.theme-celeste .total-card { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .total-card .badge.bg-warning { background: #a8d0e6 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .total-card .badge.bg-success { background: #b5d8eb !important; border-color: #a8d0e6 !important; }
+        body.theme-celeste .payment-card { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .payment-efectivo { border-left-color: #28a745 !important; }
+        body.theme-celeste .payment-usd { border-left-color: #b5d8eb !important; }
+        body.theme-celeste .payment-zelle { border-left-color: #FFD700 !important; }
+        body.theme-celeste .payment-movil { border-left-color: #9C27B0 !important; }
+        body.theme-celeste .payment-transferencia { border-left-color: #9C27B0 !important; }
+        body.theme-celeste .payment-tarjeta { border-left-color: #E91E63 !important; }
+        body.theme-celeste .payment-devoluciones { border-left-color: #a8d0e6 !important; }
+        body.theme-celeste .table-dark { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .table-dark th { border-color: #b5d8eb !important; }
+        body.theme-celeste tfoot { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .btn-primary { background: #b5d8eb !important; border-color: #a8d0e6 !important; color: #000 !important; }
+        body.theme-celeste .btn-primary:hover { background: #a8d0e6 !important; }
+        body.theme-celeste .btn-secondary { background: #a8d0e6 !important; border-color: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .btn-secondary:hover { background: #b5d8eb !important; }
+        body.theme-celeste .btn-dark { background: #b5d8eb !important; border-color: #a8d0e6 !important; color: #000 !important; }
+        body.theme-celeste .btn-dark:hover { background: #a8d0e6 !important; }
+        body.theme-celeste .btn-primary-custom { background: #b5d8eb !important; border-color: #a8d0e6 !important; color: #000 !important; }
+        body.theme-celeste .btn-primary-custom:hover { background: #a8d0e6 !important; }
+        body.theme-celeste .badge { border-color: #b5d8eb !important; }
+        body.theme-celeste .badge.bg-success { background: #b5d8eb !important; border-color: #a8d0e6 !important; color: #000 !important; }
+        body.theme-celeste .badge.bg-warning { background: #a8d0e6 !important; border-color: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .badge.bg-secondary { background: #d6ecf5 !important; border-color: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .alert-info { background: #d6ecf5 !important; border-color: #b5d8eb !important; border-left-color: #a8d0e6 !important; }
+        body.theme-celeste .alert-success { border-left-color: #28a745 !important; }
+        body.theme-celeste .alert-danger { border-left-color: #dc3545 !important; }
+        body.theme-celeste .result-sobrante { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .result-faltante { background: #a8d0e6 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .result-cuadrado { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .logo-circle { border-color: #b5d8eb !important; }
+        body.theme-celeste .logo-circle-small { border-color: #b5d8eb !important; }
+        body.theme-celeste .sidebar-logo { border-color: #b5d8eb !important; }
+        body.theme-celeste .caja-cerrada-badge { background: #b5d8eb !important; border-color: #a8d0e6 !important; color: #000 !important; }
+        body.theme-celeste .form-control:focus { border-color: #b5d8eb; box-shadow: 0 0 0 0.2rem rgba(181,216,235,0.4); }
+
+        /* 3. Menta pastel */
+        body.theme-menta {
+            --renaven-azul-fuerte: #b5e6c3;
+            --renaven-azul-cielo: #d8f0e0;
+            --renaven-blanco: #f6fcf8;
+            --renaven-gris-fondo: #f2faf5;
+            --renaven-borde: #b5e6c3;
+        }
+        body.theme-menta .sidebar { background: #a8dbb8; border-right-color: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link.active { background: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link:hover { background: #d8f0e0; }
+        body.theme-menta .card-header { background: #b5e6c3 !important; border-bottom-color: #a8dbb8 !important; }
+        body.theme-menta .card-header.bg-warning { background: #a8dbb8 !important; border-bottom-color: #b5e6c3 !important; }
+        body.theme-menta .card-header.bg-secondary { background: #d8f0e0 !important; border-bottom-color: #b5e6c3 !important; }
+        body.theme-menta .saldo-bs { background: linear-gradient(135deg, #d8f0e0, #b5e6c3) !important; }
+        body.theme-menta .saldo-usd { background: linear-gradient(135deg, #d8f0e0, #b5e6c3) !important; }
+        body.theme-menta .total-card { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .total-card .badge.bg-warning { background: #a8dbb8 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .total-card .badge.bg-success { background: #b5e6c3 !important; border-color: #a8dbb8 !important; }
+        body.theme-menta .payment-card { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .payment-efectivo { border-left-color: #28a745 !important; }
+        body.theme-menta .payment-usd { border-left-color: #b5e6c3 !important; }
+        body.theme-menta .payment-zelle { border-left-color: #FFD700 !important; }
+        body.theme-menta .payment-movil { border-left-color: #9C27B0 !important; }
+        body.theme-menta .payment-transferencia { border-left-color: #9C27B0 !important; }
+        body.theme-menta .payment-tarjeta { border-left-color: #E91E63 !important; }
+        body.theme-menta .payment-devoluciones { border-left-color: #a8dbb8 !important; }
+        body.theme-menta .table-dark { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .table-dark th { border-color: #b5e6c3 !important; }
+        body.theme-menta tfoot { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .btn-primary { background: #b5e6c3 !important; border-color: #a8dbb8 !important; color: #000 !important; }
+        body.theme-menta .btn-primary:hover { background: #a8dbb8 !important; }
+        body.theme-menta .btn-secondary { background: #a8dbb8 !important; border-color: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .btn-secondary:hover { background: #b5e6c3 !important; }
+        body.theme-menta .btn-dark { background: #b5e6c3 !important; border-color: #a8dbb8 !important; color: #000 !important; }
+        body.theme-menta .btn-dark:hover { background: #a8dbb8 !important; }
+        body.theme-menta .btn-primary-custom { background: #b5e6c3 !important; border-color: #a8dbb8 !important; color: #000 !important; }
+        body.theme-menta .btn-primary-custom:hover { background: #a8dbb8 !important; }
+        body.theme-menta .badge { border-color: #b5e6c3 !important; }
+        body.theme-menta .badge.bg-success { background: #b5e6c3 !important; border-color: #a8dbb8 !important; color: #000 !important; }
+        body.theme-menta .badge.bg-warning { background: #a8dbb8 !important; border-color: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .badge.bg-secondary { background: #d8f0e0 !important; border-color: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .alert-info { background: #d8f0e0 !important; border-color: #b5e6c3 !important; border-left-color: #a8dbb8 !important; }
+        body.theme-menta .alert-success { border-left-color: #28a745 !important; }
+        body.theme-menta .alert-danger { border-left-color: #dc3545 !important; }
+        body.theme-menta .result-sobrante { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .result-faltante { background: #a8dbb8 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .result-cuadrado { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .logo-circle { border-color: #b5e6c3 !important; }
+        body.theme-menta .logo-circle-small { border-color: #b5e6c3 !important; }
+        body.theme-menta .sidebar-logo { border-color: #b5e6c3 !important; }
+        body.theme-menta .caja-cerrada-badge { background: #b5e6c3 !important; border-color: #a8dbb8 !important; color: #000 !important; }
+        body.theme-menta .form-control:focus { border-color: #b5e6c3; box-shadow: 0 0 0 0.2rem rgba(181,230,195,0.4); }
+
+        /* 4. Amarillo pastel */
+        body.theme-amarillo {
+            --renaven-azul-fuerte: #f9e7b2;
+            --renaven-azul-cielo: #fdf3d5;
+            --renaven-blanco: #fffef9;
+            --renaven-gris-fondo: #fefcf5;
+            --renaven-borde: #f9e7b2;
+        }
+        body.theme-amarillo .sidebar { background: #f5dc9a; border-right-color: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link.active { background: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link:hover { background: #fdf3d5; }
+        body.theme-amarillo .card-header { background: #f9e7b2 !important; border-bottom-color: #f5dc9a !important; }
+        body.theme-amarillo .card-header.bg-warning { background: #f5dc9a !important; border-bottom-color: #f9e7b2 !important; }
+        body.theme-amarillo .card-header.bg-secondary { background: #fdf3d5 !important; border-bottom-color: #f9e7b2 !important; }
+        body.theme-amarillo .saldo-bs { background: linear-gradient(135deg, #fdf3d5, #f9e7b2) !important; }
+        body.theme-amarillo .saldo-usd { background: linear-gradient(135deg, #fdf3d5, #f9e7b2) !important; }
+        body.theme-amarillo .total-card { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .total-card .badge.bg-warning { background: #f5dc9a !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .total-card .badge.bg-success { background: #f9e7b2 !important; border-color: #f5dc9a !important; }
+        body.theme-amarillo .payment-card { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .payment-efectivo { border-left-color: #28a745 !important; }
+        body.theme-amarillo .payment-usd { border-left-color: #f9e7b2 !important; }
+        body.theme-amarillo .payment-zelle { border-left-color: #FFD700 !important; }
+        body.theme-amarillo .payment-movil { border-left-color: #9C27B0 !important; }
+        body.theme-amarillo .payment-transferencia { border-left-color: #9C27B0 !important; }
+        body.theme-amarillo .payment-tarjeta { border-left-color: #E91E63 !important; }
+        body.theme-amarillo .payment-devoluciones { border-left-color: #f5dc9a !important; }
+        body.theme-amarillo .table-dark { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .table-dark th { border-color: #f9e7b2 !important; }
+        body.theme-amarillo tfoot { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .btn-primary { background: #f9e7b2 !important; border-color: #f5dc9a !important; color: #000 !important; }
+        body.theme-amarillo .btn-primary:hover { background: #f5dc9a !important; }
+        body.theme-amarillo .btn-secondary { background: #f5dc9a !important; border-color: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .btn-secondary:hover { background: #f9e7b2 !important; }
+        body.theme-amarillo .btn-dark { background: #f9e7b2 !important; border-color: #f5dc9a !important; color: #000 !important; }
+        body.theme-amarillo .btn-dark:hover { background: #f5dc9a !important; }
+        body.theme-amarillo .btn-primary-custom { background: #f9e7b2 !important; border-color: #f5dc9a !important; color: #000 !important; }
+        body.theme-amarillo .btn-primary-custom:hover { background: #f5dc9a !important; }
+        body.theme-amarillo .badge { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .badge.bg-success { background: #f9e7b2 !important; border-color: #f5dc9a !important; color: #000 !important; }
+        body.theme-amarillo .badge.bg-warning { background: #f5dc9a !important; border-color: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .badge.bg-secondary { background: #fdf3d5 !important; border-color: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .alert-info { background: #fdf3d5 !important; border-color: #f9e7b2 !important; border-left-color: #f5dc9a !important; }
+        body.theme-amarillo .alert-success { border-left-color: #28a745 !important; }
+        body.theme-amarillo .alert-danger { border-left-color: #dc3545 !important; }
+        body.theme-amarillo .result-sobrante { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .result-faltante { background: #f5dc9a !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .result-cuadrado { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .logo-circle { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .logo-circle-small { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .sidebar-logo { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .caja-cerrada-badge { background: #f9e7b2 !important; border-color: #f5dc9a !important; color: #000 !important; }
+        body.theme-amarillo .form-control:focus { border-color: #f9e7b2; box-shadow: 0 0 0 0.2rem rgba(249,231,178,0.4); }
+
+        /* 5. Lila pastel */
+        body.theme-lila {
+            --renaven-azul-fuerte: #d4c4f0;
+            --renaven-azul-cielo: #e8defa;
+            --renaven-blanco: #fcfaff;
+            --renaven-gris-fondo: #f8f5fe;
+            --renaven-borde: #d4c4f0;
+        }
+        body.theme-lila .sidebar { background: #c9b7e8; border-right-color: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link.active { background: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link:hover { background: #e8defa; }
+        body.theme-lila .card-header { background: #d4c4f0 !important; border-bottom-color: #c9b7e8 !important; }
+        body.theme-lila .card-header.bg-warning { background: #c9b7e8 !important; border-bottom-color: #d4c4f0 !important; }
+        body.theme-lila .card-header.bg-secondary { background: #e8defa !important; border-bottom-color: #d4c4f0 !important; }
+        body.theme-lila .saldo-bs { background: linear-gradient(135deg, #e8defa, #d4c4f0) !important; }
+        body.theme-lila .saldo-usd { background: linear-gradient(135deg, #e8defa, #d4c4f0) !important; }
+        body.theme-lila .total-card { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .total-card .badge.bg-warning { background: #c9b7e8 !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .total-card .badge.bg-success { background: #d4c4f0 !important; border-color: #c9b7e8 !important; }
+        body.theme-lila .payment-card { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .payment-efectivo { border-left-color: #28a745 !important; }
+        body.theme-lila .payment-usd { border-left-color: #d4c4f0 !important; }
+        body.theme-lila .payment-zelle { border-left-color: #FFD700 !important; }
+        body.theme-lila .payment-movil { border-left-color: #9C27B0 !important; }
+        body.theme-lila .payment-transferencia { border-left-color: #9C27B0 !important; }
+        body.theme-lila .payment-tarjeta { border-left-color: #E91E63 !important; }
+        body.theme-lila .payment-devoluciones { border-left-color: #c9b7e8 !important; }
+        body.theme-lila .table-dark { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .table-dark th { border-color: #d4c4f0 !important; }
+        body.theme-lila tfoot { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .btn-primary { background: #d4c4f0 !important; border-color: #c9b7e8 !important; color: #000 !important; }
+        body.theme-lila .btn-primary:hover { background: #c9b7e8 !important; }
+        body.theme-lila .btn-secondary { background: #c9b7e8 !important; border-color: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .btn-secondary:hover { background: #d4c4f0 !important; }
+        body.theme-lila .btn-dark { background: #d4c4f0 !important; border-color: #c9b7e8 !important; color: #000 !important; }
+        body.theme-lila .btn-dark:hover { background: #c9b7e8 !important; }
+        body.theme-lila .btn-primary-custom { background: #d4c4f0 !important; border-color: #c9b7e8 !important; color: #000 !important; }
+        body.theme-lila .btn-primary-custom:hover { background: #c9b7e8 !important; }
+        body.theme-lila .badge { border-color: #d4c4f0 !important; }
+        body.theme-lila .badge.bg-success { background: #d4c4f0 !important; border-color: #c9b7e8 !important; color: #000 !important; }
+        body.theme-lila .badge.bg-warning { background: #c9b7e8 !important; border-color: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .badge.bg-secondary { background: #e8defa !important; border-color: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .alert-info { background: #e8defa !important; border-color: #d4c4f0 !important; border-left-color: #c9b7e8 !important; }
+        body.theme-lila .alert-success { border-left-color: #28a745 !important; }
+        body.theme-lila .alert-danger { border-left-color: #dc3545 !important; }
+        body.theme-lila .result-sobrante { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .result-faltante { background: #c9b7e8 !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .result-cuadrado { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .logo-circle { border-color: #d4c4f0 !important; }
+        body.theme-lila .logo-circle-small { border-color: #d4c4f0 !important; }
+        body.theme-lila .sidebar-logo { border-color: #d4c4f0 !important; }
+        body.theme-lila .caja-cerrada-badge { background: #d4c4f0 !important; border-color: #c9b7e8 !important; color: #000 !important; }
+        body.theme-lila .form-control:focus { border-color: #d4c4f0; box-shadow: 0 0 0 0.2rem rgba(212,196,240,0.4); }
+
+        /* 6. Durazno pastel */
+        body.theme-durazno {
+            --renaven-azul-fuerte: #fdd0b5;
+            --renaven-azul-cielo: #fee5d0;
+            --renaven-blanco: #fffcf9;
+            --renaven-gris-fondo: #fef8f3;
+            --renaven-borde: #fdd0b5;
+        }
+        body.theme-durazno .sidebar { background: #f5c2a4; border-right-color: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link.active { background: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link:hover { background: #fee5d0; }
+        body.theme-durazno .card-header { background: #fdd0b5 !important; border-bottom-color: #f5c2a4 !important; }
+        body.theme-durazno .card-header.bg-warning { background: #f5c2a4 !important; border-bottom-color: #fdd0b5 !important; }
+        body.theme-durazno .card-header.bg-secondary { background: #fee5d0 !important; border-bottom-color: #fdd0b5 !important; }
+        body.theme-durazno .saldo-bs { background: linear-gradient(135deg, #fee5d0, #fdd0b5) !important; }
+        body.theme-durazno .saldo-usd { background: linear-gradient(135deg, #fee5d0, #fdd0b5) !important; }
+        body.theme-durazno .total-card { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .total-card .badge.bg-warning { background: #f5c2a4 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .total-card .badge.bg-success { background: #fdd0b5 !important; border-color: #f5c2a4 !important; }
+        body.theme-durazno .payment-card { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .payment-efectivo { border-left-color: #28a745 !important; }
+        body.theme-durazno .payment-usd { border-left-color: #fdd0b5 !important; }
+        body.theme-durazno .payment-zelle { border-left-color: #FFD700 !important; }
+        body.theme-durazno .payment-movil { border-left-color: #9C27B0 !important; }
+        body.theme-durazno .payment-transferencia { border-left-color: #9C27B0 !important; }
+        body.theme-durazno .payment-tarjeta { border-left-color: #E91E63 !important; }
+        body.theme-durazno .payment-devoluciones { border-left-color: #f5c2a4 !important; }
+        body.theme-durazno .table-dark { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .table-dark th { border-color: #fdd0b5 !important; }
+        body.theme-durazno tfoot { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .btn-primary { background: #fdd0b5 !important; border-color: #f5c2a4 !important; color: #000 !important; }
+        body.theme-durazno .btn-primary:hover { background: #f5c2a4 !important; }
+        body.theme-durazno .btn-secondary { background: #f5c2a4 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .btn-secondary:hover { background: #fdd0b5 !important; }
+        body.theme-durazno .btn-dark { background: #fdd0b5 !important; border-color: #f5c2a4 !important; color: #000 !important; }
+        body.theme-durazno .btn-dark:hover { background: #f5c2a4 !important; }
+        body.theme-durazno .btn-primary-custom { background: #fdd0b5 !important; border-color: #f5c2a4 !important; color: #000 !important; }
+        body.theme-durazno .btn-primary-custom:hover { background: #f5c2a4 !important; }
+        body.theme-durazno .badge { border-color: #fdd0b5 !important; }
+        body.theme-durazno .badge.bg-success { background: #fdd0b5 !important; border-color: #f5c2a4 !important; color: #000 !important; }
+        body.theme-durazno .badge.bg-warning { background: #f5c2a4 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .badge.bg-secondary { background: #fee5d0 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .alert-info { background: #fee5d0 !important; border-color: #fdd0b5 !important; border-left-color: #f5c2a4 !important; }
+        body.theme-durazno .alert-success { border-left-color: #28a745 !important; }
+        body.theme-durazno .alert-danger { border-left-color: #dc3545 !important; }
+        body.theme-durazno .result-sobrante { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .result-faltante { background: #f5c2a4 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .result-cuadrado { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .logo-circle { border-color: #fdd0b5 !important; }
+        body.theme-durazno .logo-circle-small { border-color: #fdd0b5 !important; }
+        body.theme-durazno .sidebar-logo { border-color: #fdd0b5 !important; }
+        body.theme-durazno .caja-cerrada-badge { background: #fdd0b5 !important; border-color: #f5c2a4 !important; color: #000 !important; }
+        body.theme-durazno .form-control:focus { border-color: #fdd0b5; box-shadow: 0 0 0 0.2rem rgba(253,208,181,0.4); }
+
+        /* ========== TODAS LAS LETRAS EN NEGRITA (excepto iconos) ========== */
+        *:not([class*="fa-"]) {
+            font-weight: bold !important;
+        }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+            font-weight: 400 !important;
+        }
+        .fas, .fa-solid {
+            font-weight: 900 !important;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--renaven-gris-fondo);
+            font-family: Arial, sans-serif;
+            overflow-x: hidden;
+            color: var(--renaven-texto);
+            font-size: 13px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* ===== FORZAR COLOR DE TEXTO ===== */
+        body, p, span, div, h1, h2, h3, h4, h5, h6,
+        .sidebar .nav-link, .sidebar h5, .sidebar small,
+        .card, .card-body, .table, .alert, .badge,
+        .text-muted, .text-success, .text-primary,
+        .table-dark th, tfoot td,
+        .payment-card, .total-card, .card-header, .form-control,
+        .form-select, label, .moneda-usd, .moneda-bs, small,
+        a, .btn, .btn-primary, .btn-secondary, .btn-dark,
+        .btn-primary-custom, .stat-number, .saldo-card,
+        .result-card {
+            color: var(--renaven-texto) !important;
+        }
+
+        ::placeholder, input::placeholder, textarea::placeholder {
+            color: #9ca3af !important;
+            opacity: 1;
+        }
+
+        a { text-decoration: none; }
+        a:hover { color: var(--renaven-azul-fuerte) !important; text-decoration: underline; }
+
+        /* ========== NAVEGACIÓN POR TECLADO ========== */
+        *:focus {
+            outline: 3px solid #FFD700 !important;
+            outline-offset: 2px !important;
+        }
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--renaven-azul-fuerte);
+            color: #000;
+            padding: 8px 16px;
+            z-index: 1000;
+            text-decoration: none;
+            border-radius: 0 0 8px 0;
+            font-weight: bold;
+        }
+        .skip-link:focus { top: 0; }
+
+        /* ========== LOGOS ========== */
+        .logo-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--renaven-borde);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease, border-color 0.3s;
+            background: var(--renaven-blanco);
+        }
+        .logo-circle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .logo-circle-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--renaven-borde);
+            transition: all 0.3s ease, border-color 0.3s;
+            background: var(--renaven-blanco);
+        }
+        .logo-circle-small:hover { transform: scale(1.05); }
+        .title-with-logo { display: flex; align-items: center; gap: 15px; }
+        .sidebar-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 10px;
+            border: 3px solid var(--renaven-azul-cielo);
+            background: var(--renaven-blanco);
+            transition: border-color 0.3s;
+        }
+
+        /* ========== SIDEBAR ========== */
+        .sidebar {
+            min-height: 100vh;
+            background: var(--renaven-azul-fuerte);
+            border-right: 2px solid var(--renaven-azul-cielo);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .sidebar .nav-link {
+            color: #000 !important;
+            margin: 5px 0;
+            border-radius: 50px;
+            transition: all 0.3s;
+            padding: 10px 15px;
+        }
+        .sidebar .nav-link i { color: #000 !important; }
+        .sidebar .nav-link:hover {
+            background: var(--renaven-azul-cielo);
+            transform: translateX(8px);
+            color: #000 !important;
+        }
+        .sidebar .nav-link:hover i { color: #000 !important; }
+        .sidebar .nav-link.active {
+            background: var(--renaven-azul-cielo);
+            color: #000 !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            border: 1px solid var(--renaven-borde);
+        }
+        .sidebar .nav-link.active i { color: #000 !important; }
+        .sidebar h5, .sidebar small { color: #000 !important; }
+
+        /* ========== CARDS ========== */
+        .card {
+            border-radius: 20px !important;
+            border: 2px solid var(--renaven-borde) !important;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, border-color 0.3s;
+            overflow: hidden;
+            background: var(--renaven-blanco);
+            color: #000 !important;
+        }
+        .card:hover { transform: translateY(-5px); }
+        .card-header {
+            padding: 15px 20px !important;
+            font-weight: bold;
+            border-bottom: 2px solid var(--renaven-borde) !important;
+            background: var(--renaven-azul-fuerte) !important;
+            border-radius: 20px 20px 0 0 !important;
+            color: #000 !important;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .card-header.bg-warning { background: var(--renaven-azul-cielo) !important; color: #000 !important; }
+        .card-header.bg-secondary { background: var(--renaven-azul-cielo) !important; color: #000 !important; }
+        .card-header i { color: #000 !important; }
+
+        /* ========== TABLA ========== */
+        .table {
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            background: var(--renaven-blanco);
+            color: #000 !important;
+            border: 1px solid var(--renaven-borde);
+            transition: border-color 0.3s;
+        }
+        .table-dark {
+            background: var(--renaven-azul-fuerte) !important;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .table-dark th {
+            background: transparent;
+            border-bottom: 2px solid var(--renaven-borde);
+            padding: 12px;
+            font-weight: 600;
+            color: #000 !important;
+        }
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: var(--renaven-gris-fondo);
+        }
+        .table tbody tr:hover {
+            background-color: rgba(132,182,244,0.1);
+        }
+        .table td, .table th {
+            border-color: var(--renaven-borde) !important;
+        }
+        tfoot {
+            background: var(--renaven-azul-cielo) !important;
+            border-top: 2px solid var(--renaven-borde) !important;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        tfoot td { color: #000 !important; }
+
+        /* ========== PAYMENT CARDS ========== */
+        .payment-card {
+            background: var(--renaven-blanco);
+            border-left: 4px solid;
+            border-right: 2px solid var(--renaven-borde);
+            border-top: 2px solid var(--renaven-borde);
+            border-bottom: 2px solid var(--renaven-borde);
+            margin-bottom: 12px;
+            padding: 15px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            color: #000 !important;
+        }
+        .payment-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .payment-card strong { color: #000 !important; }
+        .payment-efectivo { border-left-color: #28a745; }
+        .payment-usd { border-left-color: var(--renaven-azul-cielo); }
+        .payment-zelle { border-left-color: #FFD700; }
+        .payment-movil { border-left-color: #9C27B0; }
+        .payment-transferencia { border-left-color: #9C27B0; }
+        .payment-tarjeta { border-left-color: #E91E63; }
+        .payment-devoluciones { border-left-color: #FF5722; }
+
+        /* ========== TOTAL CARD ========== */
+        .total-card {
+            background: var(--renaven-azul-cielo);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            border: 2px solid var(--renaven-borde);
+            color: #000 !important;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .total-card h6, .total-card h4, .total-card small { color: #000 !important; }
+
+        /* ========== SALDO CARDS ========== */
+        .saldo-card {
+            border-radius: 16px;
+            padding: 12px 16px;
+            color: #000 !important;
+            transition: transform 0.25s, box-shadow 0.25s, background 0.3s;
+            cursor: default;
+            border: 1px solid var(--renaven-borde);
+        }
+        .saldo-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px -8px rgba(0,0,0,0.2);
+        }
+        .saldo-card .saldo-label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            font-weight: 500;
+            color: #000 !important;
+        }
+        .saldo-card .saldo-monto {
+            font-size: 1.6rem;
+            font-weight: 800;
+            line-height: 1.2;
+            color: #000 !important;
+        }
+        .saldo-card .saldo-sub {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            color: #000 !important;
+        }
+        .saldo-bs { background: linear-gradient(135deg, var(--renaven-azul-cielo), var(--renaven-azul-fuerte)); }
+        .saldo-usd { background: linear-gradient(135deg, var(--renaven-azul-cielo), var(--renaven-azul-fuerte)); }
+
+        /* ========== RESULT CARD ========== */
+        .result-card {
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+            transition: all 0.3s ease, background 0.3s, border-color 0.3s;
+            border: 2px solid var(--renaven-borde);
+            color: #000 !important;
+        }
+        .result-sobrante { background: #28a745; color: #000 !important; }
+        .result-faltante { background: #DC3545; color: #000 !important; }
+        .result-cuadrado { background: var(--renaven-azul-cielo); color: #000 !important; }
+
+        /* ========== BOTONES ========== */
+        .btn {
+            border-radius: 50px !important;
+            border: 2px solid var(--renaven-borde) !important;
+            font-weight: 600;
+        }
+        .btn-primary {
+            background: var(--renaven-azul-fuerte) !important;
+            color: #000 !important;
+        }
+        .btn-primary:hover {
+            background: var(--renaven-azul-cielo) !important;
+            color: #000 !important;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: #6c757d !important;
+            color: #000 !important;
+        }
+        .btn-secondary:hover {
+            background: #5a6268 !important;
+            color: #000 !important;
+            transform: translateY(-2px);
+        }
+        .btn-dark {
+            background: var(--renaven-azul-fuerte) !important;
+            color: #000 !important;
+        }
+        .btn-dark:hover {
+            background: var(--renaven-azul-cielo) !important;
+            color: #000 !important;
+            transform: translateY(-2px);
+        }
+        .btn-primary-custom {
+            background: var(--renaven-azul-fuerte);
+            border: 2px solid var(--renaven-borde);
+            padding: 12px;
+            border-radius: 50px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+            color: #000 !important;
+        }
+        .btn-primary-custom:hover {
+            background: var(--renaven-azul-cielo);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            color: #000 !important;
+        }
+
+        .form-control {
+            border-radius: 25px !important;
+            border: 2px solid var(--renaven-borde) !important;
+            background: var(--renaven-blanco);
+            padding: 10px 18px;
+            color: #000 !important;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .form-control:focus {
+            border-color: var(--renaven-azul-fuerte);
+            box-shadow: 0 0 0 0.2rem rgba(132,182,244,0.25);
+        }
+        .form-label { font-weight: 600; color: #000 !important; }
+
+        .alert {
+            border-radius: 20px;
+            border: 2px solid var(--renaven-borde) !important;
+            background: var(--renaven-blanco);
+            border-left: 5px solid;
+            color: #000 !important;
+            transition: border-color 0.3s, background 0.3s;
+        }
+        .alert-success { border-left-color: #28a745; }
+        .alert-danger { border-left-color: #DC3545; }
+        .alert-info { border-left-color: var(--renaven-azul-cielo); }
+        .alert-warning { border-left-color: #FFD700; }
+
+        .caja-cerrada-badge {
+            background: #28a745;
+            color: #000 !important;
+            border-radius: 50px;
+            padding: 5px 15px;
+            font-size: 0.9rem;
+            display: inline-block;
+            border: 1px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .badge {
+            border-radius: 50px;
+            padding: 5px 12px;
+            font-weight: 500;
+            border: 1px solid var(--renaven-borde);
+            color: #000 !important;
+        }
+        .badge.bg-success { background: #28a745 !important; color: #000 !important; }
+        .badge.bg-warning { background: #FFD700 !important; color: #000 !important; }
+        .badge.bg-secondary { background: var(--renaven-azul-cielo) !important; color: #000 !important; }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #000 !important;
+        }
+        .opacity-50 { opacity: 0.3; }
+        hr { border-top: 2px solid var(--renaven-borde); }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--renaven-gris-fondo); }
+        ::-webkit-scrollbar-thumb {
+            background: var(--renaven-azul-cielo);
+            border-radius: 10px;
+            border: 1px solid var(--renaven-borde);
+        }
+
+        @media (max-width: 768px) {
+            .title-with-logo { flex-direction: column; text-align: center; }
+            .stat-number { font-size: 1.5rem; }
+            .saldo-card .saldo-monto { font-size: 1.2rem; }
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            .sidebar { display: none !important; }
+            .col-md-10 { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            body { background: white !important; padding: 20px !important; }
+            .card { box-shadow: none; border: 2px solid #000 !important; }
+            .table { background: white !important; border: 1px solid #000 !important; }
+            .logo-circle, .logo-circle-small, .sidebar-logo { border: 2px solid #000 !important; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== SKIP LINK ========== -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <div class="container-fluid" id="main-content" role="main">
+        <div class="row">
+            <!-- ========== SIDEBAR ========== -->
+            <div class="col-md-2 p-0 sidebar no-print">
+                <div class="text-center py-4">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN - Sistema de Facturación" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/80x80?text=R'">
+                    <h5 class="mt-2">RENAVEN</h5>
+                    <small>{{ session.get('role', 'Usuario') }}</small>
+                </div>
+                <nav class="nav flex-column px-3" aria-label="Menú principal">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}" aria-label="Ir al Dashboard"><i class="fas fa-tachometer-alt me-2" aria-hidden="true"></i> Dashboard</a>
+                    <a class="nav-link" href="{{ url_for('facturacion') }}" aria-label="Ir a Facturación"><i class="fas fa-shopping-cart me-2" aria-hidden="true"></i> Facturación</a>
+                    <a class="nav-link" href="{{ url_for('inventory') }}" aria-label="Ir a Inventario"><i class="fas fa-boxes me-2" aria-hidden="true"></i> Inventario</a>
+                    <a class="nav-link active" href="{{ url_for('daily_closure') }}" aria-label="Cierre del Día (página actual)"><i class="fas fa-chart-line me-2" aria-hidden="true"></i> Cierre del Día</a>
+                    <a class="nav-link" href="{{ url_for('ventas_mes') }}" aria-label="Ver Ventas del Mes"><i class="fas fa-calendar-alt me-2" aria-hidden="true"></i> Ventas Mes</a>
+                    <a class="nav-link" href="{{ url_for('monthly_profit') }}" aria-label="Ver Ganancias"><i class="fas fa-chart-pie me-2" aria-hidden="true"></i> Ganancias</a>
+                    <a class="nav-link" href="{{ url_for('cash_closure') }}" aria-label="Ir a Cierre de Caja"><i class="fas fa-cash-register me-2" aria-hidden="true"></i> Cierre Caja</a>
+                    <hr>
+                    <a class="nav-link text-danger" href="{{ url_for('logout') }}" aria-label="Cerrar Sesión"><i class="fas fa-sign-out-alt me-2" aria-hidden="true"></i> Salir</a>
+                </nav>
+            </div>
+
+            <!-- ========== CONTENIDO PRINCIPAL ========== -->
+            <div class="col-md-10 p-4" id="main-content">
+                <!-- Encabezado -->
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div class="title-with-logo">
+                        <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="logo-circle">
+                        <h1 class="mb-3 no-print fs-2"><i class="fas fa-cash-register" aria-hidden="true"></i> Cierre del Día - RENAVEN</h1>
+                    </div>
+                    {% if cierre_realizado|default(false) %}
+                    <span class="caja-cerrada-badge no-print"><i class="fas fa-check-circle" aria-hidden="true"></i> CAJA CERRADA - Contadores en CERO</span>
+                    {% endif %}
+                </div>
+                <p class="mb-4 no-print">📅 Fecha: {{ today|default(now|datetimeformat('%d/%m/%Y')) }} | 👤 Cajera: {{ cashier_name|default('Usuario') }}</p>
+                <hr class="no-print">
+
+                <!-- ========== SALDO EN TIEMPO REAL Y ESTADO ========== -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="saldo-card saldo-bs">
+                            <div class="saldo-label"><i class="fas fa-cash-stack me-1" aria-hidden="true"></i> Saldo Actual (Bs.)</div>
+                            <div class="saldo-monto" id="saldoBsDisplay" aria-live="polite">Bs. {{ saldo_bs|default(0)|format_bs }}</div>
+                            <div class="saldo-sub">Actualizado en tiempo real</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="saldo-card saldo-usd">
+                            <div class="saldo-label"><i class="fas fa-currency-dollar me-1" aria-hidden="true"></i> Saldo Actual (USD)</div>
+                            <div class="saldo-monto" id="saldoUsdDisplay" aria-live="polite">${{ saldo_usd|default(0)|format_usd_venezuela }}</div>
+                            <div class="saldo-sub">Actualizado en tiempo real</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="total-card" style="background: #FFD700;">
+                            <div class="text-center">
+                                <h6><i class="fas fa-info-circle me-1" aria-hidden="true"></i> Estado de Caja</h6>
+                                {% if cierre_realizado|default(false) %}
+                                <h4><span class="badge bg-success">🔒 Cerrada</span></h4>
+                                <small>Contadores en CERO</small>
+                                {% else %}
+                                <h4><span class="badge bg-warning">🟢 Abierta</span></h4>
+                                <small>Turno en curso</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== MENSAJES FLASH ========== -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show no-print" role="alert">
+                                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}info-circle{% endif %} me-2" aria-hidden="true"></i>
+                                {{ message|safe }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar mensaje"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- ========== FILA PRINCIPAL: RESUMEN + TABLA (IZQUIERDA) Y ARQUEO (DERECHA) ========== -->
+                <div class="row">
+                    <!-- COLUMNA IZQUIERDA: Resumen, tarjetas de métodos y tabla de ventas -->
+                    <div class="col-lg-6">
+                        <!-- Resumen del Día -->
+                        <div class="total-card">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="logo-circle-small">
+                                <h2 class="mb-0 fs-5">📊 Resumen del Día {% if cierre_realizado|default(false) %}<span class="badge bg-success ms-2">CERRADO</span>{% endif %}</h2>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-6 mb-2">
+                                    <small>Balance Apertura</small>
+                                    <h3 class="fs-5">Bs. {{ (opening_balance_cero if cierre_realizado|default(false) else opening_balance|default(0))|format_bs }}</h3>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <small>Total Ventas USD</small>
+                                    <h3 class="fs-5">$ {{ (total_usd_cero if cierre_realizado|default(false) else total_usd|default(0))|format_usd }}</h3>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <small>Total Ventas Bs</small>
+                                    <h3 class="fs-5">Bs. {{ (total_bs_cero if cierre_realizado|default(false) else total_bs|default(0))|format_bs }}</h3>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <small>Total Devoluciones (Bs)</small>
+                                    <h3 class="fs-5" id="devolucionesBsDisplay">Bs. 0,00</h3>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <small>Total Devoluciones (USD)</small>
+                                    <h3 class="fs-5" id="devolucionesUsdDisplay">$ 0.00</h3>
+                                </div>
+                                <div class="col-6">
+                                    <small>Total Esperado (Ajustado)</small>
+                                    <h3 class="fs-5" id="totalEsperadoAjustado">Bs. {{ ((opening_balance_cero if cierre_realizado|default(false) else opening_balance|default(0)) + (total_bs_cero if cierre_realizado|default(false) else total_bs|default(0)))|format_bs }}</h3>
+                                </div>
+                            </div>
+                            {% if cierre_realizado|default(false) %}
+                            <div class="alert alert-info mt-3 mb-0 py-2">
+                                <i class="fas fa-check-circle" aria-hidden="true"></i> ✅ Cierre de caja completado. Los contadores se han reiniciado a cero para el próximo turno.
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Tarjetas de Ventas por Método -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="logo-circle-small">
+                                    <h3 class="mb-0 fs-6">💰 VENTAS DEL DÍA {% if cierre_realizado|default(false) %}(Último cierre){% else %}(Actual){% endif %}</h3>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="payment-card payment-efectivo">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>💵 Efectivo Bs</strong>
+                                        <span>Bs. {{ (total_efectivo_bs_cero if cierre_realizado|default(false) else total_efectivo_bs|default(0))|format_bs }}</span>
+                                    </div>
+                                </div>
+                                <div class="payment-card payment-usd">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>💵 Efectivo USD</strong>
+                                        <span>$ {{ (total_efectivo_usd_cero if cierre_realizado|default(false) else total_efectivo_usd|default(0))|format_usd }}</span>
+                                    </div>
+                                    <small>Equivale a Bs. {{ ((total_efectivo_usd_cero if cierre_realizado|default(false) else total_efectivo_usd|default(0)) * rate|default(40))|format_bs }}</small>
+                                </div>
+                                <div class="payment-card payment-zelle">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>🏦 Zelle</strong>
+                                        <span>$ {{ (total_zelle_cero if cierre_realizado|default(false) else total_zelle|default(0))|format_usd }}</span>
+                                    </div>
+                                    <small>Equivale a Bs. {{ ((total_zelle_cero if cierre_realizado|default(false) else total_zelle|default(0)) * rate|default(40))|format_bs }}</small>
+                                </div>
+                                <div class="payment-card payment-movil">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>📱 Pago Móvil</strong>
+                                        <span>Bs. {{ (total_pago_movil_cero if cierre_realizado|default(false) else total_pago_movil|default(0))|format_bs }}</span>
+                                    </div>
+                                </div>
+                                <div class="payment-card payment-transferencia">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>🔄 Transferencia</strong>
+                                        <span>Bs. {{ (total_transferencia_cero if cierre_realizado|default(false) else total_transferencia|default(0))|format_bs }}</span>
+                                    </div>
+                                </div>
+                                <div class="payment-card payment-tarjeta">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>💳 Tarjeta</strong>
+                                        <span>Bs. {{ (total_tarjeta_cero if cierre_realizado|default(false) else total_tarjeta|default(0))|format_bs }}</span>
+                                    </div>
+                                </div>
+                                <div class="payment-card payment-devoluciones">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>↩️ Devoluciones (Total)</strong>
+                                        <span id="devolucionesTotalDisplay">Bs. 0,00</span>
+                                    </div>
+                                    <small id="devolucionesTotalUsdDisplay">$ 0.00</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Ventas Detallada -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="logo-circle-small">
+                                    <h3 class="mb-0 fs-5"><i class="fas fa-list" aria-hidden="true"></i> Detalle de Ventas</h3>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                {% if sales and sales|length > 0 %}
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-striped mb-0" aria-label="Tabla de ventas del día">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th scope="col"># Factura</th>
+                                                <th scope="col">Cliente</th>
+                                                <th scope="col">Total USD</th>
+                                                <th scope="col">Total Bs</th>
+                                                <th scope="col">Método Pago</th>
+                                                <th scope="col">Hora</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for sale in sales %}
+                                            <tr>
+                                                <td class="text-center">
+                                                    <span class="badge" style="background: var(--renaven-azul-cielo); border: 1px solid var(--renaven-borde);" aria-label="Factura número {{ "%04d"|format(sale.invoice_number|default(0)|int) }}">
+                                                        {{ "%04d"|format(sale.invoice_number|default(0)|int) }}
+                                                    </span>
+                                                </td>
+                                                <td><strong>{{ sale.client_name|default('CLIENTE')|upper }}</strong></td>
+                                                <td class="fw-bold">$ {{ sale.total_usd|default(0)|format_usd }}</td>
+                                                <td class="fw-bold">Bs. {{ sale.total_bs|default(0)|format_bs }}</td>
+                                                <td>
+                                                    {% set method = sale.payment_method|default('Efectivo USD') %}
+                                                    {% if 'USD' in method or 'usd' in method|lower %}
+                                                        <span class="badge" style="background: var(--renaven-azul-cielo); border: 1px solid var(--renaven-borde);" aria-label="Método de pago: {{ method }}">💵 {{ method }}</span>
+                                                    {% elif 'Bs' in method or 'EFECTIVO BS' in method|upper %}
+                                                        <span class="badge" style="background: #28a745; border: 1px solid var(--renaven-borde);" aria-label="Método de pago: {{ method }}">💵 {{ method }}</span>
+                                                    {% elif 'Zelle' in method %}
+                                                        <span class="badge" style="background: #FFD700; border: 1px solid var(--renaven-borde);" aria-label="Método de pago: {{ method }}">🏦 {{ method }}</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary" style="border: 1px solid var(--renaven-borde);" aria-label="Método de pago: {{ method }}">{{ method }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td><small>{{ sale.date.split(' ')[1] if sale.date and ' ' in sale.date else sale.date[:16] if sale.date else 'N/A' }}</small></td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="2" class="text-end"><strong>TOTALES:</strong></td>
+                                                <td class="text-end"><strong>$ {{ total_usd|default(0)|format_usd }}</strong></td>
+                                                <td class="text-end"><strong>Bs. {{ total_bs|default(0)|format_bs }}</strong></td>
+                                                <td colspan="2"><strong>{{ sales|length }} ventas</strong></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-warning text-center m-3" role="alert">
+                                    <i class="fas fa-info-circle" aria-hidden="true"></i> No hay ventas registradas hoy.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- COLUMNA DERECHA: FORMULARIO DE ARQUEO -->
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header bg-warning">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="logo-circle-small">
+                                    <h3 class="mb-0 fs-5"><i class="fas fa-money-bill-wave" aria-hidden="true"></i> 🧾 ARQUEO - Dinero Entregado por la Cajera</h3>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                {% if cierre_realizado|default(false) %}
+                                <div class="alert alert-success text-center mb-3">
+                                    <i class="fas fa-lock fa-3x mb-2" aria-hidden="true"></i>
+                                    <h4 class="mt-2">✅ Cierre de caja completado</h4>
+                                    <p class="mb-2">El turno ha finalizado y todos los contadores están en <strong>CERO</strong>.</p>
+                                    <p>Para iniciar un nuevo turno, debe realizar una nueva <strong>Apertura de Caja</strong>.</p>
+                                    <hr>
+                                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary-custom mt-2" aria-label="Ir al Dashboard">
+                                        <i class="fas fa-tachometer-alt" aria-hidden="true"></i> Ir al Dashboard
+                                    </a>
+                                    <button class="btn btn-secondary mt-2 ms-2" onclick="window.location.reload();" aria-label="Recargar página">
+                                        <i class="fas fa-sync-alt" aria-hidden="true"></i> Recargar
+                                    </button>
+                                </div>
+                                {% else %}
+                                <form method="POST" id="formCierre" onsubmit="return confirmarCierre(event)" aria-label="Formulario de cierre de caja">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="cash_bs" class="form-label"><i class="fas fa-money-bill" aria-hidden="true"></i> Efectivo Bs (ENTREGA)</label>
+                                            <input type="number" step="0.01" name="cash_bs_delivered" id="cash_bs" class="form-control" value="{{ total_efectivo_bs|default(0) }}" oninput="calcularCierre()" aria-label="Monto en efectivo bolívares entregado">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="cash_usd" class="form-label"><i class="fas fa-dollar-sign" aria-hidden="true"></i> Efectivo USD (ENTREGA)</label>
+                                            <input type="number" step="0.01" name="cash_usd_delivered" id="cash_usd" class="form-control" value="{{ total_efectivo_usd|default(0) }}" oninput="calcularCierre()" aria-label="Monto en efectivo dólares entregado">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="zelle" class="form-label"><i class="fas fa-university" aria-hidden="true"></i> Zelle (ENTREGA)</label>
+                                            <input type="number" step="0.01" name="zelle_delivered" id="zelle" class="form-control" value="{{ total_zelle|default(0) }}" oninput="calcularCierre()" aria-label="Monto en Zelle entregado">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="pago_movil" class="form-label"><i class="fas fa-mobile-alt" aria-hidden="true"></i> Pago Móvil (ENTREGA)</label>
+                                            <input type="number" step="0.01" name="pago_movil_delivered" id="pago_movil" class="form-control" value="{{ total_pago_movil|default(0) }}" oninput="calcularCierre()" aria-label="Monto en pago móvil entregado">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="transferencia" class="form-label"><i class="fas fa-exchange-alt" aria-hidden="true"></i> Transferencia (ENTREGA)</label>
+                                            <input type="number" step="0.01" name="transferencia_delivered" id="transferencia" class="form-control" value="{{ total_transferencia|default(0) }}" oninput="calcularCierre()" aria-label="Monto en transferencia entregado">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="tarjeta" class="form-label"><i class="fas fa-credit-card" aria-hidden="true"></i> Tarjeta (ENTREGA)</label>
+                                            <input type="number" step="0.01" name="tarjeta_delivered" id="tarjeta" class="form-control" value="{{ total_tarjeta|default(0) }}" oninput="calcularCierre()" aria-label="Monto en tarjeta entregado">
+                                        </div>
+                                    </div>
+
+                                    <!-- Campos de Devoluciones -->
+                                    <div class="row mt-2">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="devoluciones_bs" class="form-label"><i class="fas fa-undo-alt" aria-hidden="true"></i> Devoluciones en Efectivo (Bs)</label>
+                                            <input type="number" step="0.01" name="devoluciones_bs" id="devoluciones_bs" class="form-control" value="0" oninput="calcularCierre()" aria-label="Monto de devoluciones en bolívares">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="devoluciones_usd" class="form-label"><i class="fas fa-undo-alt" aria-hidden="true"></i> Devoluciones en Efectivo (USD)</label>
+                                            <input type="number" step="0.01" name="devoluciones_usd" id="devoluciones_usd" class="form-control" value="0" oninput="calcularCierre()" aria-label="Monto de devoluciones en dólares">
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="notes" class="form-label"><i class="fas fa-pen" aria-hidden="true"></i> 📝 Notas / Observaciones</label>
+                                        <textarea name="notes" id="notes" class="form-control" rows="2" placeholder="Ingrese observaciones si es necesario..." aria-label="Notas u observaciones"></textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="supervisor_password" class="form-label"><i class="fas fa-lock" aria-hidden="true"></i> 🔒 Contraseña de Dueño/Supervisor *</label>
+                                        <input type="password" name="supervisor_password" id="supervisor_password" class="form-control" required placeholder="Ingrese su contraseña para confirmar" aria-label="Contraseña de supervisor para autorizar cierre">
+                                        <small>Solo Dueño o Supervisor pueden cerrar la caja</small>
+                                    </div>
+
+                                    <div id="resultPreview" aria-live="polite"></div>
+
+                                    <button type="submit" class="btn btn-primary-custom mt-3" aria-label="Confirmar cierre de caja">
+                                        <i class="fas fa-check-circle" aria-hidden="true"></i> Confirmar Cierre de Caja (Reiniciará contadores)
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== BOTONES DE ACCIÓN ========== -->
+                <div class="row mt-4 no-print">
+                    <div class="col-md-6 mb-3">
+                        <button class="btn btn-dark w-100" onclick="imprimirCierre()" {% if not cierre_realizado|default(false) and not total_bs|default(0) %}disabled{% endif %} aria-label="Imprimir cierre de caja">
+                            <i class="fas fa-print" aria-hidden="true"></i> 🖨️ Imprimir Cierre
+                        </button>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary w-100" aria-label="Volver al Dashboard">
+                            <i class="fas fa-arrow-left" aria-hidden="true"></i> Volver al Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== SCRIPTS ========== -->
+    <script>
+        // ========== CARGA DE TEMA GUARDADO Y CONFIGURACIÓN DE FUENTE ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            // ---- Temas pastel ----
+            function applyTheme(themeClass) {
+                document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                if (themeClass) {
+                    document.body.classList.add(themeClass);
+                }
+                localStorage.setItem('selectedTheme', themeClass || '');
+            }
+
+            const savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            }
+
+            // ---- Tamaño de fuente (base 13px) ----
+            let currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            function applyFontSize() {
+                document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+            applyFontSize();
+
+            // ---- Inicializar saldo y arqueo ----
+            actualizarSaldo();
+            fetchSaldoActual();
+            setInterval(function() {
+                fetchSaldoActual();
+            }, 30000);
+
+            inicializarVariables();
+            if (!cierreRealizado) {
+                calcularCierre();
+                const inputs = ['cash_bs', 'cash_usd', 'zelle', 'pago_movil', 'transferencia', 'tarjeta', 'devoluciones_bs', 'devoluciones_usd'];
+                inputs.forEach(id => {
+                    let el = document.getElementById(id);
+                    if (el) {
+                        el.addEventListener('input', calcularCierre);
+                        el.addEventListener('change', calcularCierre);
+                    }
+                });
+            }
+        });
+
+        // ========== FUNCIONES DE SALDO ==========
+        let saldoBs = parseFloat('{{ saldo_bs|default(0) }}');
+        let saldoUsd = parseFloat('{{ saldo_usd|default(0) }}');
+
+        function formatNumberVenezuela(numero, decimals = 2) {
+            if (isNaN(numero) || numero === null || numero === '') return '0,00';
+            numero = Math.round(numero * 100) / 100;
+            let partes = numero.toFixed(decimals).split('.');
+            let entero = parseInt(partes[0]);
+            let decimal = partes[1];
+            let enteroFormateado = entero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            return `${enteroFormateado},${decimal}`;
+        }
+
+        function formatNumberUSD(numero, decimals = 2) {
+            if (isNaN(numero) || numero === null || numero === '') return '0.00';
+            numero = Math.round(numero * 100) / 100;
+            let partes = numero.toFixed(decimals).split('.');
+            let entero = parseInt(partes[0]);
+            let decimal = partes[1];
+            let enteroFormateado = entero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            return `${enteroFormateado}.${decimal}`;
+        }
+
+        function actualizarSaldo() {
+            let saldoBsDisplay = document.getElementById('saldoBsDisplay');
+            let saldoUsdDisplay = document.getElementById('saldoUsdDisplay');
+            if (saldoBsDisplay) saldoBsDisplay.innerHTML = 'Bs. ' + formatNumberVenezuela(saldoBs);
+            if (saldoUsdDisplay) saldoUsdDisplay.innerHTML = '$' + formatNumberUSD(saldoUsd);
+        }
+
+        async function fetchSaldoActual() {
+            try {
+                var response = await fetch('/api/saldo_actual', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                var data = await response.json();
+                if (data.success) {
+                    saldoBs = parseFloat(data.saldo_bs) || 0;
+                    saldoUsd = parseFloat(data.saldo_usd) || 0;
+                    actualizarSaldo();
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('❌ Error obteniendo saldo:', error.message);
+                return false;
+            }
+        }
+
+        // ========== LÓGICA DE CIERRE DE CAJA ==========
+        let openingBalance = 0;
+        let totalVentasBs = 0;
+        let tasa = 40;
+        let totalEsperadoBase = 0;
+        let totalEsperadoAjustado = 0;
+        let cierreRealizado = false;
+
+        function inicializarVariables() {
+            try {
+                let cierreRaw = "{{ cierre_realizado|default('false') }}";
+                cierreRealizado = (String(cierreRaw).toLowerCase() === 'true');
+                let openingBalanceRaw = "{{ opening_balance_cero if cierre_realizado|default(false) else opening_balance|default('0') }}";
+                let totalVentasBsRaw = "{{ total_bs_cero if cierre_realizado|default(false) else total_bs|default('0') }}";
+                let tasaRaw = "{{ rate|default('40') }}";
+                openingBalance = parseFloat(String(openingBalanceRaw).replace(/[^0-9.-]/g, '')) || 0;
+                totalVentasBs = parseFloat(String(totalVentasBsRaw).replace(/[^0-9.-]/g, '')) || 0;
+                tasa = parseFloat(String(tasaRaw).replace(/[^0-9.-]/g, '')) || 40;
+                totalEsperadoBase = openingBalance + totalVentasBs;
+                totalEsperadoAjustado = totalEsperadoBase;
+            } catch(e) {
+                console.error('Error inicializando variables:', e);
+                openingBalance = 0;
+                totalVentasBs = 0;
+                tasa = 40;
+                cierreRealizado = false;
+                totalEsperadoBase = 0;
+                totalEsperadoAjustado = 0;
+            }
+        }
+
+        function obtenerValorInput(id) {
+            let elemento = document.getElementById(id);
+            if (!elemento) return 0;
+            let valor = parseFloat(elemento.value);
+            return (isNaN(valor) || valor === null) ? 0 : valor;
+        }
+
+        function ocultarPreview() {
+            let preview = document.getElementById('resultPreview');
+            if (preview) {
+                preview.style.display = 'none';
+                preview.innerHTML = '';
+            }
+        }
+
+        function calcularCierre() {
+            if (cierreRealizado) {
+                ocultarPreview();
+                return;
+            }
+            try {
+                let efectivoBsEntregado = obtenerValorInput('cash_bs');
+                let efectivoUsdEntregado = obtenerValorInput('cash_usd');
+                let zelleEntregado = obtenerValorInput('zelle');
+                let pagoMovilEntregado = obtenerValorInput('pago_movil');
+                let transferenciaEntregado = obtenerValorInput('transferencia');
+                let tarjetaEntregado = obtenerValorInput('tarjeta');
+                let devolucionesBs = obtenerValorInput('devoluciones_bs');
+                let devolucionesUsd = obtenerValorInput('devoluciones_usd');
+
+                let tasaValida = (typeof tasa === 'number' && !isNaN(tasa) && tasa > 0) ? tasa : 40;
+                let efectivoUsdEnBs = efectivoUsdEntregado * tasaValida;
+                let zelleEnBs = zelleEntregado * tasaValida;
+                let devolucionesUsdEnBs = devolucionesUsd * tasaValida;
+
+                let totalEntregado = efectivoBsEntregado + efectivoUsdEnBs + zelleEnBs +
+                                    pagoMovilEntregado + transferenciaEntregado + tarjetaEntregado;
+                let totalDevolucionesBs = devolucionesBs + devolucionesUsdEnBs;
+                let totalEsperado = totalEsperadoBase - totalDevolucionesBs;
+
+                // Actualizar total esperado en el resumen
+                let esperadoAjustadoElem = document.getElementById('totalEsperadoAjustado');
+                if (esperadoAjustadoElem) {
+                    esperadoAjustadoElem.textContent = 'Bs. ' + formatNumberVenezuela(totalEsperado);
+                }
+                // Actualizar displays de devoluciones
+                let devBsDisplay = document.getElementById('devolucionesBsDisplay');
+                let devUsdDisplay = document.getElementById('devolucionesUsdDisplay');
+                let devTotalDisplay = document.getElementById('devolucionesTotalDisplay');
+                let devTotalUsdDisplay = document.getElementById('devolucionesTotalUsdDisplay');
+                if (devBsDisplay) devBsDisplay.textContent = 'Bs. ' + formatNumberVenezuela(devolucionesBs);
+                if (devUsdDisplay) devUsdDisplay.textContent = '$ ' + formatNumberUSD(devolucionesUsd);
+                if (devTotalDisplay) devTotalDisplay.textContent = 'Bs. ' + formatNumberVenezuela(totalDevolucionesBs);
+                if (devTotalUsdDisplay) devTotalUsdDisplay.textContent = '$ ' + formatNumberUSD(devolucionesUsd + (devolucionesBs / tasaValida));
+
+                let diferencia = totalEntregado - totalEsperado;
+                let tolerancia = 0.01;
+                let preview = document.getElementById('resultPreview');
+                if (!preview) return;
+
+                if (totalEntregado > 0 || efectivoBsEntregado > 0 || efectivoUsdEntregado > 0 || devolucionesBs > 0 || devolucionesUsd > 0) {
+                    let resultadoClase = '';
+                    let resultadoTexto = '';
+                    if (diferencia > tolerancia) {
+                        resultadoClase = 'result-sobrante';
+                        resultadoTexto = '✅ SOBRANTE: +' + formatNumberVenezuela(diferencia) + ' Bs';
+                    } else if (diferencia < -tolerancia) {
+                        resultadoClase = 'result-faltante';
+                        resultadoTexto = '⚠️ FALTANTE: ' + formatNumberVenezuela(diferencia) + ' Bs';
+                    } else {
+                        resultadoClase = 'result-cuadrado';
+                        resultadoTexto = '✓ CUADRADO PERFECTO';
+                    }
+                    preview.innerHTML = `
+                        <div class="result-card ${resultadoClase}" style="margin-top: 20px;">
+                            <h5><i class="fas fa-chart-line" aria-hidden="true"></i> Resultado del Arqueo</h5>
+                            <hr>
+                            <div class="row">
+                                <div class="col-4 text-start">
+                                    <small>Ventas</small>
+                                    <h6>Bs. ${formatNumberVenezuela(totalVentasBs)}</h6>
+                                </div>
+                                <div class="col-4 text-start">
+                                    <small>Devoluciones</small>
+                                    <h6>Bs. ${formatNumberVenezuela(totalDevolucionesBs)}</h6>
+                                </div>
+                                <div class="col-4 text-end">
+                                    <small>Esperado (Ajustado)</small>
+                                    <h6>Bs. ${formatNumberVenezuela(totalEsperado)}</h6>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 text-start">
+                                    <small>TOTAL ENTREGADO</small>
+                                    <h4>Bs. ${formatNumberVenezuela(totalEntregado)}</h4>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <small>TOTAL ESPERADO</small>
+                                    <h4>Bs. ${formatNumberVenezuela(totalEsperado)}</h4>
+                                </div>
+                            </div>
+                            <hr>
+                            <h4>${resultadoTexto}</h4>
+                        </div>
+                    `;
+                    preview.style.display = 'block';
+                } else {
+                    ocultarPreview();
+                }
+            } catch(e) {
+                console.error('Error en calcularCierre:', e);
+                ocultarPreview();
+            }
+        }
+
+        function calcularTotalEntregado() {
+            let efectivoBsEntregado = obtenerValorInput('cash_bs');
+            let efectivoUsdEntregado = obtenerValorInput('cash_usd');
+            let zelleEntregado = obtenerValorInput('zelle');
+            let pagoMovilEntregado = obtenerValorInput('pago_movil');
+            let transferenciaEntregado = obtenerValorInput('transferencia');
+            let tarjetaEntregado = obtenerValorInput('tarjeta');
+            let tasaValida = (typeof tasa === 'number' && !isNaN(tasa) && tasa > 0) ? tasa : 40;
+            let efectivoUsdEnBs = efectivoUsdEntregado * tasaValida;
+            let zelleEnBs = zelleEntregado * tasaValida;
+            return efectivoBsEntregado + efectivoUsdEnBs + zelleEnBs +
+                   pagoMovilEntregado + transferenciaEntregado + tarjetaEntregado;
+        }
+
+        function calcularDevoluciones() {
+            let devBs = obtenerValorInput('devoluciones_bs');
+            let devUsd = obtenerValorInput('devoluciones_usd');
+            let tasaValida = (typeof tasa === 'number' && !isNaN(tasa) && tasa > 0) ? tasa : 40;
+            return devBs + (devUsd * tasaValida);
+        }
+
+        function confirmarCierre(event) {
+            event.preventDefault();
+            let totalEntregado = calcularTotalEntregado();
+            let totalDevoluciones = calcularDevoluciones();
+            let totalEsperado = totalEsperadoBase - totalDevoluciones;
+            let diferencia = totalEntregado - totalEsperado;
+            let tolerancia = 0.01;
+            let mensaje = '';
+            let detalleDevoluciones = `Devoluciones: Bs. ${formatNumberVenezuela(totalDevoluciones)}\n`;
+
+            if (Math.abs(diferencia) <= tolerancia) {
+                mensaje = '✅ El arqueo está CUADRADO PERFECTAMENTE.\n\n' + detalleDevoluciones + '¿Desea proceder con el cierre de caja?\n⚠️ Esta acción reiniciará TODOS los contadores a CERO y NO se puede deshacer.';
+            } else if (diferencia > tolerancia) {
+                mensaje = '⚠️ ATENCIÓN: Hay un SOBRANTE de +' + formatNumberVenezuela(diferencia) + ' Bs.\n\n' + detalleDevoluciones + '¿Desea proceder con el cierre de caja de todas formas?\n⚠️ Esta acción reiniciará TODOS los contadores a CERO y NO se puede deshacer.';
+            } else {
+                mensaje = '⚠️ ATENCIÓN: Hay un FALTANTE de ' + formatNumberVenezuela(diferencia) + ' Bs.\n\n' + detalleDevoluciones + '¿Desea proceder con el cierre de caja de todas formas?\n⚠️ Esta acción reiniciará TODOS los contadores a CERO y NO se puede deshacer.';
+            }
+
+            if (confirm(mensaje + '\n\nSe requiere contraseña de Supervisor/Dueño para continuar.')) {
+                document.getElementById('formCierre').submit();
+            }
+            return false;
+        }
+
+        function imprimirCierre() {
+            window.print();
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

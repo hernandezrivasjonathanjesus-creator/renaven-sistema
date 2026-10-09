@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Dashboard - RENAVEN | Sistema de Gestión</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ========== PALETA PREDETERMINADA ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+            --shadow-color: rgba(132,182,244,0.2);
+            --transition-base: all 0.25s ease-in-out;
+        }
+
+        /* ========== TEMAS PASTEL ========== */
+        body.theme-rosa { --renaven-azul-fuerte: #fbc4d5; --renaven-azul-cielo: #fce4ec; --renaven-blanco: #fef9f0; --renaven-gris-fondo: #fdf6f8; --renaven-borde: #fbc4d5; }
+        body.theme-rosa .sidebar { background: #fdd0b5; border-right-color: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link.active { background: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link:hover { background: #fce4ec; }
+        body.theme-rosa .card-header { background: #fbc4d5 !important; }
+        body.theme-rosa .saldo-bs { background: #fbc4d5; }
+        body.theme-rosa .saldo-usd { background: #fce4ec; }
+        body.theme-rosa .saldo-movimientos { background: #fdd0b5; }
+        body.theme-rosa .badge-tasa { background: #fce4ec !important; }
+        body.theme-rosa .badge-descuento { background: #fdd0b5 !important; }
+        body.theme-rosa .user-badge { background: #fbc4d5 !important; }
+        body.theme-rosa .alert-secondary { background: #fce4ec !important; }
+        body.theme-rosa .btn-primary, body.theme-rosa .btn-dark { background: #fbc4d5 !important; }
+        body.theme-rosa .btn-primary:hover, body.theme-rosa .btn-dark:hover { background: #fdd0b5 !important; }
+        body.theme-rosa .accessibility-btn { background: #fbc4d5; border-color: #fdd0b5; }
+        body.theme-rosa .accessibility-btn:hover { background: #fdd0b5; }
+
+        body.theme-celeste { --renaven-azul-fuerte: #b5d8eb; --renaven-azul-cielo: #d6ecf5; --renaven-blanco: #f9fdff; --renaven-gris-fondo: #f4faff; --renaven-borde: #b5d8eb; }
+        body.theme-celeste .sidebar { background: #a8d0e6; border-right-color: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link.active { background: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link:hover { background: #d6ecf5; }
+        body.theme-celeste .card-header { background: #b5d8eb !important; }
+        body.theme-celeste .saldo-bs { background: #b5d8eb; }
+        body.theme-celeste .saldo-usd { background: #d6ecf5; }
+        body.theme-celeste .saldo-movimientos { background: #a8d0e6; }
+        body.theme-celeste .badge-tasa { background: #d6ecf5 !important; }
+        body.theme-celeste .badge-descuento { background: #a8d0e6 !important; }
+        body.theme-celeste .user-badge { background: #b5d8eb !important; }
+        body.theme-celeste .alert-secondary { background: #d6ecf5 !important; }
+        body.theme-celeste .btn-primary, body.theme-celeste .btn-dark { background: #b5d8eb !important; }
+        body.theme-celeste .btn-primary:hover, body.theme-celeste .btn-dark:hover { background: #a8d0e6 !important; }
+        body.theme-celeste .accessibility-btn { background: #b5d8eb; border-color: #a8d0e6; }
+        body.theme-celeste .accessibility-btn:hover { background: #a8d0e6; }
+
+        body.theme-menta { --renaven-azul-fuerte: #b5e6c3; --renaven-azul-cielo: #d8f0e0; --renaven-blanco: #f6fcf8; --renaven-gris-fondo: #f2faf5; --renaven-borde: #b5e6c3; }
+        body.theme-menta .sidebar { background: #a8dbb8; border-right-color: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link.active { background: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link:hover { background: #d8f0e0; }
+        body.theme-menta .card-header { background: #b5e6c3 !important; }
+        body.theme-menta .saldo-bs { background: #b5e6c3; }
+        body.theme-menta .saldo-usd { background: #d8f0e0; }
+        body.theme-menta .saldo-movimientos { background: #a8dbb8; }
+        body.theme-menta .badge-tasa { background: #d8f0e0 !important; }
+        body.theme-menta .badge-descuento { background: #a8dbb8 !important; }
+        body.theme-menta .user-badge { background: #b5e6c3 !important; }
+        body.theme-menta .alert-secondary { background: #d8f0e0 !important; }
+        body.theme-menta .btn-primary, body.theme-menta .btn-dark { background: #b5e6c3 !important; }
+        body.theme-menta .btn-primary:hover, body.theme-menta .btn-dark:hover { background: #a8dbb8 !important; }
+        body.theme-menta .accessibility-btn { background: #b5e6c3; border-color: #a8dbb8; }
+        body.theme-menta .accessibility-btn:hover { background: #a8dbb8; }
+
+        body.theme-amarillo { --renaven-azul-fuerte: #f9e7b2; --renaven-azul-cielo: #fdf3d5; --renaven-blanco: #fffef9; --renaven-gris-fondo: #fefcf5; --renaven-borde: #f9e7b2; }
+        body.theme-amarillo .sidebar { background: #f5dc9a; border-right-color: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link.active { background: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link:hover { background: #fdf3d5; }
+        body.theme-amarillo .card-header { background: #f9e7b2 !important; }
+        body.theme-amarillo .saldo-bs { background: #f9e7b2; }
+        body.theme-amarillo .saldo-usd { background: #fdf3d5; }
+        body.theme-amarillo .saldo-movimientos { background: #f5dc9a; }
+        body.theme-amarillo .badge-tasa { background: #fdf3d5 !important; }
+        body.theme-amarillo .badge-descuento { background: #f5dc9a !important; }
+        body.theme-amarillo .user-badge { background: #f9e7b2 !important; }
+        body.theme-amarillo .alert-secondary { background: #fdf3d5 !important; }
+        body.theme-amarillo .btn-primary, body.theme-amarillo .btn-dark { background: #f9e7b2 !important; }
+        body.theme-amarillo .btn-primary:hover, body.theme-amarillo .btn-dark:hover { background: #f5dc9a !important; }
+        body.theme-amarillo .accessibility-btn { background: #f9e7b2; border-color: #f5dc9a; }
+        body.theme-amarillo .accessibility-btn:hover { background: #f5dc9a; }
+
+        body.theme-lila { --renaven-azul-fuerte: #d4c4f0; --renaven-azul-cielo: #e8defa; --renaven-blanco: #fcfaff; --renaven-gris-fondo: #f8f5fe; --renaven-borde: #d4c4f0; }
+        body.theme-lila .sidebar { background: #c9b7e8; border-right-color: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link.active { background: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link:hover { background: #e8defa; }
+        body.theme-lila .card-header { background: #d4c4f0 !important; }
+        body.theme-lila .saldo-bs { background: #d4c4f0; }
+        body.theme-lila .saldo-usd { background: #e8defa; }
+        body.theme-lila .saldo-movimientos { background: #c9b7e8; }
+        body.theme-lila .badge-tasa { background: #e8defa !important; }
+        body.theme-lila .badge-descuento { background: #c9b7e8 !important; }
+        body.theme-lila .user-badge { background: #d4c4f0 !important; }
+        body.theme-lila .alert-secondary { background: #e8defa !important; }
+        body.theme-lila .btn-primary, body.theme-lila .btn-dark { background: #d4c4f0 !important; }
+        body.theme-lila .btn-primary:hover, body.theme-lila .btn-dark:hover { background: #c9b7e8 !important; }
+        body.theme-lila .accessibility-btn { background: #d4c4f0; border-color: #c9b7e8; }
+        body.theme-lila .accessibility-btn:hover { background: #c9b7e8; }
+
+        body.theme-durazno { --renaven-azul-fuerte: #fdd0b5; --renaven-azul-cielo: #fee5d0; --renaven-blanco: #fffcf9; --renaven-gris-fondo: #fef8f3; --renaven-borde: #fdd0b5; }
+        body.theme-durazno .sidebar { background: #f5c2a4; border-right-color: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link.active { background: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link:hover { background: #fee5d0; }
+        body.theme-durazno .card-header { background: #fdd0b5 !important; }
+        body.theme-durazno .saldo-bs { background: #fdd0b5; }
+        body.theme-durazno .saldo-usd { background: #fee5d0; }
+        body.theme-durazno .saldo-movimientos { background: #f5c2a4; }
+        body.theme-durazno .badge-tasa { background: #fee5d0 !important; }
+        body.theme-durazno .badge-descuento { background: #f5c2a4 !important; }
+        body.theme-durazno .user-badge { background: #fdd0b5 !important; }
+        body.theme-durazno .alert-secondary { background: #fee5d0 !important; }
+        body.theme-durazno .btn-primary, body.theme-durazno .btn-dark { background: #fdd0b5 !important; }
+        body.theme-durazno .btn-primary:hover, body.theme-durazno .btn-dark:hover { background: #f5c2a4 !important; }
+        body.theme-durazno .accessibility-btn { background: #fdd0b5; border-color: #f5c2a4; }
+        body.theme-durazno .accessibility-btn:hover { background: #f5c2a4; }
+
+        /* ========== RESET Y BASE ========== */
+        *:not([class*="fa-"]) { font-weight: bold !important; }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] { font-weight: 400 !important; }
+        .fas, .fa-solid { font-weight: 900 !important; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--renaven-gris-fondo);
+            font-family: Arial, sans-serif;
+            overflow-x: hidden;
+            color: var(--renaven-texto);
+            font-size: 13px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body.bg-black-solid { background-color: #000000 !important; }
+        body.bg-black-solid .card,
+        body.bg-black-solid .saldo-card { background: #1a1a1a !important; color: #fff !important; }
+        body.bg-white-solid { background-color: #FFFFFF !important; }
+
+        *:focus { outline: 3px solid #FFD700 !important; outline-offset: 2px !important; }
+
+        .skip-link {
+            position: absolute; top: -40px; left: 0;
+            background: var(--renaven-azul-fuerte); color: #000;
+            padding: 8px 16px; z-index: 1000;
+            text-decoration: none; border-radius: 0 0 8px 0;
+            font-weight: bold;
+        }
+        .skip-link:focus { top: 0; }
+
+        /* ========== BOTÓN ACCESIBILIDAD ========== */
+        .accessibility-btn {
+            background: var(--renaven-azul-fuerte);
+            color: #000;
+            border: 1px solid var(--renaven-azul-cielo);
+            border-radius: 50px;
+            padding: 5px 14px !important;
+            font-size: 1rem !important;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            line-height: 1.5;
+        }
+        .accessibility-btn:hover { background: var(--renaven-azul-cielo); transform: scale(1.03); }
+
+        .accessibility-dropdown { position: relative; display: inline-block; }
+        .accessibility-dropdown-content {
+            display: none; position: absolute; top: calc(100% + 8px); right: 0;
+            background: var(--renaven-blanco); min-width: 200px;
+            border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            padding: 10px; border: 1px solid var(--renaven-azul-cielo);
+            z-index: 999; flex-direction: column; gap: 6px;
+        }
+        .accessibility-dropdown-content.show { display: flex; }
+        .accessibility-dropdown-content button {
+            background: none; border: none; padding: 8px 12px;
+            text-align: left; cursor: pointer; border-radius: 8px;
+            font-size: 14px; font-weight: bold; color: #000;
+            transition: background 0.2s; display: flex; align-items: center; gap: 10px;
+        }
+        .accessibility-dropdown-content button:hover { background: var(--renaven-azul-cielo); }
+        .accessibility-dropdown-content .color-circle {
+            display: inline-block; width: 20px; height: 20px;
+            border-radius: 50%; border: 1px solid #ccc; flex-shrink: 0;
+        }
+        .accessibility-dropdown-content hr { margin: 4px 0; border-color: var(--renaven-azul-cielo); }
+
+        /* ========== BADGES INFO ========== */
+        .info-badge {
+            padding: 5px 12px !important; font-size: 1rem !important;
+            border-radius: 50px !important; display: inline-flex !important;
+            align-items: center !important; gap: 6px !important;
+            font-weight: 500 !important; box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+            color: #000 !important; border: 1px solid var(--renaven-azul-cielo);
+            background: var(--renaven-azul-cielo);
+        }
+        .info-badge i { font-size: 0.8rem; color: #000 !important; }
+        .info-badge .refresh-icon {
+            cursor: pointer; transition: transform 0.3s ease;
+            margin-left: 4px; font-size: 0.7rem;
+        }
+        .info-badge .refresh-icon:hover { transform: rotate(180deg); }
+        .badge-tasa { background: var(--renaven-azul-cielo) !important; }
+        .badge-descuento { background: var(--renaven-azul-cielo) !important; }
+
+        .user-badge {
+            background: var(--renaven-azul-fuerte) !important;
+            padding: 5px 14px !important; font-size: 1rem !important;
+            border-radius: 50px !important; font-weight: 500 !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+            color: #000 !important; border: 1px solid var(--renaven-azul-cielo);
+        }
+        .user-badge i { font-size: 0.8rem; margin-right: 4px; color: #000 !important; }
+
+        .rate-update { font-size: 0.7rem; opacity: 0.7; cursor: pointer; transition: opacity 0.2s; color: #000 !important; }
+        .rate-update:hover { opacity: 1; }
+        .rate-loading { animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .logo-circle {
+            width: 70px; height: 70px; border-radius: 50%; object-fit: cover;
+            border: 2px solid var(--renaven-azul-cielo);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+            transition: all 0.3s ease; background: var(--renaven-blanco);
+            display: block; margin-left: auto; margin-right: auto;
+        }
+        .logo-circle:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+
+        /* ========== SIDEBAR ========== */
+        .sidebar {
+            min-height: 100vh; background: var(--renaven-azul-fuerte);
+            border-right: 2px solid var(--renaven-azul-cielo);
+            box-shadow: 2px 0 15px rgba(0,0,0,0.04);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .sidebar .nav-link {
+            margin: 5px 0; border-radius: 40px; transition: var(--transition-base);
+            padding: 8px 16px; font-weight: bold; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 10px; color: #000 !important;
+        }
+        .sidebar .nav-link i { color: #000 !important; }
+        .sidebar .nav-link:hover { background: var(--renaven-azul-cielo); transform: translateX(6px); color: #000 !important; }
+        .sidebar .nav-link.active { background: var(--renaven-azul-cielo); box-shadow: 0 6px 14px rgba(0,0,0,0.08); color: #000 !important; }
+        .sidebar .nav-link.active i { color: #000 !important; }
+        .sidebar-logo {
+            width: 70px; height: 70px; border-radius: 50%; object-fit: cover;
+            margin-bottom: 10px; border: 3px solid var(--renaven-azul-cielo);
+            background: var(--renaven-blanco); display: block;
+            margin-left: auto; margin-right: auto;
+        }
+        .sidebar h5, .sidebar small { color: #000 !important; }
+        .sidebar hr { border-color: var(--renaven-azul-cielo); }
+
+        /* ========== CARDS ========== */
+        .card {
+            border: 1px solid var(--renaven-azul-cielo) !important;
+            border-radius: 20px; background: var(--renaven-blanco);
+            box-shadow: 0 8px 20px -10px rgba(0,0,0,0.06);
+            transition: all 0.2s ease; color: #000 !important;
+        }
+        .card-stats {
+            border-radius: 24px; transition: transform 0.25s, box-shadow 0.25s;
+            cursor: pointer; overflow: hidden;
+        }
+        .card-stats:hover { transform: translateY(-4px); box-shadow: 0 15px 25px -12px rgba(0,0,0,0.12); }
+        .stat-number { font-size: 1.8rem; font-weight: 800; color: #000 !important; }
+        .card-header {
+            background: var(--renaven-azul-fuerte) !important; border: none;
+            border-radius: 20px 20px 0 0 !important; padding: 12px 20px;
+            transition: background 0.3s;
+        }
+        .card-header h4, .card-header h5, .card-header h6 { color: #000 !important; font-size: 1rem; }
+        .card-header i { color: #000 !important; }
+
+        .badge.bg-primary { background: var(--renaven-azul-fuerte) !important; color: #000 !important; }
+        .badge.bg-success { background: var(--renaven-azul-cielo) !important; color: #000 !important; }
+        .badge.bg-info { background: var(--renaven-azul-cielo) !important; color: #000 !important; }
+
+        .alert-secondary {
+            background: var(--renaven-azul-cielo) !important;
+            border-left: 5px solid var(--renaven-azul-fuerte);
+            border-radius: 16px; color: #000 !important;
+        }
+
+        .btn-primary, .btn-dark {
+            background: var(--renaven-azul-fuerte) !important;
+            border: none !important; border-radius: 50px !important;
+            padding: 8px 18px !important; font-weight: 600; font-size: 0.85rem;
+            transition: all 0.3s ease; color: #000 !important;
+        }
+        .btn-primary:hover, .btn-dark:hover {
+            background: var(--renaven-azul-cielo) !important;
+            color: #000 !important; transform: translateY(-2px);
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--renaven-gris-fondo); }
+        ::-webkit-scrollbar-thumb { background: var(--renaven-azul-cielo); border-radius: 10px; }
+        .opacity-50 { opacity: 0.3; }
+        hr { border-color: var(--renaven-azul-cielo); }
+
+        /* ========== TARJETAS DE SALDO ========== */
+        .saldo-card {
+            border-radius: 20px; padding: 15px 20px; color: #000 !important;
+            transition: transform 0.25s, box-shadow 0.25s; cursor: default;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+        .saldo-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -8px rgba(0,0,0,0.10); }
+        .saldo-card .saldo-label { font-size: 0.85rem; opacity: 0.9; font-weight: bold; color: #000 !important; }
+        .saldo-card .saldo-monto { font-size: 2.2rem; font-weight: 800; line-height: 1.2; color: #000 !important; }
+        .saldo-card .saldo-sub { font-size: 0.75rem; opacity: 0.7; color: #000 !important; }
+
+        .saldo-bs { background: var(--renaven-azul-fuerte); }
+        .saldo-usd { background: var(--renaven-azul-cielo); }
+        .saldo-movimientos { background: var(--renaven-azul-cielo); }
+
+        /* ========== PRODUCTO MÁS VENDIDO (SIMPLE Y LIMPIO) ========== */
+        .top-product-card {
+            border-left: 5px solid var(--renaven-azul-fuerte) !important;
+        }
+        .top-product-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.7;
+            color: #000 !important;
+        }
+        .top-product-name {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #000 !important;
+            line-height: 1.2;
+            margin-top: 4px;
+        }
+        .top-product-meta {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            color: #000 !important;
+            margin-top: 4px;
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            .sidebar { min-height: auto; margin-bottom: 1rem; }
+            .stat-number { font-size: 1.4rem; }
+            .logo-circle, .sidebar-logo { width: 50px; height: 50px; }
+            .info-badge, .user-badge, .accessibility-btn {
+                padding: 4px 10px !important; font-size: 0.7rem !important;
+            }
+            .saldo-card .saldo-monto { font-size: 1.6rem; }
+            .accessibility-dropdown-content { right: auto; left: 0; min-width: 170px; }
+        }
+        @media (max-width: 576px) {
+            .top-bar { flex-direction: column; align-items: stretch !important; }
+            .top-bar .d-flex { justify-content: space-between; flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <!-- SIDEBAR -->
+            <div class="col-md-2 p-0 sidebar">
+                <div class="text-center py-4 px-2">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/70x70?text=R'">
+                    <h5 class="mt-2 fw-bold" style="font-size: 1rem; color: #000;">RENAVEN</h5>
+                    <small style="font-size: 0.7rem; color: #000;">{{ session.get('role', 'Administrador') }}</small>
+                </div>
+                <nav class="nav flex-column px-3 pb-4">
+                    <a class="nav-link active" href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i> <span>Dashboard</span></a>
+                    <a class="nav-link" href="{{ url_for('facturacion') }}"><i class="fas fa-shopping-cart me-2"></i> <span>Facturación</span></a>
+                    <a class="nav-link" href="{{ url_for('inventory') }}"><i class="fas fa-boxes me-2"></i> <span>Inventario</span></a>
+                    <a class="nav-link" href="{{ url_for('cash_closure') }}"><i class="fas fa-chart-line me-2"></i> <span>Cierre Diario</span></a>
+                    <a class="nav-link" href="{{ url_for('ventas_mes') }}"><i class="fas fa-calendar-alt me-2"></i> <span>Ventas del Mes</span></a>
+                    <a class="nav-link" href="{{ url_for('monthly_profit') }}"><i class="fas fa-chart-pie me-2"></i> <span>Ganancias</span></a>
+                    <a class="nav-link" href="{{ url_for('cash_closure') }}"><i class="fas fa-cash-register me-2"></i> <span>Cierre de Caja</span></a>
+                    <a class="nav-link" href="{{ url_for('opening_balance') }}"><i class="fas fa-money-bill-wave me-2"></i> <span>Apertura de Caja</span></a>
+                    <a class="nav-link" href="{{ url_for('historial_caja') }}"><i class="fas fa-wallet me-2"></i> <span>Historial de Caja</span></a>
+                    <a class="nav-link" href="{{ url_for('historial_devoluciones') }}"><i class="fas fa-undo-alt me-2"></i> <span>Devoluciones</span></a>
+                    <a class="nav-link" href="{{ url_for('historial_facturacion') }}"><i class="fas fa-file-invoice me-2"></i> <span>Historial Facturación</span></a>
+                    {% if session.get('role') == 'Dueño' %}
+                    <hr>
+                    <a class="nav-link" href="{{ url_for('manage_roles') }}"><i class="fas fa-users-cog me-2"></i> <span>Roles</span></a>
+                    <a class="nav-link" href="{{ url_for('manage_users') }}"><i class="fas fa-user-plus me-2"></i> <span>Usuarios</span></a>
+                    <a class="nav-link" href="{{ url_for('exchange_rate') }}"><i class="fas fa-dollar-sign me-2"></i> <span>Tasa</span></a>
+                    {% endif %}
+                    <hr>
+                    <a class="nav-link" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i> <span>Salir</span></a>
+                </nav>
+            </div>
+
+            <!-- CONTENIDO PRINCIPAL -->
+            <div class="col-md-10 p-md-4 p-3" id="main-content">
+                <div class="top-bar d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="logo-circle">
+                        <h1 class="m-0 d-flex align-items-center gap-2 fs-4" style="color: #000 !important;">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Dashboard</span>
+                        </h1>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <div class="info-badge badge-tasa shadow-sm" id="rateBadge">
+                            <i class="fas fa-dollar-sign"></i>
+                            <span id="exchangeRateValue">{{ exchange_rate|default(40)|format_bs }}</span>
+                            <small>Bs/USD</small>
+                            <i class="fas fa-sync-alt refresh-icon" id="refreshRateBtn"></i>
+                        </div>
+                        <div class="info-badge badge-descuento shadow-sm">
+                            <i class="fas fa-tag"></i>
+                            <span>{{ discount_percent|default(0) }}%</span>
+                            <small>dto</small>
+                        </div>
+                        <div class="user-badge shadow-sm">
+                            <i class="fas fa-user-circle"></i>
+                            <strong>{{ session.get('username', 'Invitado') }}</strong>
+                        </div>
+                        <div class="accessibility-dropdown">
+                            <button class="accessibility-btn" id="accessibilityToggle" aria-label="Abrir menú de accesibilidad">
+                                🌓 Accesibilidad
+                            </button>
+                            <div class="accessibility-dropdown-content" id="accessibilityMenu">
+                                <button id="increaseFontBtn">🔍 Aumentar Texto</button>
+                                <button id="decreaseFontBtn">🔍 Disminuir Texto</button>
+                                <button id="resetFontBtn">⟳ Restablecer</button>
+                                <hr>
+                                <button id="themeOriginal" style="font-weight: bold;">🎨 Tema Original</button>
+                                <button id="themeRosa"><span class="color-circle" style="background:#fbc4d5;"></span> Rosa pastel</button>
+                                <button id="themeCeleste"><span class="color-circle" style="background:#b5d8eb;"></span> Celeste pastel</button>
+                                <button id="themeMenta"><span class="color-circle" style="background:#b5e6c3;"></span> Menta pastel</button>
+                                <button id="themeAmarillo"><span class="color-circle" style="background:#f9e7b2;"></span> Amarillo pastel</button>
+                                <button id="themeLila"><span class="color-circle" style="background:#d4c4f0;"></span> Lila pastel</button>
+                                <button id="themeDurazno"><span class="color-circle" style="background:#fdd0b5;"></span> Durazno pastel</button>
+                                <hr>
+                                <button id="themeBlack" style="font-weight: bold;">🖤 Fondo Negro</button>
+                                <button id="themeWhite" style="font-weight: bold;">🤍 Fondo Blanco</button>
+                                <hr>
+                                <button id="closeAccessibilityMenu" style="color: #999;">✖ Cerrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end mb-2">
+                    <small class="text-muted rate-update">
+                        <i class="far fa-clock"></i> <span id="lastUpdateText">--:--:--</span>
+                    </small>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm rounded-4" role="alert">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-triangle{% else %}info-circle{% endif %} fa-fw"></i>
+                                    <span>{{ message }}</span>
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- SALDO EN TIEMPO REAL -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="saldo-card saldo-bs">
+                            <div class="saldo-label"><i class="fas fa-cash-stack me-1"></i> Saldo en Caja (Bs.)</div>
+                            <div class="saldo-monto" id="saldoBsDisplay">Bs. {{ saldo_bs|default(0)|format_bs }}</div>
+                            <div class="saldo-sub">Actualizado en tiempo real</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="saldo-card saldo-usd">
+                            <div class="saldo-label"><i class="fas fa-currency-dollar me-1"></i> Saldo en Caja (USD)</div>
+                            <div class="saldo-monto" id="saldoUsdDisplay">${{ saldo_usd|default(0)|format_usd_venezuela }}</div>
+                            <div class="saldo-sub">Actualizado en tiempo real</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{{ url_for('historial_caja') }}" class="text-decoration-none">
+                            <div class="saldo-card saldo-movimientos" style="cursor: pointer;">
+                                <div class="saldo-label"><i class="fas fa-clock-history me-1"></i> Historial de Caja</div>
+                                <div class="saldo-monto" style="font-size: 1.8rem;">
+                                    <i class="fas fa-arrow-right"></i> Ver Movimientos
+                                </div>
+                                <div class="saldo-sub">Haz clic para ver el historial completo</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- VENTAS DÍA Y MES -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h2 class="mb-1 fw-semibold fs-6" style="color: #000 !important;"><i class="fas fa-calendar-day me-1"></i> Ventas del Día</h2>
+                                        <p class="stat-number mb-0" id="ventasDiaBs">Bs. {{ total_ventas_dia_bs|default(0)|format_bs }}</p>
+                                        <span class="small fw-medium" id="ventasDiaUsd">$ {{ total_ventas_dia_usd|default(0)|format_usd }} USD</span>
+                                    </div>
+                                    <i class="fas fa-chart-line fa-2x opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h2 class="mb-1 fw-semibold fs-6" style="color: #000 !important;"><i class="fas fa-calendar-alt me-1"></i> Ventas del Mes ({{ mes_actual|default('Enero') }})</h2>
+                                        <p class="stat-number mb-0" id="ventasMesBs">Bs. {{ total_ventas_mes_bs|default(0)|format_bs }}</p>
+                                        <span class="small fw-medium" id="ventasMesUsd">$ {{ total_ventas_mes_usd|default(0)|format_usd }} USD</span>
+                                    </div>
+                                    <i class="fas fa-chart-bar fa-2x opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== PRODUCTO MÁS VENDIDO DEL MES (SOLO DUEÑO) ========== -->
+                {% if session.get('role') == 'Dueño' %}
+                <div class="row g-3 mb-4">
+                    <div class="col-12">
+                        <div class="card top-product-card" style="cursor: default;">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                    <div>
+                                        <div class="top-product-label">
+                                            <i class="fas fa-crown me-1" style="color: #FFD700;"></i> Producto Más Vendido del Mes
+                                        </div>
+                                        {% if top_product_name %}
+                                        <div class="top-product-name">{{ top_product_name }}</div>
+                                        <div class="top-product-meta">
+                                            <i class="fas fa-boxes me-1"></i> {{ top_product_qty|default(0)|format_number }} unidades vendidas
+                                            &nbsp;·&nbsp;
+                                            <i class="fas fa-dollar-sign me-1"></i> $ {{ top_product_total|default(0)|format_usd }} en ingresos
+                                        </div>
+                                        {% else %}
+                                        <div class="top-product-meta">
+                                            <i class="fas fa-info-circle me-1"></i> No hay ventas registradas este mes todavía.
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <span class="badge" style="background: var(--renaven-azul-cielo); border: 1px solid var(--renaven-borde); font-size: 0.75rem; padding: 6px 14px; color: #000 !important;">
+                                        <i class="fas fa-calendar-alt me-1"></i> {{ mes_actual|default('Este mes') }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- ACCESOS RÁPIDOS -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('facturacion') }}" class="text-decoration-none">
+                            <div class="card card-stats h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h3 class="fw-bold mb-0 fs-6" style="color: #000 !important;"><i class="fas fa-shopping-cart me-1"></i>Facturación</h3>
+                                            <p class="mb-0 small" style="color: #000 !important;">Nueva venta</p>
+                                        </div>
+                                        <i class="fas fa-receipt fa-1x opacity-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('inventory') }}" class="text-decoration-none">
+                            <div class="card card-stats h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h3 class="fw-bold mb-0 fs-6" style="color: #000 !important;"><i class="fas fa-boxes me-1"></i>Inventario</h3>
+                                            <p class="mb-0 small" style="color: #000 !important;">Gestionar</p>
+                                        </div>
+                                        <i class="fas fa-cubes fa-1x opacity-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('cash_closure') }}" class="text-decoration-none">
+                            <div class="card card-stats h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h3 class="fw-bold mb-0 fs-6" style="color: #000 !important;"><i class="fas fa-chart-line me-1"></i>Cierre Diario</h3>
+                                            <p class="mb-0 small" style="color: #000 !important;">Resumen</p>
+                                        </div>
+                                        <i class="fas fa-chart-simple fa-1x opacity-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('cash_closure') }}" class="text-decoration-none">
+                            <div class="card card-stats h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h3 class="fw-bold mb-0 fs-6" style="color: #000 !important;"><i class="fas fa-cash-register me-1"></i>Cierre Caja</h3>
+                                            <p class="mb-0 small" style="color: #000 !important;">Finalizar</p>
+                                        </div>
+                                        <i class="fas fa-coins fa-1x opacity-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('opening_balance') }}" class="text-decoration-none">
+                            <div class="card card-stats h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h3 class="fw-bold mb-0 fs-6" style="color: #000 !important;"><i class="fas fa-money-bill-wave me-1"></i>Apertura</h3>
+                                            <p class="mb-0 small" style="color: #000 !important;">Iniciar turno</p>
+                                        </div>
+                                        <i class="fas fa-door-open fa-1x opacity-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('historial_caja') }}" class="text-decoration-none">
+                            <div class="card card-stats h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h3 class="fw-bold mb-0 fs-6" style="color: #000 !important;"><i class="fas fa-wallet me-1"></i>Historial Caja</h3>
+                                            <p class="mb-0 small" style="color: #000 !important;">Ver movimientos</p>
+                                        </div>
+                                        <i class="fas fa-clock-history fa-1x opacity-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('historial_devoluciones') }}" class="text-decoration-none">
+                            <div class="card card-stats h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h3 class="fw-bold mb-0 fs-6" style="color: #000 !important;"><i class="fas fa-undo-alt me-1"></i>Devoluciones</h3>
+                                            <p class="mb-0 small" style="color: #000 !important;">Historial</p>
+                                        </div>
+                                        <i class="fas fa-exchange-alt fa-1x opacity-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('historial_facturacion') }}" class="text-decoration-none">
+                            <div class="card card-stats h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h3 class="fw-bold mb-0 fs-6" style="color: #000 !important;"><i class="fas fa-file-invoice me-1"></i>Historial</h3>
+                                            <p class="mb-0 small" style="color: #000 !important;">Ver facturas</p>
+                                        </div>
+                                        <i class="fas fa-print fa-1x opacity-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- INFORMACIÓN CORPORATIVA Y CONSEJOS -->
+                <div class="row g-3">
+                    <div class="col-lg-7">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h4 class="mb-0 fw-semibold fs-6" style="color: #000 !important;"><i class="fas fa-store me-2"></i> Información Corporativa</h4>
+                            </div>
+                            <div class="card-body p-3">
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <p class="mb-1 small" style="color: #000 !important;"><strong><i class="fas fa-building me-1"></i> Nombre:</strong>
+                                            <span>{{ company.name | default('RENAVEN OAKMONT, C.A.') }}</span>
+                                        </p>
+                                        <p class="mb-1 small" style="color: #000 !important;"><strong><i class="fas fa-id-card me-1"></i> RIF:</strong>
+                                            <span>{{ company.rif | default('J-41323725-3') }}</span>
+                                        </p>
+                                        <p class="mb-1 small" style="color: #000 !important;"><strong><i class="fas fa-map-marker-alt me-1"></i> Dirección:</strong>
+                                            <span>{{ company.address | default('CALLE 1 ANDRES BELLO N°01-06') }}</span>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="mb-1 small" style="color: #000 !important;"><strong><i class="fas fa-phone-alt me-1"></i> Teléfono:</strong>
+                                            <span>{{ company.phone | default('0412-1234567') }}</span>
+                                        </p>
+                                        <p class="mb-1 small" style="color: #000 !important;"><strong><i class="fas fa-envelope me-1"></i> Email:</strong>
+                                            <span>{{ company.email | default('renaven@correo.com') }}</span>
+                                        </p>
+                                        <p class="mb-1 small" style="color: #000 !important;"><strong><i class="fas fa-location-dot me-1"></i> Ubicación:</strong>
+                                            <span>{{ company.parish | default('Punta Cardon') }}, {{ company.city | default('Punto Fijo') }}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h4 class="mb-0 fw-semibold fs-6" style="color: #000 !important;"><i class="fas fa-lightbulb me-2"></i> Consejos Rápidos</h4>
+                            </div>
+                            <div class="card-body p-3">
+                                <div class="d-flex flex-column gap-2">
+                                    <div class="d-flex gap-2 align-items-start small" style="color: #000 !important;">
+                                        <i class="fas fa-cash-register"></i>
+                                        <div><strong>Cierre de Caja</strong> — Al final del día, registre el cierre.</div>
+                                    </div>
+                                    <div class="d-flex gap-2 align-items-start small" style="color: #000 !important;">
+                                        <i class="fas fa-door-open"></i>
+                                        <div><strong>Apertura de Caja</strong> — Inicie un nuevo turno.</div>
+                                    </div>
+                                    <div class="d-flex gap-2 align-items-start small" style="color: #000 !important;">
+                                        <i class="fas fa-wallet"></i>
+                                        <div><strong>Saldo en Tiempo Real</strong> — Vea el saldo actualizado al instante.</div>
+                                    </div>
+                                    <div class="d-flex gap-2 align-items-start small" style="color: #000 !important;">
+                                        <i class="fas fa-user-shield"></i>
+                                        <div><strong>Permisos</strong> — Solo Dueño o Supervisor pueden cerrar caja.</div>
+                                    </div>
+                                    <div class="d-flex gap-2 align-items-start small" style="color: #000 !important;">
+                                        <i class="fas fa-key"></i>
+                                        <div><strong>Seguridad</strong> — Contraseñas mínimo 16 caracteres.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-secondary mt-3 d-flex align-items-center gap-2 flex-wrap small" style="color: #000 !important;">
+                    <i class="fas fa-info-circle"></i>
+                    <div class="flex-grow-1">
+                        <strong>💡 Recordatorio:</strong> Tasa actualizada en tiempo real desde el BCV. El saldo de caja se actualiza automáticamente con cada venta y devolución.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== ACCESIBILIDAD GLOBAL ==========
+        (function() {
+            var savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                document.documentElement.classList.add(savedTheme);
+            }
+            var savedBg = localStorage.getItem('backgroundMode');
+            if (savedBg === 'black') document.documentElement.classList.add('bg-black-solid');
+            if (savedBg === 'white') document.documentElement.classList.add('bg-white-solid');
+            var savedFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            document.documentElement.style.fontSize = (13 * savedFontSize / 100) + 'px';
+        })();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // ========== FUNCIONES DE ACCESIBILIDAD ==========
+            function applyTheme(themeClass) {
+                document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                document.documentElement.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                if (themeClass) {
+                    document.body.classList.add(themeClass);
+                    document.documentElement.classList.add(themeClass);
+                }
+                localStorage.setItem('selectedTheme', themeClass || '');
+            }
+
+            function applyBackground(mode) {
+                document.body.classList.remove('bg-black-solid', 'bg-white-solid');
+                if (mode === 'black') document.body.classList.add('bg-black-solid');
+                if (mode === 'white') document.body.classList.add('bg-white-solid');
+                localStorage.setItem('backgroundMode', mode || '');
+            }
+
+            // ---- Menú desplegable ----
+            var toggleBtn = document.getElementById('accessibilityToggle');
+            var menu = document.getElementById('accessibilityMenu');
+            var closeMenuBtn = document.getElementById('closeAccessibilityMenu');
+
+            function toggleMenu(e) {
+                e.stopPropagation();
+                menu.classList.toggle('show');
+            }
+
+            if (toggleBtn) toggleBtn.addEventListener('click', toggleMenu);
+            if (closeMenuBtn) closeMenuBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                menu.classList.remove('show');
+            });
+
+            document.addEventListener('click', function(e) {
+                var container = document.querySelector('.accessibility-dropdown');
+                if (container && !container.contains(e.target)) {
+                    if (menu) menu.classList.remove('show');
+                }
+            });
+
+            // ---- Botones de temas ----
+            document.getElementById('themeOriginal').addEventListener('click', function() {
+                applyTheme(null); menu.classList.remove('show');
+            });
+            document.getElementById('themeRosa').addEventListener('click', function() {
+                applyTheme('theme-rosa'); menu.classList.remove('show');
+            });
+            document.getElementById('themeCeleste').addEventListener('click', function() {
+                applyTheme('theme-celeste'); menu.classList.remove('show');
+            });
+            document.getElementById('themeMenta').addEventListener('click', function() {
+                applyTheme('theme-menta'); menu.classList.remove('show');
+            });
+            document.getElementById('themeAmarillo').addEventListener('click', function() {
+                applyTheme('theme-amarillo'); menu.classList.remove('show');
+            });
+            document.getElementById('themeLila').addEventListener('click', function() {
+                applyTheme('theme-lila'); menu.classList.remove('show');
+            });
+            document.getElementById('themeDurazno').addEventListener('click', function() {
+                applyTheme('theme-durazno'); menu.classList.remove('show');
+            });
+            document.getElementById('themeBlack').addEventListener('click', function() {
+                applyBackground('black'); menu.classList.remove('show');
+            });
+            document.getElementById('themeWhite').addEventListener('click', function() {
+                applyBackground('white'); menu.classList.remove('show');
+            });
+
+            // Cargar tema y fondo guardado
+            var savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) applyTheme(savedTheme);
+
+            var savedBg = localStorage.getItem('backgroundMode');
+            if (savedBg) applyBackground(savedBg);
+
+            // ---- Tamaño de fuente ----
+            var currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            function applyFontSize() {
+                document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                document.documentElement.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+            document.getElementById('increaseFontBtn').addEventListener('click', function() {
+                if (currentFontSize < 150) { currentFontSize += 10; applyFontSize(); }
+            });
+            document.getElementById('decreaseFontBtn').addEventListener('click', function() {
+                if (currentFontSize > 70) { currentFontSize -= 10; applyFontSize(); }
+            });
+            document.getElementById('resetFontBtn').addEventListener('click', function() {
+                currentFontSize = 100; applyFontSize();
+            });
+            applyFontSize();
+
+            // ========== FUNCIONALIDAD DE TASA Y SALDO ==========
+            let currentRate = parseFloat("{{ exchange_rate|default(40)|replace(',', '.') }}");
+            let ventasDiaBs = parseFloat("{{ total_ventas_dia_bs|default(0)|replace(',', '.') }}");
+            let ventasMesBs = parseFloat("{{ total_ventas_mes_bs|default(0)|replace(',', '.') }}");
+            let saldoBs = parseFloat("{{ saldo_bs|default(0)|replace(',', '.') }}");
+            let saldoUsd = parseFloat("{{ saldo_usd|default(0)|replace(',', '.') }}");
+
+            function formatNumber(num, decimals = 2) {
+                if (isNaN(num)) num = 0;
+                return num.toLocaleString('es-VE', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+            }
+            function formatBs(num) {
+                if (isNaN(num)) num = 0;
+                return 'Bs. ' + formatNumber(num, 2);
+            }
+            function formatUsdVenezuela(num) {
+                if (isNaN(num)) num = 0;
+                return '$' + formatNumber(num, 2);
+            }
+
+            function updateUSDAmounts() {
+                var ventasDiaUsd = ventasDiaBs / currentRate;
+                var ventasMesUsd = ventasMesBs / currentRate;
+                var saldoUsdCalculado = saldoBs / currentRate;
+                document.getElementById('ventasDiaUsd').innerHTML = '$ ' + formatNumber(ventasDiaUsd) + ' USD';
+                document.getElementById('ventasMesUsd').innerHTML = '$ ' + formatNumber(ventasMesUsd) + ' USD';
+                document.getElementById('exchangeRateValue').innerHTML = formatNumber(currentRate, 4);
+                document.getElementById('saldoBsDisplay').innerHTML = formatBs(saldoBs);
+                document.getElementById('saldoUsdDisplay').innerHTML = formatUsdVenezuela(saldoUsdCalculado);
+            }
+
+            async function fetchSaldoActual() {
+                try {
+                    var response = await fetch('/api/saldo_actual', {
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    var data = await response.json();
+                    if (data.success) {
+                        saldoBs = parseFloat(data.saldo_bs) || 0;
+                        saldoUsd = parseFloat(data.saldo_usd) || 0;
+                        updateUSDAmounts();
+                        return true;
+                    }
+                    return false;
+                } catch (error) {
+                    console.error('Error obteniendo saldo:', error.message);
+                    return false;
+                }
+            }
+
+            async function fetchBCVRate() {
+                var rateBadge = document.getElementById('rateBadge');
+                var refreshBtn = document.getElementById('refreshRateBtn');
+                var lastUpdateText = document.getElementById('lastUpdateText');
+                if (rateBadge) rateBadge.classList.add('rate-loading');
+                if (refreshBtn) refreshBtn.style.opacity = '0.5';
+                try {
+                    var controller = new AbortController();
+                    var timeoutId = setTimeout(function() { controller.abort(); }, 10000);
+                    var response = await fetch('/api/bcv-rate', {
+                        signal: controller.signal,
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    clearTimeout(timeoutId);
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    var data = await response.json();
+                    if (data.success && data.rate && data.rate > 0) {
+                        var newRate = parseFloat(data.rate);
+                        if (!isNaN(newRate) && newRate > 0 && newRate < 1000000) {
+                            currentRate = newRate;
+                            localStorage.setItem('bcvRate', currentRate);
+                            localStorage.setItem('bcvRateDate', data.last_update || new Date().toISOString());
+                            document.getElementById('exchangeRateValue').innerHTML = formatNumber(currentRate, 4);
+                            lastUpdateText.innerHTML = new Date().toLocaleTimeString('es-VE');
+                            updateUSDAmounts();
+                            return true;
+                        }
+                    }
+                    throw new Error(data.error || 'Tasa no disponible');
+                } catch (error) {
+                    console.error('❌ Error obteniendo tasa:', error.message);
+                    var savedRate = localStorage.getItem('bcvRate');
+                    if (savedRate && !isNaN(parseFloat(savedRate))) {
+                        currentRate = parseFloat(savedRate);
+                        var savedDate = localStorage.getItem('bcvRateDate');
+                        if (lastUpdateText) {
+                            lastUpdateText.innerHTML = savedDate ? '(guardada) ' + new Date(savedDate).toLocaleTimeString('es-VE') : '(guardada)';
+                        }
+                        updateUSDAmounts();
+                        return false;
+                    }
+                    var fallbackRate = parseFloat("{{ exchange_rate|default(40)|replace(',', '.') }}");
+                    if (!isNaN(fallbackRate) && fallbackRate > 0 && currentRate !== fallbackRate) {
+                        currentRate = fallbackRate;
+                        if (lastUpdateText) lastUpdateText.innerHTML = '(tasa guardada)';
+                        updateUSDAmounts();
+                    }
+                    return false;
+                } finally {
+                    if (rateBadge) rateBadge.classList.remove('rate-loading');
+                    if (refreshBtn) refreshBtn.style.opacity = '1';
+                }
+            }
+
+            async function refreshRate() {
+                var refreshBtn = document.getElementById('refreshRateBtn');
+                if (!refreshBtn) return;
+                var originalHTML = refreshBtn.innerHTML;
+                refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                refreshBtn.disabled = true;
+                await fetchBCVRate();
+                refreshBtn.innerHTML = originalHTML;
+                refreshBtn.disabled = false;
+                var rateBadge = document.getElementById('rateBadge');
+                if (rateBadge) {
+                    rateBadge.style.transform = 'scale(1.05)';
+                    setTimeout(function() { rateBadge.style.transform = ''; }, 300);
+                }
+            }
+
+            document.querySelectorAll('.alert-dismissible').forEach(function(alert) {
+                setTimeout(function() {
+                    var closeBtn = alert.querySelector('.btn-close');
+                    if (closeBtn) closeBtn.click();
+                }, 4800);
+            });
+
+            document.querySelectorAll('.card-stats').forEach(function(card) {
+                card.addEventListener('click', function() {
+                    this.style.transform = 'scale(0.98)';
+                    setTimeout(function() { card.style.transform = ''; }, 120);
+                });
+            });
+
+            var lastUpdateText = document.getElementById('lastUpdateText');
+            if (lastUpdateText) lastUpdateText.innerHTML = new Date().toLocaleTimeString('es-VE');
+
+            var savedRate = localStorage.getItem('bcvRate');
+            if (savedRate && !isNaN(parseFloat(savedRate))) {
+                currentRate = parseFloat(savedRate);
+                updateUSDAmounts();
+            }
+
+            fetchBCVRate();
+            fetchSaldoActual();
+            setInterval(function() { fetchSaldoActual(); }, 30000);
+            setInterval(function() { fetchBCVRate(); }, 300000);
+            document.getElementById('refreshRateBtn').addEventListener('click', refreshRate);
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

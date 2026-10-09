@@ -1,0 +1,1871 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>RENAVEN - Iniciar Sesión</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ========== PALETA PREDETERMINADA (ORIGINAL) ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+        }
+
+        /* ========== TEMAS PASTEL INDIVIDUALES ========== */
+        body.theme-rosa {
+            --renaven-azul-fuerte: #fbc4d5;
+            --renaven-azul-cielo: #fce4ec;
+            --renaven-blanco: #fef9f0;
+            --renaven-gris-fondo: #fdf6f8;
+            --renaven-borde: #fbc4d5;
+        }
+        body.theme-rosa .accessibility-btn { background: #fbc4d5; border-color: #fdd0b5; }
+        body.theme-rosa .accessibility-btn:hover { background: #fdd0b5; }
+        body.theme-rosa .daily-badge { background: #fbc4d5; }
+        body.theme-rosa .btn-login { background: #fbc4d5; }
+        body.theme-rosa .btn-login:hover { background: #fdd0b5; }
+        body.theme-rosa .motivational-panel .quote-author { color: #fbc4d5; }
+        body.theme-rosa .login-wrapper { border-color: #fbc4d5; }
+        body.theme-rosa .refresh-quote:hover { background: #fbc4d5; border-color: #fbc4d5; }
+        body.theme-rosa .captcha-container { border-color: #fbc4d5; }
+        body.theme-rosa .chat-header { background: #fbc4d5; border-bottom-color: #fdd0b5; }
+        body.theme-rosa .chat-toggle-btn { background: #fbc4d5; }
+        body.theme-rosa .chat-toggle-btn:hover { background: #fdd0b5; }
+        body.theme-rosa .accessibility-menu { border-color: #fbc4d5; }
+        body.theme-rosa .form-control:focus { border-color: #fbc4d5; box-shadow: 0 0 0 0.2rem rgba(251,196,213,0.4); }
+        body.theme-rosa .captcha-refresh-btn:hover { background: #fbc4d5; }
+
+        body.theme-celeste {
+            --renaven-azul-fuerte: #b5d8eb;
+            --renaven-azul-cielo: #d6ecf5;
+            --renaven-blanco: #f9fdff;
+            --renaven-gris-fondo: #f4faff;
+            --renaven-borde: #b5d8eb;
+        }
+        body.theme-celeste .accessibility-btn { background: #b5d8eb; border-color: #a8d0e6; }
+        body.theme-celeste .accessibility-btn:hover { background: #a8d0e6; }
+        body.theme-celeste .daily-badge { background: #b5d8eb; }
+        body.theme-celeste .btn-login { background: #b5d8eb; }
+        body.theme-celeste .btn-login:hover { background: #a8d0e6; }
+        body.theme-celeste .motivational-panel .quote-author { color: #b5d8eb; }
+        body.theme-celeste .login-wrapper { border-color: #b5d8eb; }
+        body.theme-celeste .refresh-quote:hover { background: #b5d8eb; border-color: #b5d8eb; }
+        body.theme-celeste .captcha-container { border-color: #b5d8eb; }
+        body.theme-celeste .chat-header { background: #b5d8eb; border-bottom-color: #a8d0e6; }
+        body.theme-celeste .chat-toggle-btn { background: #b5d8eb; }
+        body.theme-celeste .chat-toggle-btn:hover { background: #a8d0e6; }
+        body.theme-celeste .accessibility-menu { border-color: #b5d8eb; }
+        body.theme-celeste .form-control:focus { border-color: #b5d8eb; box-shadow: 0 0 0 0.2rem rgba(181,216,235,0.4); }
+        body.theme-celeste .captcha-refresh-btn:hover { background: #b5d8eb; }
+
+        body.theme-menta {
+            --renaven-azul-fuerte: #b5e6c3;
+            --renaven-azul-cielo: #d8f0e0;
+            --renaven-blanco: #f6fcf8;
+            --renaven-gris-fondo: #f2faf5;
+            --renaven-borde: #b5e6c3;
+        }
+        body.theme-menta .accessibility-btn { background: #b5e6c3; border-color: #a8dbb8; }
+        body.theme-menta .accessibility-btn:hover { background: #a8dbb8; }
+        body.theme-menta .daily-badge { background: #b5e6c3; }
+        body.theme-menta .btn-login { background: #b5e6c3; }
+        body.theme-menta .btn-login:hover { background: #a8dbb8; }
+        body.theme-menta .motivational-panel .quote-author { color: #b5e6c3; }
+        body.theme-menta .login-wrapper { border-color: #b5e6c3; }
+        body.theme-menta .refresh-quote:hover { background: #b5e6c3; border-color: #b5e6c3; }
+        body.theme-menta .captcha-container { border-color: #b5e6c3; }
+        body.theme-menta .chat-header { background: #b5e6c3; border-bottom-color: #a8dbb8; }
+        body.theme-menta .chat-toggle-btn { background: #b5e6c3; }
+        body.theme-menta .chat-toggle-btn:hover { background: #a8dbb8; }
+        body.theme-menta .accessibility-menu { border-color: #b5e6c3; }
+        body.theme-menta .form-control:focus { border-color: #b5e6c3; box-shadow: 0 0 0 0.2rem rgba(181,230,195,0.4); }
+        body.theme-menta .captcha-refresh-btn:hover { background: #b5e6c3; }
+
+        body.theme-amarillo {
+            --renaven-azul-fuerte: #f9e7b2;
+            --renaven-azul-cielo: #fdf3d5;
+            --renaven-blanco: #fffef9;
+            --renaven-gris-fondo: #fefcf5;
+            --renaven-borde: #f9e7b2;
+        }
+        body.theme-amarillo .accessibility-btn { background: #f9e7b2; border-color: #f5dc9a; }
+        body.theme-amarillo .accessibility-btn:hover { background: #f5dc9a; }
+        body.theme-amarillo .daily-badge { background: #f9e7b2; }
+        body.theme-amarillo .btn-login { background: #f9e7b2; }
+        body.theme-amarillo .btn-login:hover { background: #f5dc9a; }
+        body.theme-amarillo .motivational-panel .quote-author { color: #f9e7b2; }
+        body.theme-amarillo .login-wrapper { border-color: #f9e7b2; }
+        body.theme-amarillo .refresh-quote:hover { background: #f9e7b2; border-color: #f9e7b2; }
+        body.theme-amarillo .captcha-container { border-color: #f9e7b2; }
+        body.theme-amarillo .chat-header { background: #f9e7b2; border-bottom-color: #f5dc9a; }
+        body.theme-amarillo .chat-toggle-btn { background: #f9e7b2; }
+        body.theme-amarillo .chat-toggle-btn:hover { background: #f5dc9a; }
+        body.theme-amarillo .accessibility-menu { border-color: #f9e7b2; }
+        body.theme-amarillo .form-control:focus { border-color: #f9e7b2; box-shadow: 0 0 0 0.2rem rgba(249,231,178,0.4); }
+        body.theme-amarillo .captcha-refresh-btn:hover { background: #f9e7b2; }
+
+        body.theme-lila {
+            --renaven-azul-fuerte: #d4c4f0;
+            --renaven-azul-cielo: #e8defa;
+            --renaven-blanco: #fcfaff;
+            --renaven-gris-fondo: #f8f5fe;
+            --renaven-borde: #d4c4f0;
+        }
+        body.theme-lila .accessibility-btn { background: #d4c4f0; border-color: #c9b7e8; }
+        body.theme-lila .accessibility-btn:hover { background: #c9b7e8; }
+        body.theme-lila .daily-badge { background: #d4c4f0; }
+        body.theme-lila .btn-login { background: #d4c4f0; }
+        body.theme-lila .btn-login:hover { background: #c9b7e8; }
+        body.theme-lila .motivational-panel .quote-author { color: #d4c4f0; }
+        body.theme-lila .login-wrapper { border-color: #d4c4f0; }
+        body.theme-lila .refresh-quote:hover { background: #d4c4f0; border-color: #d4c4f0; }
+        body.theme-lila .captcha-container { border-color: #d4c4f0; }
+        body.theme-lila .chat-header { background: #d4c4f0; border-bottom-color: #c9b7e8; }
+        body.theme-lila .chat-toggle-btn { background: #d4c4f0; }
+        body.theme-lila .chat-toggle-btn:hover { background: #c9b7e8; }
+        body.theme-lila .accessibility-menu { border-color: #d4c4f0; }
+        body.theme-lila .form-control:focus { border-color: #d4c4f0; box-shadow: 0 0 0 0.2rem rgba(212,196,240,0.4); }
+        body.theme-lila .captcha-refresh-btn:hover { background: #d4c4f0; }
+
+        body.theme-durazno {
+            --renaven-azul-fuerte: #fdd0b5;
+            --renaven-azul-cielo: #fee5d0;
+            --renaven-blanco: #fffcf9;
+            --renaven-gris-fondo: #fef8f3;
+            --renaven-borde: #fdd0b5;
+        }
+        body.theme-durazno .accessibility-btn { background: #fdd0b5; border-color: #f5c2a4; }
+        body.theme-durazno .accessibility-btn:hover { background: #f5c2a4; }
+        body.theme-durazno .daily-badge { background: #fdd0b5; }
+        body.theme-durazno .btn-login { background: #fdd0b5; }
+        body.theme-durazno .btn-login:hover { background: #f5c2a4; }
+        body.theme-durazno .motivational-panel .quote-author { color: #fdd0b5; }
+        body.theme-durazno .login-wrapper { border-color: #fdd0b5; }
+        body.theme-durazno .refresh-quote:hover { background: #fdd0b5; border-color: #fdd0b5; }
+        body.theme-durazno .captcha-container { border-color: #fdd0b5; }
+        body.theme-durazno .chat-header { background: #fdd0b5; border-bottom-color: #f5c2a4; }
+        body.theme-durazno .chat-toggle-btn { background: #fdd0b5; }
+        body.theme-durazno .chat-toggle-btn:hover { background: #f5c2a4; }
+        body.theme-durazno .accessibility-menu { border-color: #fdd0b5; }
+        body.theme-durazno .form-control:focus { border-color: #fdd0b5; box-shadow: 0 0 0 0.2rem rgba(253,208,181,0.4); }
+        body.theme-durazno .captcha-refresh-btn:hover { background: #fdd0b5; }
+
+        /* ========== TODAS LAS LETRAS EN NEGRITA (excepto iconos) ========== */
+        *:not([class*="fa-"]) {
+            font-weight: bold !important;
+        }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+            font-weight: 400 !important;
+        }
+        .fas, .fa-solid {
+            font-weight: 900 !important;
+        }
+
+        /* ========== FUERZA TODOS LOS TEXTOS A NEGRO ========== */
+        body, p, span, div, h1, h2, h3, h4, h5, h6,
+        .card, .card-header, .card-body, .form-label,
+        .form-control, .alert, .text-muted, small,
+        .text-center a, .text-white-50,
+        .btn-login, .btn-login:hover, .btn, .btn:hover,
+        .quote-text, .quote-author, .quote-source,
+        .quote-timer, .quote-counter, .daily-badge,
+        .captcha-header, .captcha-help, .motivational-panel *,
+        .login-wrapper *, .navbar *, .accessibility-menu *,
+        .chat-header *, .chat-message, .chat-input-area *,
+        .refresh-quote, .refresh-quote:hover,
+        .logo-container h1, .logo-container p,
+        .text-center a, .text-center a:hover,
+        .btn-close, .btn-close:hover,
+        .form-control::placeholder {
+            color: #000000 !important;
+        }
+
+        ::placeholder, input::placeholder, textarea::placeholder {
+            color: #9ca3af !important;
+            opacity: 1;
+        }
+
+        body {
+            background-image: url("{{ url_for('static', filename='img/fereteria.jpeg') }}");
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            position: relative;
+            transition: background-image 0.3s ease, background-color 0.3s ease;
+            margin: 0;
+            font-size: 13px;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.4);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ========== MARCA DE AGUA "JJ" - CREADOR DEL CÓDIGO ========== */
+        body::after {
+            content: "JJ";
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-25deg);
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 30vw;
+            font-weight: 900 !important;
+            color: rgba(0, 0, 0, 0.04);
+            letter-spacing: 0.05em;
+            pointer-events: none;
+            user-select: none;
+            z-index: 0;
+            white-space: nowrap;
+            line-height: 1;
+        }
+
+        body.bg-black-solid {
+            background-image: none !important;
+            background-color: #000000 !important;
+        }
+        body.bg-black-solid::before { display: none; }
+        body.bg-black-solid::after { color: rgba(255, 255, 255, 0.05); }
+
+        body.bg-white-solid {
+            background-image: none !important;
+            background-color: #FFFFFF !important;
+        }
+        body.bg-white-solid::before { display: none; }
+        body.bg-white-solid::after { color: rgba(0, 0, 0, 0.04); }
+
+        body.bg-image-default {
+            background-image: url("{{ url_for('static', filename='img/fereteria.jpeg') }}") !important;
+            background-size: cover !important;
+            background-position: center center !important;
+            background-repeat: no-repeat !important;
+            background-attachment: fixed !important;
+        }
+        body.bg-image-default::before { display: block; }
+
+        *:focus {
+            outline: 3px solid #FFD700 !important;
+            outline-offset: 2px !important;
+        }
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--renaven-azul-fuerte);
+            color: white;
+            padding: 8px 16px;
+            z-index: 1000;
+            text-decoration: none;
+            border-radius: 0 0 8px 0;
+            font-weight: bold;
+        }
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* ========== BOTÓN Y MENÚ DE ACCESIBILIDAD ========== */
+        .accessibility-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 999;
+            background: var(--renaven-azul-fuerte);
+            color: #000 !important;
+            border: 2px solid var(--renaven-azul-cielo);
+            border-radius: 50px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+        .accessibility-btn:hover {
+            background: var(--renaven-azul-cielo);
+            transform: scale(1.05);
+        }
+
+        .accessibility-menu {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            z-index: 999;
+            background: var(--renaven-blanco);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 10px;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 200px;
+            max-width: 300px;
+            border: 1px solid var(--renaven-azul-cielo);
+        }
+        .accessibility-menu button {
+            background: none;
+            border: none;
+            padding: 8px 12px;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #000 !important;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .accessibility-menu button:hover {
+            background: var(--renaven-azul-cielo);
+        }
+        .accessibility-menu .color-circle {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 1px solid #ccc;
+            flex-shrink: 0;
+        }
+        .accessibility-menu hr {
+            margin: 5px 0;
+        }
+        .accessibility-menu input[type="text"] {
+            width: 100%;
+            padding: 6px 10px;
+            border-radius: 50px;
+            border: 1px solid var(--renaven-azul-cielo);
+            font-size: 12px;
+        }
+        .accessibility-menu .api-key-status {
+            font-size: 11px;
+            color: #555;
+            padding: 0 8px;
+        }
+
+        /* ========== ROBOT FLOTANTE Y BURBUJA DE BIENVENIDA ========== */
+        .chat-toggle-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            z-index: 999;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: var(--renaven-azul-fuerte);
+            border: 3px solid var(--renaven-azul-cielo);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: #000 !important;
+            animation: float 3s ease-in-out infinite;
+        }
+        .chat-toggle-btn:hover {
+            transform: scale(1.1);
+            background: var(--renaven-azul-cielo);
+        }
+        .chat-toggle-btn i {
+            color: #000 !important;
+        }
+        .chat-toggle-btn .chat-tooltip {
+            display: none;
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white !important;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            white-space: nowrap;
+            font-weight: normal !important;
+        }
+        .chat-toggle-btn:hover .chat-tooltip {
+            display: block;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Burbuja de bienvenida */
+        .welcome-bubble {
+            position: fixed;
+            bottom: 110px;
+            left: 100px;
+            z-index: 998;
+            background: var(--renaven-blanco);
+            border: 2px solid var(--renaven-azul-cielo);
+            border-radius: 20px;
+            padding: 16px 20px;
+            max-width: 320px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            display: none;
+            animation: fadeInUp 0.5s ease;
+            backdrop-filter: blur(6px);
+            transition: opacity 0.3s ease;
+        }
+        .welcome-bubble.show {
+            display: block;
+        }
+        .welcome-bubble p {
+            margin: 0;
+            font-size: 0.95rem;
+            color: #000 !important;
+            line-height: 1.5;
+        }
+        .welcome-bubble .close-bubble {
+            position: absolute;
+            top: 6px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.2s;
+        }
+        .welcome-bubble .close-bubble:hover {
+            color: #333;
+        }
+        .welcome-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 30px;
+            border-width: 12px 12px 0 12px;
+            border-style: solid;
+            border-color: var(--renaven-azul-cielo) transparent transparent transparent;
+        }
+        .welcome-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -9px;
+            left: 33px;
+            border-width: 9px 9px 0 9px;
+            border-style: solid;
+            border-color: var(--renaven-blanco) transparent transparent transparent;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ========== CHAT CONTAINER ========== */
+        .chat-container {
+            position: fixed;
+            bottom: 100px;
+            left: 110px;
+            z-index: 999;
+            width: 380px;
+            max-width: calc(100vw - 40px);
+            background: rgba(252, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            border: 1px solid var(--renaven-azul-cielo);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            max-height: 520px;
+            transition: all 0.3s ease;
+        }
+        .chat-container.open {
+            display: flex;
+        }
+        .chat-header {
+            background: var(--renaven-azul-fuerte);
+            color: #000 !important;
+            padding: 12px 16px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--renaven-azul-cielo);
+        }
+        .chat-header h6 {
+            margin: 0;
+            color: #000 !important;
+            font-size: 0.95rem;
+        }
+        .chat-header .close-chat {
+            background: none;
+            border: none;
+            color: #000 !important;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 12px 16px;
+            overflow-y: auto;
+            max-height: 350px;
+            background: rgba(252, 255, 255, 0.6);
+            color: #000 !important;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .chat-message {
+            padding: 8px 12px;
+            border-radius: 12px;
+            max-width: 90%;
+            word-wrap: break-word;
+            font-size: 0.9rem;
+            color: #000 !important;
+            animation: fadeInChat 0.3s ease;
+            line-height: 1.5;
+        }
+        .chat-message.bot {
+            background: var(--renaven-azul-cielo);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .chat-message.user {
+            background: var(--renaven-azul-fuerte);
+            color: #000 !important;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        @keyframes fadeInChat {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chat-input-area {
+            display: flex;
+            padding: 8px 12px;
+            gap: 8px;
+            border-top: 1px solid var(--renaven-azul-cielo);
+            background: rgba(252, 255, 255, 0.8);
+        }
+        .chat-input-area input {
+            flex: 1;
+            border: 1px solid var(--renaven-azul-cielo);
+            border-radius: 50px;
+            padding: 8px 14px;
+            font-size: 0.85rem;
+            color: #000 !important;
+            background: white;
+            outline: none;
+        }
+        .chat-input-area input:focus {
+            border-color: var(--renaven-azul-fuerte);
+        }
+        .chat-input-area button {
+            background: var(--renaven-azul-fuerte);
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            color: #000 !important;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-input-area button:hover {
+            background: var(--renaven-azul-cielo);
+        }
+
+        /* ========== CONTENEDOR PRINCIPAL ========== */
+        .login-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            max-width: 1100px;
+            width: 100%;
+            background: rgba(252, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 30px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            border: 2px solid var(--renaven-azul-cielo);
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+
+        .login-card {
+            flex: 1 1 400px;
+            background: var(--renaven-blanco);
+            border-radius: 20px;
+            padding: 35px 30px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(132, 182, 244, 0.15);
+        }
+
+        /* ========== PANEL MOTIVACIONAL ========== */
+        .motivational-panel {
+            flex: 1 1 320px;
+            border-radius: 20px;
+            padding: 30px 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 420px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(132, 182, 244, 0.15);
+            background-color: rgba(252, 255, 255, 0.75);
+            backdrop-filter: blur(6px);
+            transition: all 0.3s;
+        }
+        .motivational-panel::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("{{ url_for('static', filename='img/fereteria.jpeg') }}");
+            background-size: cover;
+            background-position: center;
+            opacity: 0.12;
+            z-index: 0;
+        }
+        .motivational-panel::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(252, 255, 255, 0.15);
+            z-index: 1;
+            backdrop-filter: blur(2px);
+        }
+        .motivational-panel>* {
+            position: relative;
+            z-index: 2;
+        }
+
+        .motivational-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--renaven-azul-cielo);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 12px;
+            background: white;
+        }
+
+        .daily-badge {
+            display: inline-block;
+            background: var(--renaven-azul-fuerte);
+            color: #000 !important;
+            font-size: 0.85rem !important;
+            font-weight: 700;
+            padding: 6px 20px;
+            border-radius: 50px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .motivational-panel .quote-text {
+            font-size: 1.5rem !important;
+            line-height: 1.8;
+            font-weight: 600;
+            color: #000 !important;
+            margin-bottom: 14px;
+            font-style: italic;
+            text-shadow: 0 1px 4px rgba(255, 255, 255, 0.9);
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 10px;
+            transition: opacity 0.3s ease;
+        }
+        .motivational-panel .quote-text.loading {
+            opacity: 0.5;
+        }
+
+        .motivational-panel .quote-author {
+            font-size: 1.2rem !important;
+            font-weight: 700;
+            color: var(--renaven-azul-fuerte);
+            opacity: 0.95;
+            text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9);
+            margin-bottom: 6px;
+        }
+
+        .motivational-panel .quote-source {
+            font-size: 0.95rem !important;
+            opacity: 0.7;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9);
+            margin-bottom: 6px;
+        }
+
+        .refresh-quote {
+            margin-top: 18px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(4px);
+            border: 2px solid var(--renaven-azul-cielo);
+            border-radius: 50px;
+            padding: 10px 32px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem !important;
+            color: var(--renaven-azul-fuerte);
+            font-weight: 700;
+        }
+        .refresh-quote:hover {
+            background: var(--renaven-azul-fuerte);
+            color: white !important;
+            border-color: var(--renaven-azul-fuerte);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(132, 182, 244, 0.25);
+        }
+
+        .quote-timer {
+            font-size: 0.95rem !important;
+            opacity: 0.7;
+            margin-top: 12px;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9);
+        }
+        .quote-counter {
+            font-size: 0.9rem !important;
+            opacity: 0.6;
+            margin-top: 4px;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9);
+        }
+
+        /* ========== LOGIN CARD ========== */
+        .logo-container {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .logo-container img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            border: 3px solid var(--renaven-azul-cielo);
+            background: var(--renaven-blanco);
+        }
+        .logo-container h1 {
+            color: #000 !important;
+            font-weight: bold;
+            margin-top: 12px;
+            margin-bottom: 2px;
+            font-size: 1.5rem;
+        }
+        .logo-container p {
+            color: #000 !important;
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #000 !important;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
+        .form-label i {
+            color: var(--renaven-azul-fuerte);
+            margin-right: 8px;
+        }
+
+        .form-control {
+            border-radius: 50px;
+            border: 2px solid var(--renaven-azul-cielo);
+            padding: 12px 20px;
+            transition: all 0.3s ease;
+            background: var(--renaven-blanco);
+            color: #000 !important;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+        .form-control:focus {
+            border-color: var(--renaven-azul-fuerte);
+            box-shadow: 0 0 0 0.2rem rgba(132, 182, 244, 0.25);
+            outline: none;
+        }
+        .form-control::placeholder {
+            color: #9ca3af !important;
+            opacity: 1;
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--renaven-azul-fuerte);
+            background: var(--renaven-blanco);
+            padding: 0 5px;
+        }
+        .toggle-password:hover {
+            color: var(--renaven-azul-cielo);
+        }
+
+        .captcha-container {
+            background: var(--renaven-gris-fondo);
+            border-radius: 15px;
+            padding: 12px;
+            border: 1px solid var(--renaven-azul-cielo);
+            margin-bottom: 20px;
+        }
+        .captcha-header {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #000 !important;
+        }
+        .captcha-header i {
+            color: var(--renaven-azul-fuerte);
+            margin-right: 5px;
+        }
+        .captcha-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .captcha-image-box {
+            flex-shrink: 0;
+            cursor: pointer;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #ddd;
+            background: white;
+            line-height: 0;
+        }
+        .captcha-image-box img {
+            width: 130px;
+            height: 40px;
+            object-fit: cover;
+        }
+        .captcha-input-box {
+            flex: 1;
+            min-width: 120px;
+        }
+        .captcha-input-box input {
+            border-radius: 50px;
+            border: 1px solid var(--renaven-azul-cielo);
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            width: 100%;
+            color: #000 !important;
+            font-family: Arial, sans-serif;
+        }
+        .captcha-input-box input:focus {
+            border-color: var(--renaven-azul-fuerte);
+            outline: none;
+        }
+        .captcha-refresh-btn {
+            flex-shrink: 0;
+            background: var(--renaven-gris-fondo);
+            border: 1px solid var(--renaven-azul-cielo);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--renaven-azul-fuerte);
+        }
+        .captcha-refresh-btn:hover {
+            background: var(--renaven-azul-fuerte);
+            color: white;
+            transform: rotate(180deg);
+        }
+        .captcha-help {
+            font-size: 0.7rem;
+            color: #000 !important;
+            margin-top: 8px;
+            text-align: center;
+            opacity: 0.7;
+        }
+
+        .btn-login {
+            background: var(--renaven-azul-fuerte);
+            border: none;
+            width: 100%;
+            padding: 12px;
+            font-weight: bold;
+            font-size: 1rem;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            color: #000 !important;
+            margin-top: 10px;
+            font-family: Arial, sans-serif;
+        }
+        .btn-login:hover {
+            background: var(--renaven-azul-cielo);
+            color: #000 !important;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(132, 182, 244, 0.3);
+        }
+
+        .alert {
+            border-radius: 15px;
+            animation: fadeIn 0.3s ease;
+            border: none;
+            border-left: 5px solid;
+            color: #000 !important;
+            font-family: Arial, sans-serif;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border-left-color: #DC3545;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left-color: #28a745;
+        }
+        .alert-warning {
+            background: #fff3e0;
+            color: #856404;
+            border-left-color: #FFD700;
+        }
+        .alert-info {
+            background: var(--renaven-gris-fondo);
+            color: #000 !important;
+            border-left-color: var(--renaven-azul-cielo);
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--renaven-azul-cielo), transparent);
+            margin: 20px 0;
+        }
+
+        .text-center a {
+            color: #000 !important;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.05rem !important;
+            transition: all 0.3s ease;
+            font-family: Arial, sans-serif;
+        }
+        .text-center a:hover {
+            color: var(--renaven-azul-fuerte) !important;
+            text-decoration: underline;
+        }
+
+        .text-muted {
+            color: #000 !important;
+            opacity: 0.6;
+        }
+
+        .btn-close {
+            filter: brightness(0.3);
+        }
+        .btn-close:hover {
+            filter: brightness(0.1);
+        }
+
+        /* ========== BOTÓN FLOTANTE DE WHATSAPP ========== */
+        .whatsapp-float {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+            width: 62px;
+            height: 62px;
+            background: #25D366;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            animation: pulseWhatsApp 2.5s ease-in-out infinite;
+        }
+
+        .whatsapp-float:hover {
+            background: #128C7E;
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(37, 211, 102, 0.7);
+        }
+
+        .whatsapp-float i {
+            color: #ffffff !important;
+            font-size: 36px;
+            font-weight: 400 !important;
+        }
+
+        .whatsapp-float .wa-tooltip {
+            position: absolute;
+            right: 75px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: #ffffff !important;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            font-family: Arial, sans-serif;
+        }
+
+        .whatsapp-float:hover .wa-tooltip {
+            opacity: 1;
+        }
+
+        @keyframes pulseWhatsApp {
+            0% {
+                box-shadow: 0 6px 20px rgba(37, 211, 102, 0.5), 0 0 0 0 rgba(37, 211, 102, 0.7);
+            }
+            70% {
+                box-shadow: 0 6px 20px rgba(37, 211, 102, 0.5), 0 0 0 18px rgba(37, 211, 102, 0);
+            }
+            100% {
+                box-shadow: 0 6px 20px rgba(37, 211, 102, 0.5), 0 0 0 0 rgba(37, 211, 102, 0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .login-wrapper {
+                flex-direction: column;
+                padding: 16px;
+                gap: 16px;
+            }
+            .login-card {
+                flex: 1 1 auto;
+                padding: 20px 16px;
+            }
+            .motivational-panel {
+                flex: 1 1 auto;
+                min-height: 300px;
+                padding: 20px 16px;
+            }
+            .motivational-panel .quote-text {
+                font-size: 1.2rem !important;
+                min-height: 70px;
+            }
+            .motivational-panel .quote-author {
+                font-size: 1rem !important;
+            }
+            .motivational-panel .quote-source {
+                font-size: 0.85rem !important;
+            }
+            .daily-badge {
+                font-size: 0.7rem !important;
+            }
+            .quote-timer {
+                font-size: 0.8rem !important;
+            }
+            .quote-counter {
+                font-size: 0.75rem !important;
+            }
+            .refresh-quote {
+                font-size: 0.9rem !important;
+                padding: 8px 24px;
+            }
+            .text-center a {
+                font-size: 0.95rem !important;
+            }
+            .logo-container img {
+                width: 70px;
+                height: 70px;
+            }
+            .logo-container h1 {
+                font-size: 1.1rem;
+            }
+            .captcha-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .captcha-image-box {
+                text-align: center;
+            }
+            .captcha-image-box img {
+                width: 100%;
+                height: auto;
+            }
+            .captcha-refresh-btn {
+                align-self: center;
+            }
+            .accessibility-btn {
+                top: 10px;
+                right: 10px;
+                padding: 6px 12px;
+                font-size: 10px;
+            }
+            .accessibility-menu {
+                top: 50px;
+                right: 10px;
+                min-width: 160px;
+            }
+            .chat-toggle-btn {
+                bottom: 20px;
+                left: 20px;
+                width: 55px;
+                height: 55px;
+                font-size: 26px;
+            }
+            .chat-container {
+                left: 20px;
+                bottom: 90px;
+                width: calc(100vw - 40px);
+                max-width: 300px;
+                max-height: 400px;
+            }
+            .welcome-bubble {
+                bottom: 90px;
+                left: 20px;
+                max-width: 250px;
+                padding: 12px 16px;
+            }
+            .welcome-bubble p {
+                font-size: 0.85rem;
+            }
+
+            /* WhatsApp flotante en móvil */
+            .whatsapp-float {
+                width: 55px;
+                height: 55px;
+                bottom: 20px;
+                right: 20px;
+            }
+            .whatsapp-float i {
+                font-size: 30px;
+            }
+            .whatsapp-float .wa-tooltip {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-image-default">
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <!-- ========== BOTÓN ACCESIBILIDAD ========== -->
+    <button class="accessibility-btn" id="accessibilityToggle" aria-label="Abrir menú de accesibilidad">
+        🌓 Accesibilidad
+    </button>
+    <div class="accessibility-menu" id="accessibilityMenu">
+        <button id="increaseFontBtn" aria-label="Aumentar tamaño de texto">🔍 Aumentar Texto</button>
+        <button id="decreaseFontBtn" aria-label="Disminuir tamaño de texto">🔍 Disminuir Texto</button>
+        <button id="resetFontBtn" aria-label="Restablecer tamaño de texto">⟳ Restablecer</button>
+        <hr>
+        <button id="themeOriginal" style="font-weight: bold;">🎨 Tema Original</button>
+        <button id="themeRosa"><span class="color-circle" style="background:#fbc4d5;"></span> Rosa pastel</button>
+        <button id="themeCeleste"><span class="color-circle" style="background:#b5d8eb;"></span> Celeste pastel</button>
+        <button id="themeMenta"><span class="color-circle" style="background:#b5e6c3;"></span> Menta pastel</button>
+        <button id="themeAmarillo"><span class="color-circle" style="background:#f9e7b2;"></span> Amarillo pastel</button>
+        <button id="themeLila"><span class="color-circle" style="background:#d4c4f0;"></span> Lila pastel</button>
+        <button id="themeDurazno"><span class="color-circle" style="background:#fdd0b5;"></span> Durazno pastel</button>
+        <hr>
+        <strong style="padding: 5px 12px; font-size: 12px; color: #666;">🎨 Color de fondo:</strong>
+        <button id="bgImageBtn" aria-label="Fondo con imagen">🖼 Fondo Imagen</button>
+        <button id="bgBlackBtn" aria-label="Fondo negro">⬛ Fondo Negro</button>
+        <button id="bgWhiteBtn" aria-label="Fondo blanco">⬜ Fondo Blanco</button>
+        <hr>
+        <strong style="padding: 5px 12px; font-size: 12px; color: #666;">🤖 Mistral AI API Key (GRATIS):</strong>
+        <div style="display: flex; gap: 6px; padding: 0 8px;">
+            <input type="text" id="apiKeyInput" placeholder="Pega tu clave de Mistral aquí..." style="flex:1; padding: 6px 10px; border-radius: 50px; border:1px solid var(--renaven-azul-cielo); font-size:12px;">
+            <button id="saveApiKeyBtn" style="background: var(--renaven-azul-fuerte); color:#000; border:none; border-radius:50px; padding:4px 12px; font-size:12px; cursor:pointer;">Guardar</button>
+        </div>
+        <div style="display: flex; gap: 6px; padding: 0 8px;">
+            <button id="clearApiKeyBtn" style="background: #dc3545; color:white; border:none; border-radius:50px; padding:4px 12px; font-size:12px; cursor:pointer;">Borrar clave</button>
+            <span id="apiKeyStatus" class="api-key-status">❌ No configurada</span>
+        </div>
+        <hr>
+        <button id="closeAccessibilityMenu" aria-label="Cerrar menú">✖ Cerrar</button>
+    </div>
+
+    <!-- ========== ROBOT FLOTANTE ========== -->
+    <button class="chat-toggle-btn" id="chatToggleBtn" aria-label="Abrir asistente virtual">
+        <i class="fas fa-robot" aria-hidden="true"></i>
+        <span class="chat-tooltip">Asistente RENAVEN</span>
+    </button>
+
+    <!-- ========== BURBUJA DE BIENVENIDA ========== -->
+    <div id="welcomeBubble" class="welcome-bubble">
+        <button class="close-bubble" id="closeWelcomeBubble" aria-label="Cerrar mensaje de bienvenida">✖</button>
+        <p>🤖 ¡Hola! Soy el asistente virtual de <strong>RENAVEN</strong>. ¿En qué puedo ayudarte?</p>
+    </div>
+
+    <!-- ========== CHAT CONTAINER ========== -->
+    <div class="chat-container" id="chatContainer">
+        <div class="chat-header">
+            <h6><i class="fas fa-robot" aria-hidden="true"></i> Asistente RENAVEN (Mistral AI)</h6>
+            <button class="close-chat" id="closeChatBtn" aria-label="Cerrar chat">✖</button>
+        </div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Escribe tu pregunta..." aria-label="Escribe tu mensaje">
+            <button id="chatSendBtn" aria-label="Enviar mensaje"><i class="fas fa-paper-plane" aria-hidden="true"></i></button>
+        </div>
+    </div>
+
+    <!-- ========== BOTÓN FLOTANTE DE WHATSAPP ========== -->
+    <a href="https://wa.me/584146397416?text=Hola%20Jonathan,%20soy%20usuario%20de%20RENAVEN%20y%20necesito%20soporte%20t%C3%A9cnico"
+       target="_blank"
+       rel="noopener noreferrer"
+       class="whatsapp-float"
+       aria-label="Contactar por WhatsApp para soporte">
+        <i class="fab fa-whatsapp" aria-hidden="true"></i>
+        <span class="wa-tooltip">¿Necesitas soporte? Escríbeme</span>
+    </a>
+
+    <!-- ========== CONTENEDOR PRINCIPAL ========== -->
+    <div class="login-wrapper" id="main-content" role="main">
+        <div class="login-card">
+            <div class="logo-container">
+                <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" onerror="this.src='https://via.placeholder.com/100x100?text=RENAVEN'">
+                <h1>RENAVEN OAKMONT, C.A.</h1>
+                <p><i class="fas fa-chart-line" aria-hidden="true"></i> Sistema de Facturación y POS</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show" role="alert">
+                <i class="fas fa-{% if category == 'danger' %}exclamation-circle{% elif category == 'success' %}check-circle{% else %}info-circle{% endif %} me-2" aria-hidden="true"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar mensaje"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('login') }}" aria-label="Formulario de inicio de sesión">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-3">
+                    <label for="username" class="form-label">
+                        <i class="fas fa-user" aria-hidden="true"></i> Usuario
+                    </label>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Ingrese su usuario" required autofocus autocomplete="username" aria-label="Nombre de usuario">
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">
+                        <i class="fas fa-lock" aria-hidden="true"></i> Contraseña
+                    </label>
+                    <div class="password-wrapper">
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Ingrese su contraseña" required autocomplete="current-password" aria-label="Contraseña">
+                        <span class="toggle-password" onclick="togglePassword()" aria-label="Mostrar u ocultar contraseña">
+                            <i class="fas fa-eye" id="toggleIcon" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="captcha-container">
+                    <div class="captcha-header">
+                        <i class="fas fa-shield-alt" aria-hidden="true"></i> Verificación de seguridad
+                    </div>
+                    <div class="captcha-row">
+                        <div class="captcha-image-box" onclick="refreshCaptcha()" title="Haz clic para actualizar">
+                            <img src="{{ url_for('captcha_image') }}?t={{ timestamp }}" id="captcha-img" alt="Código de verificación CAPTCHA">
+                        </div>
+                        <div class="captcha-input-box">
+                            <input type="text" id="captcha_code" name="captcha_code" placeholder="Ingrese el código" required maxlength="6" aria-label="Código CAPTCHA" aria-describedby="captcha-help">
+                        </div>
+                        <div class="captcha-refresh-btn" onclick="refreshCaptcha()" title="Actualizar captcha" aria-label="Actualizar código CAPTCHA">
+                            <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                        </div>
+                    </div>
+                    <div class="captcha-help" id="captcha-help">
+                        <i class="fas fa-info-circle" aria-hidden="true"></i> Ingrese los caracteres de la imagen (no distingue mayúsculas)
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-login" aria-label="Iniciar sesión en el sistema">
+                    <i class="fas fa-sign-in-alt me-2" aria-hidden="true"></i> Ingresar al Sistema
+                </button>
+            </form>
+
+            <hr>
+
+            <div class="text-center">
+                <a href="{{ url_for('forgot_password') }}" aria-label="Recuperar contraseña" style="font-size:1.1rem; font-weight:700;">
+                    <i class="fas fa-key" aria-hidden="true"></i> ¿Olvidó su contraseña?
+                </a>
+            </div>
+
+            <div class="text-center text-muted small mt-4">
+                <p class="mb-0">
+                    <i class="fas fa-shield-alt" aria-hidden="true"></i> Sistema seguro con autenticación multicapa<br>
+                    <i class="fas fa-chart-line" aria-hidden="true"></i> RENAVEN OAKMONT, C.A. © 2026<br>
+                    <span style="opacity:0.55; font-size:0.85em;">
+                         Desarrollado por <strong>(JJ)</strong>
+                    </span>
+                </p>
+            </div>
+        </div>
+
+        <!-- PANEL MOTIVACIONAL -->
+        <div class="motivational-panel" id="motivationalPanel">
+            <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="motivational-logo" onerror="this.src='https://via.placeholder.com/80x80?text=RENAVEN'">
+            <span class="daily-badge" id="dailyBadge">
+                <i class="fas fa-sun" aria-hidden="true"></i> Frase del Día
+            </span>
+            <div class="quote-text" id="quoteText">
+                <span id="quoteTextSpan">Cargando frase...</span>
+            </div>
+            <div class="quote-author" id="quoteAuthor">— RENAVEN</div>
+            <div class="quote-source" id="quoteSource">🌐 Fuente: Inspiración diaria</div>
+            <button class="refresh-quote" id="refreshQuoteBtn">
+                <i class="fas fa-sync-alt" aria-hidden="true"></i> Nueva frase
+            </button>
+            <div class="quote-timer" id="quoteTimer">
+                Actualizando en <span id="countdown">15</span>s
+            </div>
+            <div class="quote-counter" id="quoteCounter">
+                📖 Frases mostradas: <span id="quoteCountLabel">0</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========================================================================
+        // 1. CONOCIMIENTO LOCAL (FALLBACK)
+        // ========================================================================
+        const knowledgeBase = {
+            "hola": "¡Hola! ¿Cómo puedo ayudarte?",
+            "ayuda": `
+                <strong>📚 Temas que conozco:</strong><br>
+                • <strong>Dashboard</strong> – Resumen general y accesos rápidos<br>
+                • <strong>Facturación</strong> – Crear y gestionar facturas<br>
+                • <strong>Inventario</strong> – Control de productos y stock<br>
+                • <strong>Cierre Diario</strong> – Resumen de ventas del día<br>
+                • <strong>Ventas del Mes</strong> – Reporte mensual<br>
+                • <strong>Ganancias</strong> – Utilidades y balances<br>
+                • <strong>Cierre de Caja</strong> – Finalizar turno<br>
+                • <strong>Apertura de Caja</strong> – Iniciar turno<br>
+                • <strong>Historial de Caja</strong> – Movimientos anteriores<br>
+                • <strong>Devoluciones</strong> – Procesar devoluciones<br>
+                • <strong>Historial Facturación</strong> – Facturas pasadas<br>
+                • <strong>Roles y Usuarios</strong> – Gestión de permisos<br>
+                • <strong>Tasa de Cambio</strong> – Configuración del BCV<br><br>
+                Escribe el nombre de cualquier tema para más detalles.
+            `,
+            "dashboard": "El <strong>Dashboard</strong> es la pantalla principal. Muestra un resumen con el saldo actual en caja (Bs. y USD), las ventas del día y del mes, y accesos directos a los módulos más importantes.",
+            "facturación": "El módulo de <strong>Facturación</strong> te permite crear nuevas ventas. Debes seleccionar el cliente, agregar productos, aplicar descuentos y calcular el total.",
+            "inventario": "El <strong>Inventario</strong> administra todos los productos: puedes agregar, editar, eliminar y controlar el stock.",
+            "cierre diario": "El <strong>Cierre Diario</strong> muestra un resumen de todas las ventas realizadas durante el día.",
+            "ventas del mes": "El reporte de <strong>Ventas del Mes</strong> te permite visualizar todas las ventas realizadas en el mes actual.",
+            "ganancias": "El módulo de <strong>Ganancias</strong> calcula la utilidad neta restando los costos de los ingresos.",
+            "cierre de caja": "El <strong>Cierre de Caja</strong> se usa al finalizar la jornada. Solo Dueño o Supervisor pueden hacerlo.",
+            "apertura de caja": "La <strong>Apertura de Caja</strong> inicia un nuevo turno. Debes registrar el saldo inicial.",
+            "historial de caja": "El <strong>Historial de Caja</strong> guarda todos los movimientos: aperturas, cierres, ventas, devoluciones y retiros.",
+            "devoluciones": "El módulo de <strong>Devoluciones</strong> permite procesar devoluciones de productos previamente vendidos.",
+            "historial facturación": "El <strong>Historial de Facturación</strong> muestra todas las facturas emitidas.",
+            "roles": "Los <strong>Roles</strong> definen los permisos de cada usuario: Dueño, Administrador, Supervisor, Vendedor.",
+            "usuarios": "El módulo de <strong>Usuarios</strong> permite crear, editar y eliminar cuentas de usuario.",
+            "tasa": "La <strong>Tasa de Cambio</strong> se actualiza automáticamente desde el BCV.",
+            "default": "No tengo información específica sobre eso. Puedo ayudarte con: Dashboard, Facturación, Inventario, Cierre Diario, Ventas del Mes, Ganancias, Cierre de Caja, Apertura de Caja, Historial de Caja, Devoluciones, Historial Facturación, Roles, Usuarios, Tasa."
+        };
+
+        function getLocalResponse(userInput) {
+            const lower = userInput.toLowerCase().trim();
+            if (lower.includes("ayuda") || lower.includes("menu") || lower.includes("temas")) {
+                return knowledgeBase["ayuda"];
+            }
+            for (let key in knowledgeBase) {
+                if (lower.includes(key) && key !== "default" && key !== "ayuda") {
+                    return knowledgeBase[key];
+                }
+            }
+            return knowledgeBase["default"];
+        }
+
+        // ========================================================================
+        // 2. FUNCIÓN CON MISTRAL AI
+        // ========================================================================
+        async function getMistralResponse(userInput, apiKey) {
+            const systemPrompt = `
+                Eres el asistente virtual de RENAVEN OAKMONT, C.A., una empresa de facturación y sistema POS.
+                Tu nombre es "Asistente RENAVEN". Responde en español, de forma amigable y profesional.
+
+                Información del sistema:
+                - Nombre: RENAVEN OAKMONT, C.A.
+                - Sistema: Facturación y POS (ventas, inventario, caja, usuarios)
+                - Módulos: Dashboard, Facturación, Inventario, Cierre Diario, Ventas del Mes, Ganancias, Cierre de Caja, Apertura de Caja, Historial de Caja, Devoluciones, Historial Facturación, Roles, Usuarios, Tasa de Cambio.
+                - Usuario por defecto: "dueño" (todos los permisos).
+                - Frase del día: "El fracaso es solo una oportunidad para comenzar de nuevo, esta vez de manera más inteligente." - Henry Ford.
+                - Desarrollador: Jonathan (JJ).
+
+                Responde siempre en español. Si no sabes algo, dilo claramente.
+            `;
+
+            try {
+                const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'mistral-small-latest',
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: userInput }
+                        ],
+                        stream: false
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const status = response.status;
+                    let errorMsg = `Error ${status}`;
+                    if (status === 401) errorMsg = '❌ Clave API inválida. Verifica que sea correcta.';
+                    else if (status === 429) errorMsg = '⏳ Demasiadas peticiones. Espera un momento.';
+                    else if (errorData.error?.message) errorMsg = `❌ ${errorData.error.message}`;
+                    return { success: false, error: errorMsg };
+                }
+
+                const data = await response.json();
+                if (data.choices && data.choices.length > 0) {
+                    const text = data.choices[0].message.content;
+                    return { success: true, text: text.replace(/\n/g, '<br>') };
+                } else {
+                    return { success: false, error: '⚠️ No se recibió respuesta de Mistral.' };
+                }
+            } catch (error) {
+                console.error('Error en Mistral:', error);
+                return { success: false, error: `🌐 Error de red: ${error.message}` };
+            }
+        }
+
+        // ========================================================================
+        // 3. LÓGICA DEL CHAT
+        // ========================================================================
+        const chatToggleBtn = document.getElementById('chatToggleBtn');
+        const chatContainer = document.getElementById('chatContainer');
+        const closeChatBtn = document.getElementById('closeChatBtn');
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const chatSendBtn = document.getElementById('chatSendBtn');
+
+        function addWelcomeMessageIfEmpty() {
+            if (chatMessages.children.length === 0) {
+                const welcomeText = `
+                    ¡Hola! Soy el asistente de <strong>RENAVEN</strong> con <strong>Mistral AI</strong> 🧠<br>
+                    <span style="font-size:0.8rem; opacity:0.7;">💡 Guarda tu API Key de Mistral en el menú de accesibilidad (arriba a la derecha).</span><br>
+                    <span style="font-size:0.8rem; opacity:0.7;">📌 Consigue tu clave gratis en <a href="https://console.mistral.ai" target="_blank">console.mistral.ai</a></span>
+                `;
+                addMessage(welcomeText, 'bot');
+            }
+        }
+
+        function addMessage(text, sender) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `chat-message ${sender}`;
+            msgDiv.innerHTML = text;
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        chatToggleBtn.addEventListener('click', () => {
+            chatContainer.classList.toggle('open');
+            if (chatContainer.classList.contains('open')) {
+                chatInput.focus();
+                addWelcomeMessageIfEmpty();
+                welcomeBubble.classList.remove('show');
+            }
+        });
+
+        closeChatBtn.addEventListener('click', () => {
+            chatContainer.classList.remove('open');
+        });
+
+        async function handleUserMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            if (chatMessages.children.length === 0) {
+                const welcomeText = `
+                    ¡Hola! Soy el asistente de <strong>RENAVEN</strong> con <strong>Mistral AI</strong> 🧠<br>
+                    <span style="font-size:0.8rem; opacity:0.7;">💡 Guarda tu API Key de Mistral en el menú de accesibilidad (arriba a la derecha).</span><br>
+                    <span style="font-size:0.8rem; opacity:0.7;">📌 Consigue tu clave gratis en <a href="https://console.mistral.ai" target="_blank">console.mistral.ai</a></span>
+                `;
+                addMessage(welcomeText, 'bot');
+            }
+
+            addMessage(message, 'user');
+            chatInput.value = '';
+
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'chat-message bot';
+            typingDiv.textContent = '⏳ Pensando...';
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            const apiKey = localStorage.getItem('mistral_api_key');
+            let finalResponse = '';
+
+            if (apiKey && apiKey.length > 5) {
+                const result = await getMistralResponse(message, apiKey);
+                if (result.success) {
+                    finalResponse = result.text;
+                } else {
+                    finalResponse = `⚠️ ${result.error}<br><br>⬇️ Usando conocimiento local:<br><br>${getLocalResponse(message)}`;
+                }
+            } else {
+                finalResponse = `⚠️ No hay clave de Mistral configurada.<br><br>📌 Consigue una gratis en <a href="https://console.mistral.ai" target="_blank">console.mistral.ai</a> (1 billón de tokens/mes, sin tarjeta).<br><br>⬇️ Mientras tanto, uso mi conocimiento local:<br><br>${getLocalResponse(message)}`;
+            }
+
+            typingDiv.innerHTML = finalResponse;
+        }
+
+        chatSendBtn.addEventListener('click', handleUserMessage);
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleUserMessage();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (chatContainer.classList.contains('open')) {
+                const target = e.target;
+                if (!chatContainer.contains(target) && target !== chatToggleBtn && !chatToggleBtn.contains(target)) {
+                    chatContainer.classList.remove('open');
+                }
+            }
+        });
+
+        // ========================================================================
+        // 4. FRASES MOTIVACIONALES CON API (ZenQuotes)
+        // ========================================================================
+        const quoteTextSpan = document.getElementById('quoteTextSpan');
+        const quoteAuthorEl = document.getElementById('quoteAuthor');
+        const quoteSourceEl = document.getElementById('quoteSource');
+        const refreshQuoteBtn = document.getElementById('refreshQuoteBtn');
+        const countdownSpan = document.getElementById('countdown');
+        const quoteCountLabel = document.getElementById('quoteCountLabel');
+
+        const fallbackQuotes = [
+            { text: "El éxito es la suma de pequeños esfuerzos repetidos día tras día.", author: "Robert Collier" },
+            { text: "El fracaso es la oportunidad de comenzar de nuevo con más inteligencia.", author: "Henry Ford" },
+            { text: "No importa lo lento que vayas, siempre y cuando no te detengas.", author: "Confucio" },
+            { text: "Cree que puedes y ya estás a medio camino.", author: "Theodore Roosevelt" }
+        ];
+
+        let quoteCount = 0;
+        let countdownInterval = null;
+        let timerSeconds = 15;
+        let isQuoteLoading = false;
+
+        async function fetchQuote() {
+            if (isQuoteLoading) return;
+            isQuoteLoading = true;
+            quoteTextSpan.textContent = "⏳ Cargando frase...";
+            quoteTextSpan.parentElement.classList.add('loading');
+            quoteAuthorEl.textContent = "— ...";
+            quoteSourceEl.textContent = "🌐 Conectando con servidor...";
+
+            try {
+                const response = await fetch('https://zenquotes.io/api/random', {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                if (data && data.length > 0 && data[0].q && data[0].a) {
+                    const quote = data[0];
+                    quoteTextSpan.textContent = `"${quote.q}"`;
+                    quoteAuthorEl.textContent = `— ${quote.a}`;
+                    quoteSourceEl.textContent = "🌐 Fuente: ZenQuotes (API pública)";
+                    quoteCount++;
+                    quoteCountLabel.textContent = quoteCount;
+                } else {
+                    throw new Error('Respuesta inesperada');
+                }
+            } catch (error) {
+                console.error('Error al obtener frase:', error);
+                const fallback = fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)];
+                quoteTextSpan.textContent = `"${fallback.text}"`;
+                quoteAuthorEl.textContent = `— ${fallback.author}`;
+                quoteSourceEl.textContent = "⚠️ Fuente local (fallback)";
+                quoteCount++;
+                quoteCountLabel.textContent = quoteCount;
+            } finally {
+                isQuoteLoading = false;
+                quoteTextSpan.parentElement.classList.remove('loading');
+            }
+        }
+
+        function startCountdown(seconds) {
+            if (countdownInterval) clearInterval(countdownInterval);
+            let remaining = seconds;
+            countdownSpan.textContent = remaining;
+            countdownInterval = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownSpan.textContent = '0';
+                    fetchQuote();
+                    startCountdown(timerSeconds);
+                } else {
+                    countdownSpan.textContent = remaining;
+                }
+            }, 1000);
+        }
+
+        refreshQuoteBtn.addEventListener('click', function() {
+            clearInterval(countdownInterval);
+            fetchQuote();
+            startCountdown(timerSeconds);
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchQuote();
+            startCountdown(timerSeconds);
+        });
+
+        // ========================================================================
+        // 5. BURBUJA DE BIENVENIDA
+        // ========================================================================
+        const welcomeBubble = document.getElementById('welcomeBubble');
+        const closeWelcomeBubble = document.getElementById('closeWelcomeBubble');
+
+        let bubbleShown = localStorage.getItem('welcomeBubbleShown');
+        if (!bubbleShown) {
+            setTimeout(() => {
+                welcomeBubble.classList.add('show');
+                setTimeout(() => {
+                    welcomeBubble.classList.remove('show');
+                }, 8000);
+                localStorage.setItem('welcomeBubbleShown', 'true');
+            }, 2000);
+        }
+
+        closeWelcomeBubble.addEventListener('click', function(e) {
+            e.stopPropagation();
+            welcomeBubble.classList.remove('show');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (welcomeBubble.classList.contains('show')) {
+                if (!welcomeBubble.contains(e.target) && e.target !== chatToggleBtn) {
+                    welcomeBubble.classList.remove('show');
+                }
+            }
+        });
+
+        // ========================================================================
+        // 6. ACCESIBILIDAD Y CONFIGURACIÓN
+        // ========================================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            // ---- API Key ----
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+            const clearApiKeyBtn = document.getElementById('clearApiKeyBtn');
+            const apiKeyStatus = document.getElementById('apiKeyStatus');
+
+            function updateApiKeyStatus() {
+                const key = localStorage.getItem('mistral_api_key');
+                if (key && key.length > 5) {
+                    const masked = key.length > 4 ? '...' + key.slice(-4) : '****';
+                    apiKeyStatus.textContent = `✅ Configurada (${masked})`;
+                    apiKeyStatus.style.color = 'green';
+                } else {
+                    apiKeyStatus.textContent = '❌ No configurada';
+                    apiKeyStatus.style.color = '#dc3545';
+                }
+            }
+
+            saveApiKeyBtn.addEventListener('click', function() {
+                const key = apiKeyInput.value.trim();
+                if (key.length > 5) {
+                    localStorage.setItem('mistral_api_key', key);
+                    apiKeyInput.value = '';
+                    updateApiKeyStatus();
+                    if (chatContainer.classList.contains('open') && chatMessages.children.length === 0) {
+                        addMessage('🔑 API Key de Mistral guardada correctamente. ¡Ahora uso Mistral AI para responder! 🎉', 'bot');
+                    } else {
+                        addMessage('🔑 API Key de Mistral guardada correctamente.', 'bot');
+                    }
+                } else {
+                    alert('❌ Clave inválida. Debe tener más de 5 caracteres.');
+                }
+            });
+
+            clearApiKeyBtn.addEventListener('click', function() {
+                localStorage.removeItem('mistral_api_key');
+                updateApiKeyStatus();
+                if (chatContainer.classList.contains('open')) {
+                    addMessage('🗑️ Clave eliminada. Usando conocimiento local.', 'bot');
+                }
+            });
+
+            updateApiKeyStatus();
+
+            // ---- Menú de accesibilidad ----
+            const toggleBtn = document.getElementById('accessibilityToggle');
+            const menu = document.getElementById('accessibilityMenu');
+            const closeMenuBtn = document.getElementById('closeAccessibilityMenu');
+            toggleBtn.addEventListener('click', () => {
+                menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'flex' : 'none';
+            });
+            closeMenuBtn.addEventListener('click', () => menu.style.display = 'none');
+            document.addEventListener('click', function(e) {
+                if (menu && toggleBtn && !menu.contains(e.target) && !toggleBtn.contains(e.target)) {
+                    menu.style.display = 'none';
+                }
+            });
+
+            // ---- Fondo de pantalla ----
+            document.getElementById('bgImageBtn').addEventListener('click', function() {
+                document.body.className = 'bg-image-default';
+                localStorage.setItem('backgroundMode', 'image');
+            });
+            document.getElementById('bgBlackBtn').addEventListener('click', function() {
+                document.body.className = 'bg-black-solid';
+                localStorage.setItem('backgroundMode', 'black');
+            });
+            document.getElementById('bgWhiteBtn').addEventListener('click', function() {
+                document.body.className = 'bg-white-solid';
+                localStorage.setItem('backgroundMode', 'white');
+            });
+            const savedBg = localStorage.getItem('backgroundMode');
+            if (savedBg === 'black') document.body.className = 'bg-black-solid';
+            else if (savedBg === 'white') document.body.className = 'bg-white-solid';
+            else document.body.className = 'bg-image-default';
+
+            // ---- Temas pastel ----
+            function applyTheme(themeClass) {
+                document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                if (themeClass) {
+                    document.body.classList.add(themeClass);
+                }
+                localStorage.setItem('selectedTheme', themeClass || '');
+            }
+
+            document.getElementById('themeOriginal').addEventListener('click', function() {
+                applyTheme(null);
+                menu.style.display = 'none';
+            });
+            document.getElementById('themeRosa').addEventListener('click', function() {
+                applyTheme('theme-rosa');
+                menu.style.display = 'none';
+            });
+            document.getElementById('themeCeleste').addEventListener('click', function() {
+                applyTheme('theme-celeste');
+                menu.style.display = 'none';
+            });
+            document.getElementById('themeMenta').addEventListener('click', function() {
+                applyTheme('theme-menta');
+                menu.style.display = 'none';
+            });
+            document.getElementById('themeAmarillo').addEventListener('click', function() {
+                applyTheme('theme-amarillo');
+                menu.style.display = 'none';
+            });
+            document.getElementById('themeLila').addEventListener('click', function() {
+                applyTheme('theme-lila');
+                menu.style.display = 'none';
+            });
+            document.getElementById('themeDurazno').addEventListener('click', function() {
+                applyTheme('theme-durazno');
+                menu.style.display = 'none';
+            });
+
+            const savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            }
+
+            // ---- Tamaño de fuente ----
+            let fontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            function applyFontSize() {
+                document.body.style.fontSize = (13 * fontSize / 100) + 'px';
+                localStorage.setItem('fontSize', fontSize);
+            }
+            document.getElementById('increaseFontBtn').addEventListener('click', function() {
+                if (fontSize < 150) { fontSize += 10; applyFontSize(); }
+            });
+            document.getElementById('decreaseFontBtn').addEventListener('click', function() {
+                if (fontSize > 70) { fontSize -= 10; applyFontSize(); }
+            });
+            document.getElementById('resetFontBtn').addEventListener('click', function() {
+                fontSize = 100;
+                applyFontSize();
+            });
+            applyFontSize();
+
+            refreshCaptcha();
+        });
+
+        function refreshCaptcha() {
+            const captchaImg = document.getElementById('captcha-img');
+            if (captchaImg) {
+                const timestamp = new Date().getTime();
+                captchaImg.src = "{{ url_for('captcha_image') }}?t=" + timestamp;
+            }
+        }
+
+        function togglePassword() {
+            const pwd = document.getElementById('password');
+            const icon = document.getElementById('toggleIcon');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                pwd.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js">
+    </script>
+</body>
+</html>

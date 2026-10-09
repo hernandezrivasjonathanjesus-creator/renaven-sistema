@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>RENAVEN - Ferretería</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <style>
+        /* ========== PALETA PREDETERMINADA (ORIGINAL LOGIN) ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-gris-claro: #e2e8f0;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+            --renaven-verde: #28a745;
+            --renaven-oro: #FFD700;
+            --shadow-color: rgba(132,182,244,0.2);
+            --transition-base: all 0.25s ease-in-out;
+        }
+
+        /* ========== TEMAS PASTEL INDIVIDUALES ========== */
+        /* 1. Rosa pastel */
+        body.theme-rosa {
+            --renaven-azul-fuerte: #fbc4d5;
+            --renaven-azul-cielo: #fce4ec;
+            --renaven-blanco: #fef9f0;
+            --renaven-gris-fondo: #fdf6f8;
+            --renaven-borde: #fbc4d5;
+        }
+        body.theme-rosa .navbar.bg-dark { background: linear-gradient(135deg, #fbc4d5, #fdd0b5) !important; border-bottom-color: #fdd0b5 !important; }
+        body.theme-rosa .card-header { background: #fbc4d5 !important; border-bottom-color: #fdd0b5 !important; }
+        body.theme-rosa .table thead th { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .btn-primary { background: #fbc4d5 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-rosa .btn-primary:hover { background: #fdd0b5 !important; }
+        body.theme-rosa .btn-outline-light { border-color: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .btn-outline-light:hover { background: #fbc4d5 !important; }
+        body.theme-rosa .alert-info { background: #fce4ec !important; border-color: #fbc4d5 !important; border-left-color: #fdd0b5 !important; }
+        body.theme-rosa .alert-success { border-left-color: #28a745 !important; }
+        body.theme-rosa .alert-danger { border-left-color: #dc3545 !important; }
+        body.theme-rosa .alert-warning { border-left-color: #ffd700 !important; }
+        body.theme-rosa .logo-circle { border-color: #fbc4d5 !important; }
+        body.theme-rosa .navbar-text { border-left-color: #fbc4d5 !important; }
+        body.theme-rosa .card { border-color: #fbc4d5 !important; }
+        body.theme-rosa .table { border-color: #fbc4d5 !important; }
+        body.theme-rosa .table td, body.theme-rosa .table th { border-color: #fbc4d5 !important; }
+        body.theme-rosa a:hover { color: #fdd0b5 !important; }
+        body.theme-rosa .accessibility-btn { background: #fbc4d5; border-color: #fdd0b5; }
+        body.theme-rosa .accessibility-btn:hover { background: #fdd0b5; }
+
+        /* 2. Celeste pastel */
+        body.theme-celeste {
+            --renaven-azul-fuerte: #b5d8eb;
+            --renaven-azul-cielo: #d6ecf5;
+            --renaven-blanco: #f9fdff;
+            --renaven-gris-fondo: #f4faff;
+            --renaven-borde: #b5d8eb;
+        }
+        body.theme-celeste .navbar.bg-dark { background: linear-gradient(135deg, #b5d8eb, #a8d0e6) !important; border-bottom-color: #a8d0e6 !important; }
+        body.theme-celeste .card-header { background: #b5d8eb !important; border-bottom-color: #a8d0e6 !important; }
+        body.theme-celeste .table thead th { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .btn-primary { background: #b5d8eb !important; border-color: #a8d0e6 !important; color: #000 !important; }
+        body.theme-celeste .btn-primary:hover { background: #a8d0e6 !important; }
+        body.theme-celeste .btn-outline-light { border-color: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .btn-outline-light:hover { background: #b5d8eb !important; }
+        body.theme-celeste .alert-info { background: #d6ecf5 !important; border-color: #b5d8eb !important; border-left-color: #a8d0e6 !important; }
+        body.theme-celeste .alert-success { border-left-color: #28a745 !important; }
+        body.theme-celeste .alert-danger { border-left-color: #dc3545 !important; }
+        body.theme-celeste .alert-warning { border-left-color: #ffd700 !important; }
+        body.theme-celeste .logo-circle { border-color: #b5d8eb !important; }
+        body.theme-celeste .navbar-text { border-left-color: #b5d8eb !important; }
+        body.theme-celeste .card { border-color: #b5d8eb !important; }
+        body.theme-celeste .table { border-color: #b5d8eb !important; }
+        body.theme-celeste .table td, body.theme-celeste .table th { border-color: #b5d8eb !important; }
+        body.theme-celeste a:hover { color: #a8d0e6 !important; }
+        body.theme-celeste .accessibility-btn { background: #b5d8eb; border-color: #a8d0e6; }
+        body.theme-celeste .accessibility-btn:hover { background: #a8d0e6; }
+
+        /* 3. Menta pastel */
+        body.theme-menta {
+            --renaven-azul-fuerte: #b5e6c3;
+            --renaven-azul-cielo: #d8f0e0;
+            --renaven-blanco: #f6fcf8;
+            --renaven-gris-fondo: #f2faf5;
+            --renaven-borde: #b5e6c3;
+        }
+        body.theme-menta .navbar.bg-dark { background: linear-gradient(135deg, #b5e6c3, #a8dbb8) !important; border-bottom-color: #a8dbb8 !important; }
+        body.theme-menta .card-header { background: #b5e6c3 !important; border-bottom-color: #a8dbb8 !important; }
+        body.theme-menta .table thead th { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .btn-primary { background: #b5e6c3 !important; border-color: #a8dbb8 !important; color: #000 !important; }
+        body.theme-menta .btn-primary:hover { background: #a8dbb8 !important; }
+        body.theme-menta .btn-outline-light { border-color: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .btn-outline-light:hover { background: #b5e6c3 !important; }
+        body.theme-menta .alert-info { background: #d8f0e0 !important; border-color: #b5e6c3 !important; border-left-color: #a8dbb8 !important; }
+        body.theme-menta .alert-success { border-left-color: #28a745 !important; }
+        body.theme-menta .alert-danger { border-left-color: #dc3545 !important; }
+        body.theme-menta .alert-warning { border-left-color: #ffd700 !important; }
+        body.theme-menta .logo-circle { border-color: #b5e6c3 !important; }
+        body.theme-menta .navbar-text { border-left-color: #b5e6c3 !important; }
+        body.theme-menta .card { border-color: #b5e6c3 !important; }
+        body.theme-menta .table { border-color: #b5e6c3 !important; }
+        body.theme-menta .table td, body.theme-menta .table th { border-color: #b5e6c3 !important; }
+        body.theme-menta a:hover { color: #a8dbb8 !important; }
+        body.theme-menta .accessibility-btn { background: #b5e6c3; border-color: #a8dbb8; }
+        body.theme-menta .accessibility-btn:hover { background: #a8dbb8; }
+
+        /* 4. Amarillo pastel */
+        body.theme-amarillo {
+            --renaven-azul-fuerte: #f9e7b2;
+            --renaven-azul-cielo: #fdf3d5;
+            --renaven-blanco: #fffef9;
+            --renaven-gris-fondo: #fefcf5;
+            --renaven-borde: #f9e7b2;
+        }
+        body.theme-amarillo .navbar.bg-dark { background: linear-gradient(135deg, #f9e7b2, #f5dc9a) !important; border-bottom-color: #f5dc9a !important; }
+        body.theme-amarillo .card-header { background: #f9e7b2 !important; border-bottom-color: #f5dc9a !important; }
+        body.theme-amarillo .table thead th { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .btn-primary { background: #f9e7b2 !important; border-color: #f5dc9a !important; color: #000 !important; }
+        body.theme-amarillo .btn-primary:hover { background: #f5dc9a !important; }
+        body.theme-amarillo .btn-outline-light { border-color: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .btn-outline-light:hover { background: #f9e7b2 !important; }
+        body.theme-amarillo .alert-info { background: #fdf3d5 !important; border-color: #f9e7b2 !important; border-left-color: #f5dc9a !important; }
+        body.theme-amarillo .alert-success { border-left-color: #28a745 !important; }
+        body.theme-amarillo .alert-danger { border-left-color: #dc3545 !important; }
+        body.theme-amarillo .alert-warning { border-left-color: #ffd700 !important; }
+        body.theme-amarillo .logo-circle { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .navbar-text { border-left-color: #f9e7b2 !important; }
+        body.theme-amarillo .card { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .table { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .table td, body.theme-amarillo .table th { border-color: #f9e7b2 !important; }
+        body.theme-amarillo a:hover { color: #f5dc9a !important; }
+        body.theme-amarillo .accessibility-btn { background: #f9e7b2; border-color: #f5dc9a; }
+        body.theme-amarillo .accessibility-btn:hover { background: #f5dc9a; }
+
+        /* 5. Lila pastel */
+        body.theme-lila {
+            --renaven-azul-fuerte: #d4c4f0;
+            --renaven-azul-cielo: #e8defa;
+            --renaven-blanco: #fcfaff;
+            --renaven-gris-fondo: #f8f5fe;
+            --renaven-borde: #d4c4f0;
+        }
+        body.theme-lila .navbar.bg-dark { background: linear-gradient(135deg, #d4c4f0, #c9b7e8) !important; border-bottom-color: #c9b7e8 !important; }
+        body.theme-lila .card-header { background: #d4c4f0 !important; border-bottom-color: #c9b7e8 !important; }
+        body.theme-lila .table thead th { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .btn-primary { background: #d4c4f0 !important; border-color: #c9b7e8 !important; color: #000 !important; }
+        body.theme-lila .btn-primary:hover { background: #c9b7e8 !important; }
+        body.theme-lila .btn-outline-light { border-color: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .btn-outline-light:hover { background: #d4c4f0 !important; }
+        body.theme-lila .alert-info { background: #e8defa !important; border-color: #d4c4f0 !important; border-left-color: #c9b7e8 !important; }
+        body.theme-lila .alert-success { border-left-color: #28a745 !important; }
+        body.theme-lila .alert-danger { border-left-color: #dc3545 !important; }
+        body.theme-lila .alert-warning { border-left-color: #ffd700 !important; }
+        body.theme-lila .logo-circle { border-color: #d4c4f0 !important; }
+        body.theme-lila .navbar-text { border-left-color: #d4c4f0 !important; }
+        body.theme-lila .card { border-color: #d4c4f0 !important; }
+        body.theme-lila .table { border-color: #d4c4f0 !important; }
+        body.theme-lila .table td, body.theme-lila .table th { border-color: #d4c4f0 !important; }
+        body.theme-lila a:hover { color: #c9b7e8 !important; }
+        body.theme-lila .accessibility-btn { background: #d4c4f0; border-color: #c9b7e8; }
+        body.theme-lila .accessibility-btn:hover { background: #c9b7e8; }
+
+        /* 6. Durazno pastel */
+        body.theme-durazno {
+            --renaven-azul-fuerte: #fdd0b5;
+            --renaven-azul-cielo: #fee5d0;
+            --renaven-blanco: #fffcf9;
+            --renaven-gris-fondo: #fef8f3;
+            --renaven-borde: #fdd0b5;
+        }
+        body.theme-durazno .navbar.bg-dark { background: linear-gradient(135deg, #fdd0b5, #f5c2a4) !important; border-bottom-color: #f5c2a4 !important; }
+        body.theme-durazno .card-header { background: #fdd0b5 !important; border-bottom-color: #f5c2a4 !important; }
+        body.theme-durazno .table thead th { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .btn-primary { background: #fdd0b5 !important; border-color: #f5c2a4 !important; color: #000 !important; }
+        body.theme-durazno .btn-primary:hover { background: #f5c2a4 !important; }
+        body.theme-durazno .btn-outline-light { border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .btn-outline-light:hover { background: #fdd0b5 !important; }
+        body.theme-durazno .alert-info { background: #fee5d0 !important; border-color: #fdd0b5 !important; border-left-color: #f5c2a4 !important; }
+        body.theme-durazno .alert-success { border-left-color: #28a745 !important; }
+        body.theme-durazno .alert-danger { border-left-color: #dc3545 !important; }
+        body.theme-durazno .alert-warning { border-left-color: #ffd700 !important; }
+        body.theme-durazno .logo-circle { border-color: #fdd0b5 !important; }
+        body.theme-durazno .navbar-text { border-left-color: #fdd0b5 !important; }
+        body.theme-durazno .card { border-color: #fdd0b5 !important; }
+        body.theme-durazno .table { border-color: #fdd0b5 !important; }
+        body.theme-durazno .table td, body.theme-durazno .table th { border-color: #fdd0b5 !important; }
+        body.theme-durazno a:hover { color: #f5c2a4 !important; }
+        body.theme-durazno .accessibility-btn { background: #fdd0b5; border-color: #f5c2a4; }
+        body.theme-durazno .accessibility-btn:hover { background: #f5c2a4; }
+
+        /* ========== TODAS LAS LETRAS EN NEGRITA (excepto iconos) ========== */
+        *:not([class*="fa-"]) {
+            font-weight: bold !important;
+        }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+            font-weight: 400 !important;
+        }
+        .fas, .fa-solid {
+            font-weight: 900 !important;
+        }
+
+        /* ========== ESTILOS BASE ========== */
+
+        /* Forzar todos los textos a negro */
+        body, p, span, div, h1, h2, h3, h4, h5, h6, .card-header,
+        .navbar-text, .nav-link, .navbar-brand, .alert, .table,
+        .text-muted, small, strong, b, label, .card-title, .card-text,
+        a, .btn, .btn-primary, .btn-success, .btn-warning, .btn-info,
+        .btn-outline-light, .navbar-dark .nav-link {
+            color: var(--renaven-texto) !important;
+        }
+
+        /* Excepción para placeholders */
+        ::placeholder, input::placeholder, textarea::placeholder {
+            color: #9ca3af !important;
+            opacity: 1;
+        }
+
+        body {
+            background: var(--renaven-gris-fondo);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            font-size: 13px;
+            color: var(--renaven-texto);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* ========== NAVEGACIÓN POR TECLADO ========== */
+        *:focus {
+            outline: 3px solid #FFD700 !important;
+            outline-offset: 2px !important;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--renaven-azul-fuerte);
+            color: #000;
+            padding: 8px 16px;
+            z-index: 1000;
+            text-decoration: none;
+            border-radius: 0 0 8px 0;
+            font-weight: bold;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* ========== BOTÓN ACCESIBILIDAD ========== */
+        .accessibility-btn {
+            background: var(--renaven-azul-fuerte);
+            color: #000 !important;
+            border: 1px solid var(--renaven-azul-cielo);
+            border-radius: 50px;
+            padding: 5px 14px !important;
+            font-size: 0.9rem !important;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            line-height: 1.5;
+            white-space: nowrap;
+        }
+        .accessibility-btn:hover {
+            background: var(--renaven-azul-cielo);
+            transform: scale(1.03);
+        }
+        .accessibility-btn i {
+            color: #000 !important;
+        }
+
+        /* ========== MENÚ DE ACCESIBILIDAD (DROPDOWN) ========== */
+        .accessibility-dropdown {
+            position: relative;
+            display: inline-block;
+            margin-left: 8px;
+        }
+        .accessibility-dropdown-content {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: var(--renaven-blanco);
+            min-width: 200px;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            padding: 10px;
+            border: 1px solid var(--renaven-azul-cielo);
+            z-index: 9999;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .accessibility-dropdown-content.show {
+            display: flex;
+        }
+        .accessibility-dropdown-content button {
+            background: none;
+            border: none;
+            padding: 8px 12px;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #000;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+        .accessibility-dropdown-content button:hover {
+            background: var(--renaven-azul-cielo);
+        }
+        .accessibility-dropdown-content .color-circle {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 1px solid #ccc;
+            flex-shrink: 0;
+        }
+        .accessibility-dropdown-content hr {
+            margin: 4px 0;
+            border-color: var(--renaven-azul-cielo);
+        }
+
+        /* ========== NAVBAR ========== */
+        .navbar.bg-dark {
+            background: linear-gradient(135deg, var(--renaven-azul-fuerte), var(--renaven-azul-cielo)) !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-bottom: 2px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .logo-circle {
+            width: 40px;
+            height: 40px;
+            background: var(--renaven-blanco);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            border: 2px solid var(--renaven-borde);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease, border-color 0.3s;
+        }
+
+        .logo-circle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .logo-circle span {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--renaven-texto) !important;
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+            color: var(--renaven-texto) !important;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar-brand:hover {
+            color: var(--renaven-texto) !important;
+            transform: translateY(-2px);
+            opacity: 0.8;
+        }
+
+        .navbar-dark .nav-link {
+            color: var(--renaven-texto) !important;
+            transition: all 0.3s ease;
+            border-radius: 50px;
+            padding: 8px 16px;
+            font-weight: 500;
+        }
+
+        .navbar-dark .nav-link:hover {
+            color: var(--renaven-texto) !important;
+            background: rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .navbar-dark .nav-link.active {
+            color: var(--renaven-texto) !important;
+            background: rgba(0,0,0,0.15);
+            font-weight: bold;
+        }
+
+        .navbar-text {
+            color: var(--renaven-texto) !important;
+            font-weight: 600;
+            background: rgba(0,0,0,0.1);
+            padding: 5px 12px;
+            border-radius: 50px;
+            border-left: 2px solid var(--renaven-borde);
+            transition: border-color 0.3s;
+        }
+
+        .btn-outline-light {
+            border-radius: 50px !important;
+            padding: 6px 24px !important;
+            border: 2px solid var(--renaven-borde) !important;
+            color: var(--renaven-texto) !important;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            background: transparent;
+        }
+
+        .btn-outline-light:hover {
+            background: var(--renaven-azul-cielo) !important;
+            color: var(--renaven-texto) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            border-color: var(--renaven-borde) !important;
+        }
+
+        /* ========== ALERTAS ========== */
+        .alert {
+            border-radius: 20px;
+            border: 2px solid var(--renaven-borde) !important;
+            background: var(--renaven-blanco);
+            transition: border-color 0.3s, background 0.3s;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border-left: 5px solid var(--renaven-verde) !important;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            border-left: 5px solid #DC3545 !important;
+        }
+
+        .alert-warning {
+            background: #fff3e0;
+            border-left: 5px solid var(--renaven-oro) !important;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            border-left: 5px solid var(--renaven-azul-cielo) !important;
+        }
+
+        .btn-close {
+            filter: brightness(0.3);
+        }
+
+        .btn-close:hover {
+            filter: brightness(0.1);
+        }
+
+        /* ========== TARJETAS ========== */
+        .card {
+            background: var(--renaven-blanco);
+            border: 2px solid var(--renaven-borde) !important;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            background: var(--renaven-azul-cielo);
+            border-bottom: 2px solid var(--renaven-borde);
+            color: var(--renaven-texto) !important;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        /* ========== TABLAS ========== */
+        .table {
+            color: var(--renaven-texto) !important;
+            border: 1px solid var(--renaven-borde);
+            transition: border-color 0.3s;
+        }
+
+        .table thead th {
+            background: var(--renaven-azul-cielo);
+            border-bottom: 2px solid var(--renaven-borde);
+            color: var(--renaven-texto) !important;
+            font-weight: bold;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .table tbody tr:hover {
+            background: var(--renaven-gris-claro);
+        }
+
+        .table, .table td, .table th {
+            border-color: var(--renaven-borde) !important;
+        }
+
+        /* ========== SCROLLBAR ========== */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--renaven-gris-fondo);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--renaven-azul-cielo);
+            border-radius: 10px;
+            border: 1px solid var(--renaven-borde);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--renaven-azul-fuerte);
+        }
+
+        /* ========== ANIMACIÓN ========== */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .container {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        /* ========== ENLACES ========== */
+        a {
+            color: var(--renaven-texto) !important;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        a:hover {
+            color: var(--renaven-azul-fuerte) !important;
+            text-decoration: underline;
+        }
+
+        /* ========== BOTONES GENERALES ========== */
+        .btn {
+            border-radius: 50px !important;
+            border: 2px solid var(--renaven-borde) !important;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: var(--renaven-azul-fuerte) !important;
+            color: var(--renaven-texto) !important;
+        }
+
+        .btn-primary:hover {
+            background: var(--renaven-azul-cielo) !important;
+            color: var(--renaven-texto) !important;
+        }
+
+        .btn-success {
+            background: var(--renaven-verde) !important;
+            color: var(--renaven-texto) !important;
+        }
+
+        .btn-info {
+            background: var(--renaven-azul-cielo) !important;
+            color: var(--renaven-texto) !important;
+        }
+
+        .btn-warning {
+            background: var(--renaven-oro) !important;
+            color: var(--renaven-texto) !important;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            .accessibility-dropdown-content {
+                right: auto;
+                left: 0;
+                min-width: 170px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== SKIP LINK ========== -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <!-- ========== NAVBAR ========== -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" aria-label="Menú principal">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}" aria-label="Ir al Dashboard">
+                <div class="logo-circle">
+                    <span aria-hidden="true">🔵</span>
+                </div>
+                RENAVEN POS
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-label="Alternar menú de navegación">
+                <span class="navbar-toggler-icon" aria-hidden="true"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('inventory') }}" aria-label="Ir a Inventario">📦 Inventario</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('facturacion') }}" aria-label="Ir a Facturación">🛒 Facturar</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('cash_closure') }}" aria-label="Ir a Cierre de Caja">💰 Cierre de Caja</a></li>
+                    {% if session.get('role') == 'Dueño' %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('manage_users') }}" aria-label="Gestionar Usuarios">👥 Usuarios</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('manage_roles') }}" aria-label="Gestionar Roles">🔐 Roles</a></li>
+                    {% endif %}
+                    {% if session.get('role') in ['Supervisor', 'Dueño'] %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('daily_closure') }}" aria-label="Ver Reportes">📊 Reportes</a></li>
+                    {% endif %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('exchange_rate') }}" aria-label="Configurar Tasa de Cambio">💱 Tasa</a></li>
+                </ul>
+                <span class="navbar-text me-3" aria-label="Usuario actual: {{ session.get('username', 'Invitado') }} - Rol: {{ session.get('role', 'Usuario') }}">
+                    👤 {{ session.get('username', 'Invitado') }} | 🔵 {{ session.get('role', 'Usuario') }}
+                </span>
+                <!-- ===== BOTÓN DE ACCESIBILIDAD ===== -->
+                <div class="accessibility-dropdown">
+                    <button class="accessibility-btn" id="accessibilityToggle" aria-label="Abrir menú de accesibilidad">
+                        <i class="fas fa-universal-access" aria-hidden="true"></i> Accesibilidad
+                    </button>
+                    <div class="accessibility-dropdown-content" id="accessibilityMenu">
+                        <button id="increaseFontBtn"><i class="fas fa-search-plus" aria-hidden="true"></i> Aumentar Texto</button>
+                        <button id="decreaseFontBtn"><i class="fas fa-search-minus" aria-hidden="true"></i> Disminuir Texto</button>
+                        <button id="resetFontBtn"><i class="fas fa-undo-alt" aria-hidden="true"></i> Restablecer</button>
+                        <hr>
+                        <button id="themeOriginal" style="font-weight: bold;">🎨 Tema Original</button>
+                        <button id="themeRosa"><span class="color-circle" style="background:#fbc4d5;"></span> Rosa pastel</button>
+                        <button id="themeCeleste"><span class="color-circle" style="background:#b5d8eb;"></span> Celeste pastel</button>
+                        <button id="themeMenta"><span class="color-circle" style="background:#b5e6c3;"></span> Menta pastel</button>
+                        <button id="themeAmarillo"><span class="color-circle" style="background:#f9e7b2;"></span> Amarillo pastel</button>
+                        <button id="themeLila"><span class="color-circle" style="background:#d4c4f0;"></span> Lila pastel</button>
+                        <button id="themeDurazno"><span class="color-circle" style="background:#fdd0b5;"></span> Durazno pastel</button>
+                        <hr>
+                        <button id="closeAccessibilityMenu" style="color: #999;"><i class="fas fa-times" aria-hidden="true"></i> Cerrar</button>
+                    </div>
+                </div>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-light ms-2" aria-label="Cerrar Sesión">🚪 Salir</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ========== CONTENIDO PRINCIPAL ========== -->
+    <div class="container mt-3" id="main-content" role="main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {% if category == 'success' %}✅
+                    {% elif category == 'danger' %}❌
+                    {% elif category == 'warning' %}⚠️
+                    {% elif category == 'info' %}ℹ️
+                    {% endif %}
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar mensaje"></button>
+                </div>
+            {% endfor %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ========== LOGICA DE ACCESIBILIDAD Y TEMAS PASTEL (IDÉNTICO AL DASHBOARD) ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            // ---- Menú desplegable ----
+            var toggleBtn = document.getElementById('accessibilityToggle');
+            var menu = document.getElementById('accessibilityMenu');
+            var closeMenuBtn = document.getElementById('closeAccessibilityMenu');
+
+            function toggleMenu(e) {
+                e.stopPropagation();
+                menu.classList.toggle('show');
+            }
+
+            toggleBtn.addEventListener('click', toggleMenu);
+            closeMenuBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                menu.classList.remove('show');
+            });
+
+            // Cerrar al hacer clic fuera
+            document.addEventListener('click', function(e) {
+                var container = document.querySelector('.accessibility-dropdown');
+                if (container && !container.contains(e.target)) {
+                    menu.classList.remove('show');
+                }
+            });
+
+            // ---- Funciones para aplicar temas ----
+            function applyTheme(themeClass) {
+                document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                if (themeClass) {
+                    document.body.classList.add(themeClass);
+                }
+                localStorage.setItem('selectedTheme', themeClass || '');
+            }
+
+            // ---- Botones de temas ----
+            document.getElementById('themeOriginal').addEventListener('click', function() {
+                applyTheme(null);
+                menu.classList.remove('show');
+            });
+            document.getElementById('themeRosa').addEventListener('click', function() {
+                applyTheme('theme-rosa');
+                menu.classList.remove('show');
+            });
+            document.getElementById('themeCeleste').addEventListener('click', function() {
+                applyTheme('theme-celeste');
+                menu.classList.remove('show');
+            });
+            document.getElementById('themeMenta').addEventListener('click', function() {
+                applyTheme('theme-menta');
+                menu.classList.remove('show');
+            });
+            document.getElementById('themeAmarillo').addEventListener('click', function() {
+                applyTheme('theme-amarillo');
+                menu.classList.remove('show');
+            });
+            document.getElementById('themeLila').addEventListener('click', function() {
+                applyTheme('theme-lila');
+                menu.classList.remove('show');
+            });
+            document.getElementById('themeDurazno').addEventListener('click', function() {
+                applyTheme('theme-durazno');
+                menu.classList.remove('show');
+            });
+
+            // Cargar tema guardado
+            var savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            }
+
+            // ---- Tamaño de fuente (base 13px) ----
+            var currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            function applyFontSize() {
+                document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+            document.getElementById('increaseFontBtn').addEventListener('click', function() {
+                if (currentFontSize < 150) { currentFontSize += 10; applyFontSize(); }
+            });
+            document.getElementById('decreaseFontBtn').addEventListener('click', function() {
+                if (currentFontSize > 70) { currentFontSize -= 10; applyFontSize(); }
+            });
+            document.getElementById('resetFontBtn').addEventListener('click', function() {
+                currentFontSize = 100;
+                applyFontSize();
+            });
+            applyFontSize();
+
+            // ========== CSRF TOKEN para fetch ==========
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const originalFetch = window.fetch;
+            window.fetch = function(...args) {
+                if (args[1] && args[1].method && args[1].method !== 'GET') {
+                    args[1].headers = { ...args[1].headers, 'X-CSRFToken': csrfToken };
+                }
+                return originalFetch(...args);
+            };
+
+            // ========== Resaltar enlace activo ==========
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.nav-link').forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

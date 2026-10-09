@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Reporte de Inventario - RENAVEN</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ========== PALETA PREDETERMINADA (ORIGINAL LOGIN) ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+            --renaven-verde: #28a745;
+            --renaven-oro: #FFD700;
+            --shadow-color: rgba(132,182,244,0.2);
+            --transition-base: all 0.25s ease-in-out;
+        }
+
+        /* ========== TEMAS PASTEL INDIVIDUALES (SIN ALTO CONTRASTE) ========== */
+        /* 1. Rosa pastel */
+        body.theme-rosa {
+            --renaven-azul-fuerte: #fbc4d5;
+            --renaven-azul-cielo: #fce4ec;
+            --renaven-blanco: #fef9f0;
+            --renaven-gris-fondo: #fdf6f8;
+            --renaven-borde: #fbc4d5;
+        }
+        body.theme-rosa .container { border-color: #fbc4d5 !important; }
+        body.theme-rosa .table-dark { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .table-dark th { border-color: #fbc4d5 !important; }
+        body.theme-rosa .btn-primary { background: #fbc4d5 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-rosa .btn-primary:hover { background: #fdd0b5 !important; color: #000 !important; }
+        body.theme-rosa .btn-secondary { background: #fdd0b5 !important; border-color: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .btn-secondary:hover { background: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .badge { border-color: #fbc4d5 !important; }
+        body.theme-rosa .alert-info { background: #fce4ec !important; border-color: #fbc4d5 !important; border-left-color: #fdd0b5 !important; }
+        body.theme-rosa .alert-warning { background: #fdd0b5 !important; border-color: #fbc4d5 !important; border-left-color: #fbc4d5 !important; }
+        body.theme-rosa .company-logo { border-color: #fbc4d5 !important; }
+        body.theme-rosa .low-stock { border-left-color: #fbc4d5 !important; }
+
+        /* 2. Celeste pastel */
+        body.theme-celeste {
+            --renaven-azul-fuerte: #b5d8eb;
+            --renaven-azul-cielo: #d6ecf5;
+            --renaven-blanco: #f9fdff;
+            --renaven-gris-fondo: #f4faff;
+            --renaven-borde: #b5d8eb;
+        }
+        body.theme-celeste .container { border-color: #b5d8eb !important; }
+        body.theme-celeste .table-dark { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .table-dark th { border-color: #b5d8eb !important; }
+        body.theme-celeste .btn-primary { background: #b5d8eb !important; border-color: #a8d0e6 !important; color: #000 !important; }
+        body.theme-celeste .btn-primary:hover { background: #a8d0e6 !important; color: #000 !important; }
+        body.theme-celeste .btn-secondary { background: #a8d0e6 !important; border-color: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .btn-secondary:hover { background: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .badge { border-color: #b5d8eb !important; }
+        body.theme-celeste .alert-info { background: #d6ecf5 !important; border-color: #b5d8eb !important; border-left-color: #a8d0e6 !important; }
+        body.theme-celeste .alert-warning { background: #a8d0e6 !important; border-color: #b5d8eb !important; border-left-color: #b5d8eb !important; }
+        body.theme-celeste .company-logo { border-color: #b5d8eb !important; }
+        body.theme-celeste .low-stock { border-left-color: #b5d8eb !important; }
+
+        /* 3. Menta pastel */
+        body.theme-menta {
+            --renaven-azul-fuerte: #b5e6c3;
+            --renaven-azul-cielo: #d8f0e0;
+            --renaven-blanco: #f6fcf8;
+            --renaven-gris-fondo: #f2faf5;
+            --renaven-borde: #b5e6c3;
+        }
+        body.theme-menta .container { border-color: #b5e6c3 !important; }
+        body.theme-menta .table-dark { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .table-dark th { border-color: #b5e6c3 !important; }
+        body.theme-menta .btn-primary { background: #b5e6c3 !important; border-color: #a8dbb8 !important; color: #000 !important; }
+        body.theme-menta .btn-primary:hover { background: #a8dbb8 !important; color: #000 !important; }
+        body.theme-menta .btn-secondary { background: #a8dbb8 !important; border-color: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .btn-secondary:hover { background: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .badge { border-color: #b5e6c3 !important; }
+        body.theme-menta .alert-info { background: #d8f0e0 !important; border-color: #b5e6c3 !important; border-left-color: #a8dbb8 !important; }
+        body.theme-menta .alert-warning { background: #a8dbb8 !important; border-color: #b5e6c3 !important; border-left-color: #b5e6c3 !important; }
+        body.theme-menta .company-logo { border-color: #b5e6c3 !important; }
+        body.theme-menta .low-stock { border-left-color: #b5e6c3 !important; }
+
+        /* 4. Amarillo pastel */
+        body.theme-amarillo {
+            --renaven-azul-fuerte: #f9e7b2;
+            --renaven-azul-cielo: #fdf3d5;
+            --renaven-blanco: #fffef9;
+            --renaven-gris-fondo: #fefcf5;
+            --renaven-borde: #f9e7b2;
+        }
+        body.theme-amarillo .container { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .table-dark { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .table-dark th { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .btn-primary { background: #f9e7b2 !important; border-color: #f5dc9a !important; color: #000 !important; }
+        body.theme-amarillo .btn-primary:hover { background: #f5dc9a !important; color: #000 !important; }
+        body.theme-amarillo .btn-secondary { background: #f5dc9a !important; border-color: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .btn-secondary:hover { background: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .badge { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .alert-info { background: #fdf3d5 !important; border-color: #f9e7b2 !important; border-left-color: #f5dc9a !important; }
+        body.theme-amarillo .alert-warning { background: #f5dc9a !important; border-color: #f9e7b2 !important; border-left-color: #f9e7b2 !important; }
+        body.theme-amarillo .company-logo { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .low-stock { border-left-color: #f9e7b2 !important; }
+
+        /* 5. Lila pastel */
+        body.theme-lila {
+            --renaven-azul-fuerte: #d4c4f0;
+            --renaven-azul-cielo: #e8defa;
+            --renaven-blanco: #fcfaff;
+            --renaven-gris-fondo: #f8f5fe;
+            --renaven-borde: #d4c4f0;
+        }
+        body.theme-lila .container { border-color: #d4c4f0 !important; }
+        body.theme-lila .table-dark { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .table-dark th { border-color: #d4c4f0 !important; }
+        body.theme-lila .btn-primary { background: #d4c4f0 !important; border-color: #c9b7e8 !important; color: #000 !important; }
+        body.theme-lila .btn-primary:hover { background: #c9b7e8 !important; color: #000 !important; }
+        body.theme-lila .btn-secondary { background: #c9b7e8 !important; border-color: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .btn-secondary:hover { background: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .badge { border-color: #d4c4f0 !important; }
+        body.theme-lila .alert-info { background: #e8defa !important; border-color: #d4c4f0 !important; border-left-color: #c9b7e8 !important; }
+        body.theme-lila .alert-warning { background: #c9b7e8 !important; border-color: #d4c4f0 !important; border-left-color: #d4c4f0 !important; }
+        body.theme-lila .company-logo { border-color: #d4c4f0 !important; }
+        body.theme-lila .low-stock { border-left-color: #d4c4f0 !important; }
+
+        /* 6. Durazno pastel */
+        body.theme-durazno {
+            --renaven-azul-fuerte: #fdd0b5;
+            --renaven-azul-cielo: #fee5d0;
+            --renaven-blanco: #fffcf9;
+            --renaven-gris-fondo: #fef8f3;
+            --renaven-borde: #fdd0b5;
+        }
+        body.theme-durazno .container { border-color: #fdd0b5 !important; }
+        body.theme-durazno .table-dark { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .table-dark th { border-color: #fdd0b5 !important; }
+        body.theme-durazno .btn-primary { background: #fdd0b5 !important; border-color: #f5c2a4 !important; color: #000 !important; }
+        body.theme-durazno .btn-primary:hover { background: #f5c2a4 !important; color: #000 !important; }
+        body.theme-durazno .btn-secondary { background: #f5c2a4 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .btn-secondary:hover { background: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .badge { border-color: #fdd0b5 !important; }
+        body.theme-durazno .alert-info { background: #fee5d0 !important; border-color: #fdd0b5 !important; border-left-color: #f5c2a4 !important; }
+        body.theme-durazno .alert-warning { background: #f5c2a4 !important; border-color: #fdd0b5 !important; border-left-color: #fdd0b5 !important; }
+        body.theme-durazno .company-logo { border-color: #fdd0b5 !important; }
+        body.theme-durazno .low-stock { border-left-color: #fdd0b5 !important; }
+
+        /* ========== TODAS LAS LETRAS EN NEGRITA (excepto iconos) ========== */
+        *:not([class*="fa-"]) {
+            font-weight: bold !important;
+        }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+            font-weight: 400 !important;
+        }
+        .fas, .fa-solid {
+            font-weight: 900 !important;
+        }
+
+        /* ========== FONDO Y CUERPO ========== */
+        body {
+            background: var(--renaven-gris-fondo);
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            font-size: 13px;
+            color: var(--renaven-texto);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* ========== NAVEGACIÓN POR TECLADO ========== */
+        *:focus {
+            outline: 3px solid #FFD700 !important;
+            outline-offset: 2px !important;
+        }
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--renaven-azul-fuerte);
+            color: #000;
+            padding: 8px 16px;
+            z-index: 1000;
+            text-decoration: none;
+            border-radius: 0 0 8px 0;
+            font-weight: bold;
+        }
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* ===== FORZAR TEXTOS A NEGRO ===== */
+        body, p, span, div, h1, h2, h3, h4, h5, h6,
+        .header-title, .alert, .footer-text, .text-muted,
+        .badge, .table, .table td, .table th {
+            color: var(--renaven-texto) !important;
+        }
+        ::placeholder, input::placeholder, textarea::placeholder {
+            color: #9ca3af !important;
+            opacity: 1;
+        }
+
+        /* ========== CONTENEDOR PRINCIPAL ========== */
+        .container {
+            background: var(--renaven-blanco);
+            border-radius: 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin: 20px auto;
+            border: 2px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .company-logo {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 3px solid var(--renaven-azul-cielo);
+            transition: transform 0.3s ease, border-color 0.3s;
+            background: var(--renaven-blanco);
+        }
+        .company-logo:hover {
+            transform: scale(1.05);
+        }
+
+        .header-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .header-title i {
+            color: var(--renaven-azul-fuerte);
+        }
+        .header-subtitle {
+            font-size: 0.9rem;
+        }
+
+        .table {
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 2px solid var(--renaven-borde);
+            transition: border-color 0.3s;
+        }
+        .table-dark {
+            background: var(--renaven-azul-cielo) !important;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .table-dark th {
+            background: transparent;
+            border: none;
+            padding: 12px;
+            font-weight: 600;
+            border-bottom: 2px solid var(--renaven-borde);
+        }
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: var(--renaven-gris-fondo);
+        }
+        .table tbody tr:hover {
+            background-color: rgba(132,182,244,0.1);
+        }
+        .table td, .table th {
+            border-color: var(--renaven-borde) !important;
+        }
+
+        .low-stock {
+            background-color: #ffe6e6 !important;
+            font-weight: bold;
+            border-left: 4px solid #DC3545;
+        }
+
+        .alert-info {
+            background: var(--renaven-azul-cielo);
+            border: 2px solid var(--renaven-borde);
+            border-radius: 15px;
+            border-left: 5px solid var(--renaven-azul-fuerte);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .alert-warning {
+            background: #fff3e0;
+            border: 2px solid var(--renaven-borde);
+            border-radius: 15px;
+            border-left: 5px solid var(--renaven-oro);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--renaven-azul-fuerte) !important;
+            border: 2px solid var(--renaven-borde) !important;
+            border-radius: 50px !important;
+            padding: 10px 25px !important;
+            margin: 5px;
+            transition: all 0.3s ease;
+            color: #000 !important;
+        }
+        .btn-primary:hover {
+            background: var(--renaven-azul-cielo) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            color: #000 !important;
+        }
+        .btn-secondary {
+            border-radius: 50px !important;
+            padding: 10px 25px !important;
+            margin: 5px;
+            transition: all 0.3s ease;
+            background: #6c757d !important;
+            border: 2px solid var(--renaven-borde) !important;
+            color: #000 !important;
+        }
+        .btn-secondary:hover {
+            background: #5a6268 !important;
+            transform: translateY(-2px);
+            color: #000 !important;
+        }
+
+        .badge {
+            border-radius: 50px;
+            padding: 5px 12px;
+            border: 1px solid var(--renaven-borde);
+            color: #000 !important;
+        }
+
+        hr {
+            border-top: 2px solid var(--renaven-borde);
+            margin: 20px 0;
+            transition: border-color 0.3s;
+        }
+        .footer-text {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+        .text-end {
+            font-weight: 500;
+        }
+        .text-center a {
+            text-decoration: none;
+        }
+
+        @media print {
+            .no-print,
+            .skip-link {
+                display: none !important;
+            }
+            body { background: white !important; margin: 0; padding: 0; }
+            .container { box-shadow: none; padding: 10px; margin: 0; border: 2px solid #000 !important; }
+            .btn { display: none; }
+            .company-logo { max-width: 80px; }
+            .low-stock { background-color: #ffe6e6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .table-dark th { background: var(--renaven-azul-cielo) !important; color: #000 !important; }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            .company-logo {
+                width: 60px;
+                height: 60px;
+            }
+            .table {
+                font-size: 11px;
+            }
+            .table td, .table th {
+                padding: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== SKIP LINK ========== -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <div class="container" style="max-width: 1200px;" id="main-content" role="main">
+        <!-- Encabezado -->
+        <div class="row align-items-center mb-4">
+            <div class="col-3">
+                <img src="{{ url_for('static', filename='img/renaven.jpeg') }}"
+                     alt="Logo RENAVEN - Sistema de Facturación"
+                     class="company-logo"
+                     onerror="this.src='https://via.placeholder.com/100x100?text=R'">
+            </div>
+            <div class="col-6 text-center">
+                <h1 class="header-title h3">
+                    <i class="fas fa-boxes" aria-hidden="true"></i> REPORTE DE INVENTARIO
+                </h1>
+                <h2 class="header-subtitle h5">{{ company.name | default('RENAVEN OAKMONT, C.A.') }}</h2>
+                <p class="mb-0">
+                    RIF: {{ company.rif | default('J-41323725-3') }} |
+                    <i class="fas fa-map-marker-alt" aria-hidden="true"></i> {{ company.address | default('CALLE 1 ANDRES BELLO N°01-06') }}
+                </p>
+            </div>
+            <div class="col-3 text-end">
+                <strong><i class="fas fa-calendar-alt" aria-hidden="true"></i> Fecha:</strong><br>
+                {{ current_date }}
+            </div>
+        </div>
+
+        <!-- Tabla de inventario -->
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped" aria-label="Tabla de inventario de productos">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col"><i class="fas fa-barcode" aria-hidden="true"></i> Código</th>
+                        <th scope="col"><i class="fas fa-tag" aria-hidden="true"></i> Producto</th>
+                        <th scope="col"><i class="fas fa-folder" aria-hidden="true"></i> Categoría</th>
+                        <th scope="col"><i class="fas fa-ruler" aria-hidden="true"></i> Unidad</th>
+                        <th scope="col" class="text-end"><i class="fas fa-cubes" aria-hidden="true"></i> Stock</th>
+                        <th scope="col" class="text-end"><i class="fas fa-chart-line" aria-hidden="true"></i> Costo</th>
+                        <th scope="col" class="text-end"><i class="fas fa-dollar-sign" aria-hidden="true"></i> Precio</th>
+                        <th scope="col" class="text-end"><i class="fas fa-chart-simple" aria-hidden="true"></i> Margen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set low_stock_counter = 0 %}
+                    {% for product in products %}
+                        {% set stock = product.stock|default(0)|float %}
+                        {% if stock < 5 and stock > 0 %}
+                            {% set low_stock_counter = low_stock_counter + 1 %}
+                        {% endif %}
+                        <tr {% if stock < 5 and stock > 0 %}class="low-stock"{% endif %}>
+                            <td aria-label="Código de barras: {{ product.barcode|default('-') }}">{{ product.barcode|default('-') }}</td>
+                            <td aria-label="Producto: {{ product.name|default('-') }}">{{ product.name|default('-') }}</td>
+                            <td aria-label="Categoría: {{ product.category|default('-') }}">{{ product.category|default('-') }}</td>
+                            <td aria-label="Unidad: {{ product.unit|default('-') }}">{{ product.unit|default('-') }}</td>
+                            <td class="text-end fw-bold" aria-label="Stock: {{ stock|format_number }}">{{ stock|format_number }}</td>
+                            <td class="text-end" aria-label="Costo: ${{ product.cost|default(0)|format_usd }}">$ {{ product.cost|default(0)|format_usd }}</td>
+                            <td class="text-end" style="font-weight: bold;" aria-label="Precio: ${{ product.price|default(0)|format_usd }}">$ {{ product.price|default(0)|format_usd }}</td>
+                            <td class="text-end">
+                                <span class="badge" style="background: var(--renaven-verde); border: 1px solid var(--renaven-borde);" aria-label="Margen: {{ product.margin|default(0)|format_number }}%">
+                                    {{ product.margin|default(0)|format_number }}%
+                                </span>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-5">
+                                <i class="fas fa-box-open fa-3x mb-3 d-block" aria-hidden="true"></i>
+                                No hay productos registrados en el inventario.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Resumen -->
+        <div class="alert alert-info mt-4" role="alert">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <i class="fas fa-chart-pie" aria-hidden="true"></i> <strong>Resumen del Inventario:</strong>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <span class="badge" style="background: var(--renaven-azul-cielo); border: 1px solid var(--renaven-borde);">
+                        <i class="fas fa-cube" aria-hidden="true"></i> Total productos: {{ products|length }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock bajo warning -->
+        {% if low_stock_counter > 0 %}
+        <div class="alert alert-warning mt-2" role="alert">
+            <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+            <strong>¡Atención!</strong> Hay {{ low_stock_counter }} producto(s) con stock bajo (menos de 5 unidades).
+        </div>
+        {% endif %}
+
+        <!-- Pie de página -->
+        <hr>
+        <div class="footer-text text-center">
+            <p class="mb-0">
+                <i class="fas fa-check-circle" aria-hidden="true"></i>
+                RENAVEN OAKMONT, C.A. - Sistema de Gestión de Inventario<br>
+                Reporte generado automáticamente - {{ current_date }}
+            </p>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="text-center no-print mt-4">
+            <button class="btn btn-primary" onclick="window.print()" aria-label="Imprimir reporte de inventario">
+                <i class="fas fa-print" aria-hidden="true"></i> 🖨️ Imprimir Reporte
+            </button>
+            <a href="{{ url_for('inventory') }}" class="btn btn-secondary" aria-label="Volver al inventario">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i> ← Volver al Inventario
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // ========== CARGA DE TEMA GUARDADO Y CONFIGURACIÓN DE FUENTE ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            // ---- Temas pastel ----
+            function applyTheme(themeClass) {
+                document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                if (themeClass) {
+                    document.body.classList.add(themeClass);
+                }
+                localStorage.setItem('selectedTheme', themeClass || '');
+            }
+
+            const savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            }
+
+            // ---- Fondo de pantalla ----
+            // Para esta página sin imagen de fondo, usamos el color de fondo directamente.
+            const savedBg = localStorage.getItem('backgroundMode');
+            if (savedBg === 'black') {
+                document.body.style.background = '#000000';
+            } else if (savedBg === 'white') {
+                document.body.style.background = '#FFFFFF';
+            } else {
+                document.body.style.background = 'var(--renaven-gris-fondo)';
+            }
+
+            // ---- Tamaño de fuente (base 13px) ----
+            let currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            function applyFontSize() {
+                document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+            // Aplicar el tamaño guardado
+            applyFontSize();
+        });
+    </script>
+</body>
+</html>

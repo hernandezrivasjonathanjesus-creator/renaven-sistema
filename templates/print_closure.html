@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Comprobante de Cierre - RENAVEN</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ========== PALETA PREDETERMINADA (ORIGINAL LOGIN) ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-gris-claro: #e2e8f0;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+            --renaven-verde: #28a745;
+            --renaven-oro: #FFD700;
+            --shadow-color: rgba(132,182,244,0.2);
+            --transition-base: all 0.25s ease-in-out;
+        }
+
+        /* ========== TEMAS PASTEL INDIVIDUALES (SIN ALTO CONTRASTE) ========== */
+        /* 1. Rosa pastel */
+        body.theme-rosa {
+            --renaven-azul-fuerte: #fbc4d5;
+            --renaven-azul-cielo: #fce4ec;
+            --renaven-blanco: #fef9f0;
+            --renaven-gris-fondo: #fdf6f8;
+            --renaven-borde: #fbc4d5;
+        }
+        body.theme-rosa .ticket { border-color: #fbc4d5 !important; }
+        body.theme-rosa .header { border-color: #fdd0b5 !important; }
+        body.theme-rosa .total-row { background: #fce4ec !important; border-color: #fbc4d5 !important; border-left-color: #fdd0b5 !important; }
+        body.theme-rosa .resultado-cuadrado { background: #fce4ec !important; border-color: #fbc4d5 !important; border-left-color: #fdd0b5 !important; }
+        body.theme-rosa .resultado-sobrante { background: #fce4ec !important; border-color: #fbc4d5 !important; border-left-color: #fdd0b5 !important; }
+        body.theme-rosa .resultado-faltante { background: #fdd0b5 !important; border-color: #fbc4d5 !important; border-left-color: #fbc4d5 !important; }
+        body.theme-rosa .btn-primary { background: #fbc4d5 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-rosa .btn-primary:hover { background: #fdd0b5 !important; }
+        body.theme-rosa .btn-secondary { background: #fdd0b5 !important; border-color: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .btn-secondary:hover { background: #fbc4d5 !important; }
+        body.theme-rosa .company-logo { border-color: #fbc4d5 !important; }
+        body.theme-rosa .notes-box { background: #fce4ec !important; border-color: #fbc4d5 !important; border-left-color: #fdd0b5 !important; }
+        body.theme-rosa .badge { border-color: #fbc4d5 !important; }
+
+        /* 2. Celeste pastel */
+        body.theme-celeste {
+            --renaven-azul-fuerte: #b5d8eb;
+            --renaven-azul-cielo: #d6ecf5;
+            --renaven-blanco: #f9fdff;
+            --renaven-gris-fondo: #f4faff;
+            --renaven-borde: #b5d8eb;
+        }
+        body.theme-celeste .ticket { border-color: #b5d8eb !important; }
+        body.theme-celeste .header { border-color: #a8d0e6 !important; }
+        body.theme-celeste .total-row { background: #d6ecf5 !important; border-color: #b5d8eb !important; border-left-color: #a8d0e6 !important; }
+        body.theme-celeste .resultado-cuadrado { background: #d6ecf5 !important; border-color: #b5d8eb !important; border-left-color: #a8d0e6 !important; }
+        body.theme-celeste .resultado-sobrante { background: #d6ecf5 !important; border-color: #b5d8eb !important; border-left-color: #a8d0e6 !important; }
+        body.theme-celeste .resultado-faltante { background: #a8d0e6 !important; border-color: #b5d8eb !important; border-left-color: #b5d8eb !important; }
+        body.theme-celeste .btn-primary { background: #b5d8eb !important; border-color: #a8d0e6 !important; color: #000 !important; }
+        body.theme-celeste .btn-primary:hover { background: #a8d0e6 !important; }
+        body.theme-celeste .btn-secondary { background: #a8d0e6 !important; border-color: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .btn-secondary:hover { background: #b5d8eb !important; }
+        body.theme-celeste .company-logo { border-color: #b5d8eb !important; }
+        body.theme-celeste .notes-box { background: #d6ecf5 !important; border-color: #b5d8eb !important; border-left-color: #a8d0e6 !important; }
+        body.theme-celeste .badge { border-color: #b5d8eb !important; }
+
+        /* 3. Menta pastel */
+        body.theme-menta {
+            --renaven-azul-fuerte: #b5e6c3;
+            --renaven-azul-cielo: #d8f0e0;
+            --renaven-blanco: #f6fcf8;
+            --renaven-gris-fondo: #f2faf5;
+            --renaven-borde: #b5e6c3;
+        }
+        body.theme-menta .ticket { border-color: #b5e6c3 !important; }
+        body.theme-menta .header { border-color: #a8dbb8 !important; }
+        body.theme-menta .total-row { background: #d8f0e0 !important; border-color: #b5e6c3 !important; border-left-color: #a8dbb8 !important; }
+        body.theme-menta .resultado-cuadrado { background: #d8f0e0 !important; border-color: #b5e6c3 !important; border-left-color: #a8dbb8 !important; }
+        body.theme-menta .resultado-sobrante { background: #d8f0e0 !important; border-color: #b5e6c3 !important; border-left-color: #a8dbb8 !important; }
+        body.theme-menta .resultado-faltante { background: #a8dbb8 !important; border-color: #b5e6c3 !important; border-left-color: #b5e6c3 !important; }
+        body.theme-menta .btn-primary { background: #b5e6c3 !important; border-color: #a8dbb8 !important; color: #000 !important; }
+        body.theme-menta .btn-primary:hover { background: #a8dbb8 !important; }
+        body.theme-menta .btn-secondary { background: #a8dbb8 !important; border-color: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .btn-secondary:hover { background: #b5e6c3 !important; }
+        body.theme-menta .company-logo { border-color: #b5e6c3 !important; }
+        body.theme-menta .notes-box { background: #d8f0e0 !important; border-color: #b5e6c3 !important; border-left-color: #a8dbb8 !important; }
+        body.theme-menta .badge { border-color: #b5e6c3 !important; }
+
+        /* 4. Amarillo pastel */
+        body.theme-amarillo {
+            --renaven-azul-fuerte: #f9e7b2;
+            --renaven-azul-cielo: #fdf3d5;
+            --renaven-blanco: #fffef9;
+            --renaven-gris-fondo: #fefcf5;
+            --renaven-borde: #f9e7b2;
+        }
+        body.theme-amarillo .ticket { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .header { border-color: #f5dc9a !important; }
+        body.theme-amarillo .total-row { background: #fdf3d5 !important; border-color: #f9e7b2 !important; border-left-color: #f5dc9a !important; }
+        body.theme-amarillo .resultado-cuadrado { background: #fdf3d5 !important; border-color: #f9e7b2 !important; border-left-color: #f5dc9a !important; }
+        body.theme-amarillo .resultado-sobrante { background: #fdf3d5 !important; border-color: #f9e7b2 !important; border-left-color: #f5dc9a !important; }
+        body.theme-amarillo .resultado-faltante { background: #f5dc9a !important; border-color: #f9e7b2 !important; border-left-color: #f9e7b2 !important; }
+        body.theme-amarillo .btn-primary { background: #f9e7b2 !important; border-color: #f5dc9a !important; color: #000 !important; }
+        body.theme-amarillo .btn-primary:hover { background: #f5dc9a !important; }
+        body.theme-amarillo .btn-secondary { background: #f5dc9a !important; border-color: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .btn-secondary:hover { background: #f9e7b2 !important; }
+        body.theme-amarillo .company-logo { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .notes-box { background: #fdf3d5 !important; border-color: #f9e7b2 !important; border-left-color: #f5dc9a !important; }
+        body.theme-amarillo .badge { border-color: #f9e7b2 !important; }
+
+        /* 5. Lila pastel */
+        body.theme-lila {
+            --renaven-azul-fuerte: #d4c4f0;
+            --renaven-azul-cielo: #e8defa;
+            --renaven-blanco: #fcfaff;
+            --renaven-gris-fondo: #f8f5fe;
+            --renaven-borde: #d4c4f0;
+        }
+        body.theme-lila .ticket { border-color: #d4c4f0 !important; }
+        body.theme-lila .header { border-color: #c9b7e8 !important; }
+        body.theme-lila .total-row { background: #e8defa !important; border-color: #d4c4f0 !important; border-left-color: #c9b7e8 !important; }
+        body.theme-lila .resultado-cuadrado { background: #e8defa !important; border-color: #d4c4f0 !important; border-left-color: #c9b7e8 !important; }
+        body.theme-lila .resultado-sobrante { background: #e8defa !important; border-color: #d4c4f0 !important; border-left-color: #c9b7e8 !important; }
+        body.theme-lila .resultado-faltante { background: #c9b7e8 !important; border-color: #d4c4f0 !important; border-left-color: #d4c4f0 !important; }
+        body.theme-lila .btn-primary { background: #d4c4f0 !important; border-color: #c9b7e8 !important; color: #000 !important; }
+        body.theme-lila .btn-primary:hover { background: #c9b7e8 !important; }
+        body.theme-lila .btn-secondary { background: #c9b7e8 !important; border-color: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .btn-secondary:hover { background: #d4c4f0 !important; }
+        body.theme-lila .company-logo { border-color: #d4c4f0 !important; }
+        body.theme-lila .notes-box { background: #e8defa !important; border-color: #d4c4f0 !important; border-left-color: #c9b7e8 !important; }
+        body.theme-lila .badge { border-color: #d4c4f0 !important; }
+
+        /* 6. Durazno pastel */
+        body.theme-durazno {
+            --renaven-azul-fuerte: #fdd0b5;
+            --renaven-azul-cielo: #fee5d0;
+            --renaven-blanco: #fffcf9;
+            --renaven-gris-fondo: #fef8f3;
+            --renaven-borde: #fdd0b5;
+        }
+        body.theme-durazno .ticket { border-color: #fdd0b5 !important; }
+        body.theme-durazno .header { border-color: #f5c2a4 !important; }
+        body.theme-durazno .total-row { background: #fee5d0 !important; border-color: #fdd0b5 !important; border-left-color: #f5c2a4 !important; }
+        body.theme-durazno .resultado-cuadrado { background: #fee5d0 !important; border-color: #fdd0b5 !important; border-left-color: #f5c2a4 !important; }
+        body.theme-durazno .resultado-sobrante { background: #fee5d0 !important; border-color: #fdd0b5 !important; border-left-color: #f5c2a4 !important; }
+        body.theme-durazno .resultado-faltante { background: #f5c2a4 !important; border-color: #fdd0b5 !important; border-left-color: #fdd0b5 !important; }
+        body.theme-durazno .btn-primary { background: #fdd0b5 !important; border-color: #f5c2a4 !important; color: #000 !important; }
+        body.theme-durazno .btn-primary:hover { background: #f5c2a4 !important; }
+        body.theme-durazno .btn-secondary { background: #f5c2a4 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .btn-secondary:hover { background: #fdd0b5 !important; }
+        body.theme-durazno .company-logo { border-color: #fdd0b5 !important; }
+        body.theme-durazno .notes-box { background: #fee5d0 !important; border-color: #fdd0b5 !important; border-left-color: #f5c2a4 !important; }
+        body.theme-durazno .badge { border-color: #fdd0b5 !important; }
+
+        /* ========== TODAS LAS LETRAS EN NEGRITA (excepto iconos) ========== */
+        *:not([class*="fa-"]) {
+            font-weight: bold !important;
+        }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+            font-weight: 400 !important;
+        }
+        .fas, .fa-solid {
+            font-weight: 900 !important;
+        }
+
+        /* ========== FONDO Y CUERPO ========== */
+        body {
+            background: var(--renaven-gris-fondo);
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+            font-size: 13px;
+            color: var(--renaven-texto);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* ========== NAVEGACIÓN POR TECLADO ========== */
+        *:focus {
+            outline: 3px solid #FFD700 !important;
+            outline-offset: 2px !important;
+        }
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--renaven-azul-fuerte);
+            color: #000;
+            padding: 8px 16px;
+            z-index: 1000;
+            text-decoration: none;
+            border-radius: 0 0 8px 0;
+            font-weight: bold;
+        }
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* ===== FORZAR TEXTOS A NEGRO ===== */
+        body, body * {
+            color: var(--renaven-texto) !important;
+        }
+        ::placeholder, input::placeholder, textarea::placeholder {
+            color: #9ca3af !important;
+            opacity: 1;
+        }
+
+        /* ========== TICKET ========== */
+        .ticket {
+            max-width: 500px;
+            margin: 0 auto;
+            background: var(--renaven-blanco);
+            border-radius: 25px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            border: 2px solid var(--renaven-borde);
+        }
+        .ticket:hover {
+            transform: translateY(-5px);
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px dashed var(--renaven-borde);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+        .company-logo {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 3px solid var(--renaven-azul-cielo);
+            margin-bottom: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, border-color 0.3s;
+            background: var(--renaven-blanco);
+        }
+        .company-logo:hover {
+            transform: scale(1.05);
+        }
+        .header h3 {
+            margin: 0;
+            font-weight: bold;
+        }
+        .header p {
+            margin: 5px 0;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        .header h5 {
+            font-weight: bold;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 13px;
+            padding: 4px 0;
+        }
+        .info-row span:first-child {
+            opacity: 0.7;
+        }
+
+        .total-row {
+            background: var(--renaven-azul-cielo);
+            padding: 12px;
+            border-radius: 15px;
+            margin: 15px 0;
+            border-left: 4px solid var(--renaven-azul-fuerte);
+            border: 2px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .total-row .info-row span {
+            font-weight: bold;
+        }
+
+        .resultado {
+            text-align: center;
+            padding: 12px;
+            border-radius: 15px;
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 14px;
+            border: 2px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .resultado-sobrante {
+            background: #d4edda;
+            border-left: 5px solid var(--renaven-verde);
+        }
+        .resultado-faltante {
+            background: #f8d7da;
+            border-left: 5px solid #DC3545;
+        }
+        .resultado-cuadrado {
+            background: var(--renaven-azul-cielo);
+            border-left: 5px solid var(--renaven-azul-fuerte);
+        }
+
+        .footer {
+            text-align: center;
+            border-top: 1px dashed var(--renaven-borde);
+            padding-top: 15px;
+            margin-top: 15px;
+            font-size: 10px;
+            opacity: 0.7;
+        }
+
+        hr {
+            margin: 12px 0;
+            border-top: 1px dashed var(--renaven-borde);
+        }
+
+        .badge {
+            border-radius: 50px;
+            padding: 3px 8px;
+            font-size: 10px;
+            border: 1px solid var(--renaven-borde);
+        }
+
+        .btn-primary {
+            background: var(--renaven-azul-fuerte) !important;
+            border: 2px solid var(--renaven-borde) !important;
+            border-radius: 50px !important;
+            padding: 8px 20px !important;
+            margin: 5px;
+            transition: all 0.3s ease;
+            color: #000 !important;
+        }
+        .btn-primary:hover {
+            background: var(--renaven-azul-cielo) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            color: #000 !important;
+        }
+        .btn-secondary {
+            border-radius: 50px !important;
+            padding: 8px 20px !important;
+            margin: 5px;
+            transition: all 0.3s ease;
+            background: #6c757d !important;
+            border: 2px solid var(--renaven-borde) !important;
+            color: #000 !important;
+        }
+        .btn-secondary:hover {
+            background: #5a6268 !important;
+            transform: translateY(-2px);
+            color: #000 !important;
+        }
+
+        .info-row i {
+            width: 22px;
+        }
+        .notes-box {
+            background: var(--renaven-gris-fondo);
+            border-radius: 15px;
+            padding: 10px;
+            margin-top: 10px;
+            border-left: 5px solid var(--renaven-azul-fuerte);
+            border: 2px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .text-muted {
+            opacity: 0.7;
+            color: #000 !important;
+        }
+        .footer i {
+            color: var(--renaven-verde);
+        }
+        .numero-bs {
+            font-weight: bold;
+        }
+        .numero-usd {
+            font-weight: bold;
+        }
+
+        @media print {
+            .no-print,
+            .skip-link {
+                display: none !important;
+            }
+            body { margin: 0; padding: 0; background: white; }
+            .ticket { box-shadow: none; padding: 10px; border: 2px solid #000 !important; }
+            .btn { display: none; }
+            .company-logo { width: 60px; height: 60px; }
+        }
+
+        @media (max-width: 480px) {
+            .ticket {
+                padding: 15px;
+            }
+            .info-row {
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== SKIP LINK ========== -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <div class="ticket" id="main-content" role="main">
+        <div class="header">
+            <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="company-logo" onerror="this.src='https://via.placeholder.com/70x70?text=R'">
+            <i class="fas fa-cash-register fa-2x" aria-hidden="true"></i>
+            <h1 class="h3">{{ company.get('name', 'RENAVEN OAKMONT, C.A.') }}</h1>
+            <p>
+                RIF: {{ company.get('rif', 'J-41323725-3') }}<br>
+                {{ company.get('address', 'CALLE 1 ANDRES BELLO N°01-06') }}<br>
+                Tel: {{ company.get('phone', '0412-1234567') }}
+            </p>
+            <h2 class="h5">📋 COMPROBANTE DE CIERRE DE CAJA</h2>
+            <p><i class="fas fa-calendar-alt" aria-hidden="true"></i> {{ current_date }}</p>
+        </div>
+
+        <!-- Cajero/a -->
+        <div class="info-row">
+            <span><i class="fas fa-user" aria-hidden="true"></i> Cajero/a:</span>
+            <strong>{{ cashier_name|default('Usuario') }}</strong>
+        </div>
+        <!-- Supervisor (si está disponible) -->
+        {% if supervisor_username %}
+        <div class="info-row">
+            <span><i class="fas fa-user-tie" aria-hidden="true"></i> Supervisor:</span>
+            <strong>{{ supervisor_username }}</strong>
+        </div>
+        {% endif %}
+        <div class="info-row">
+            <span><i class="fas fa-clock" aria-hidden="true"></i> Fecha/Hora cierre:</span>
+            <strong>{{ current_date }}</strong>
+        </div>
+
+        <hr>
+
+        <!-- Fondo de apertura -->
+        <div class="info-row">
+            <span><i class="fas fa-money-bill-wave" aria-hidden="true"></i> Fondo de Apertura:</span>
+            <strong class="numero-bs" aria-label="Fondo de apertura: Bs. {{ opening_balance|default(0)|format_bs }}">Bs. {{ opening_balance|default(0)|format_bs }}</strong>
+        </div>
+        <!-- Total ventas en Bs -->
+        <div class="info-row">
+            <span><i class="fas fa-chart-line" aria-hidden="true"></i> Total Ventas Bs:</span>
+            <strong class="numero-bs" aria-label="Total ventas en bolívares: Bs. {{ total_bs|default(0)|format_bs }}">Bs. {{ total_bs|default(0)|format_bs }}</strong>
+        </div>
+        <!-- Total esperado -->
+        <div class="info-row">
+            <span><i class="fas fa-calculator" aria-hidden="true"></i> Total Esperado:</span>
+            <strong class="numero-bs" aria-label="Total esperado: Bs. {{ (opening_balance|default(0) + total_bs|default(0))|format_bs }}">Bs. {{ (opening_balance|default(0) + total_bs|default(0))|format_bs }}</strong>
+        </div>
+
+        <hr>
+
+        <!-- Efectivo Bs entregado -->
+        <div class="info-row">
+            <span><i class="fas fa-money-bill" aria-hidden="true"></i> Efectivo Bs:</span>
+            <strong class="numero-bs" aria-label="Efectivo en bolívares entregado: Bs. {{ total_efectivo_bs|default(0)|format_bs }}">Bs. {{ total_efectivo_bs|default(0)|format_bs }}</strong>
+        </div>
+        <!-- Efectivo USD entregado -->
+        {% if total_efectivo_usd|default(0) > 0 %}
+        <div class="info-row">
+            <span><i class="fas fa-dollar-sign" aria-hidden="true"></i> Efectivo USD:</span>
+            <strong class="numero-usd" aria-label="Efectivo en dólares entregado: ${{ total_efectivo_usd|default(0)|format_usd }}">$ {{ total_efectivo_usd|default(0)|format_usd }}
+                <span class="text-muted">(Bs. {{ (total_efectivo_usd|default(0) * rate)|format_bs }})</span>
+            </strong>
+        </div>
+        {% endif %}
+        <!-- Zelle entregado -->
+        {% if total_zelle|default(0) > 0 %}
+        <div class="info-row">
+            <span><i class="fas fa-university" aria-hidden="true"></i> Zelle:</span>
+            <strong class="numero-usd" aria-label="Zelle entregado: ${{ total_zelle|default(0)|format_usd }}">$ {{ total_zelle|default(0)|format_usd }}
+                <span class="text-muted">(Bs. {{ (total_zelle|default(0) * rate)|format_bs }})</span>
+            </strong>
+        </div>
+        {% endif %}
+        <!-- Pago Móvil entregado -->
+        {% if total_pago_movil|default(0) > 0 %}
+        <div class="info-row">
+            <span><i class="fas fa-mobile-alt" aria-hidden="true"></i> Pago Móvil:</span>
+            <strong class="numero-bs" aria-label="Pago móvil entregado: Bs. {{ total_pago_movil|default(0)|format_bs }}">Bs. {{ total_pago_movil|default(0)|format_bs }}</strong>
+        </div>
+        {% endif %}
+        <!-- Transferencia entregada -->
+        {% if total_transferencia|default(0) > 0 %}
+        <div class="info-row">
+            <span><i class="fas fa-exchange-alt" aria-hidden="true"></i> Transferencia:</span>
+            <strong class="numero-bs" aria-label="Transferencia entregada: Bs. {{ total_transferencia|default(0)|format_bs }}">Bs. {{ total_transferencia|default(0)|format_bs }}</strong>
+        </div>
+        {% endif %}
+        <!-- Tarjeta entregada -->
+        {% if total_tarjeta|default(0) > 0 %}
+        <div class="info-row">
+            <span><i class="fas fa-credit-card" aria-hidden="true"></i> Tarjeta:</span>
+            <strong class="numero-bs" aria-label="Tarjeta entregada: Bs. {{ total_tarjeta|default(0)|format_bs }}">Bs. {{ total_tarjeta|default(0)|format_bs }}</strong>
+        </div>
+        {% endif %}
+
+        <hr>
+
+        <!-- Cálculo del total entregado -->
+        {% set total_entregado = (total_efectivo_bs|default(0)) +
+                                (total_efectivo_usd|default(0) * rate) +
+                                (total_zelle|default(0) * rate) +
+                                (total_pago_movil|default(0)) +
+                                (total_transferencia|default(0)) +
+                                (total_tarjeta|default(0)) %}
+        {% set total_esperado = opening_balance|default(0) + total_bs|default(0) %}
+        {% set diferencia = total_entregado - total_esperado %}
+
+        <div class="total-row">
+            <div class="info-row">
+                <span><strong>💰 TOTAL ENTREGADO:</strong></span>
+                <span><strong class="numero-bs" aria-label="Total entregado: Bs. {{ total_entregado|format_bs }}">Bs. {{ total_entregado|format_bs }}</strong></span>
+            </div>
+        </div>
+
+        <div class="info-row">
+            <span><i class="fas fa-chart-simple" aria-hidden="true"></i> DIFERENCIA:</span>
+            <strong class="numero-bs" aria-label="Diferencia: Bs. {{ diferencia|format_bs }}">Bs. {{ diferencia|format_bs }}</strong>
+        </div>
+
+        <div class="resultado
+            {% if diferencia > 0 %}resultado-sobrante
+            {% elif diferencia < 0 %}resultado-faltante
+            {% else %}resultado-cuadrado{% endif %}"
+            aria-live="polite">
+            {% if diferencia > 0 %}
+                ✅ SOBRANTE: +{{ diferencia|format_bs }} Bs
+            {% elif diferencia < 0 %}
+                ⚠️ FALTANTE: {{ diferencia|format_bs }} Bs
+            {% else %}
+                ✓ CUADRADO PERFECTO
+            {% endif %}
+        </div>
+
+        <!-- Notas (si existen) -->
+        {% if closure_notes %}
+        <div class="notes-box">
+            <div class="info-row">
+                <span><i class="fas fa-pen" aria-hidden="true"></i> Notas:</span>
+                <span>{{ closure_notes }}</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="footer">
+            <p>
+                <i class="fas fa-check-circle" aria-hidden="true"></i> Este comprobante es válido como cierre de caja<br>
+                <strong>RENAVEN OAKMONT, C.A.</strong> - Todos los derechos reservados
+            </p>
+            <p class="mt-2">
+                <i class="fas fa-chart-line" aria-hidden="true"></i> Tasa del día: Bs. {{ rate|default(40)|format_bs }} por USD
+            </p>
+        </div>
+
+        <div class="text-center no-print mt-3">
+            <button onclick="window.print()" class="btn btn-primary" aria-label="Imprimir comprobante de cierre">
+                <i class="fas fa-print" aria-hidden="true"></i> 🖨️ Imprimir
+            </button>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary" aria-label="Volver al Dashboard">
+                <i class="fas fa-chart-line" aria-hidden="true"></i> 📊 Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // ========== CARGA DE TEMA GUARDADO Y CONFIGURACIÓN DE FUENTE ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            // ---- Temas pastel ----
+            function applyTheme(themeClass) {
+                document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                if (themeClass) {
+                    document.body.classList.add(themeClass);
+                }
+                localStorage.setItem('selectedTheme', themeClass || '');
+            }
+
+            const savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            }
+
+            // ---- Fondo de pantalla ----
+            const savedBg = localStorage.getItem('backgroundMode');
+            if (savedBg === 'black') {
+                document.body.style.background = '#000000';
+            } else if (savedBg === 'white') {
+                document.body.style.background = '#FFFFFF';
+            } else {
+                document.body.style.background = 'var(--renaven-gris-fondo)';
+            }
+
+            // ---- Tamaño de fuente (base 13px) ----
+            let currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            function applyFontSize() {
+                document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+            // Aplicar el tamaño guardado
+            applyFontSize();
+        });
+    </script>
+</body>
+</html>

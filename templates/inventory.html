@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Inventario - RENAVEN</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ========== PALETA PREDETERMINADA (ORIGINAL LOGIN) ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-gris-claro: #e2e8f0;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+            --renaven-verde: #28a745;
+            --renaven-rojo: #dc2626;
+            --renaven-oro: #FFD700;
+            --shadow-color: rgba(132,182,244,0.2);
+            --transition-base: all 0.25s ease-in-out;
+        }
+
+        /* ========== TEMAS PASTEL INDIVIDUALES (SIN ALTO CONTRASTE) ========== */
+        /* 1. Rosa pastel */
+        body.theme-rosa {
+            --renaven-azul-fuerte: #fbc4d5;
+            --renaven-azul-cielo: #fce4ec;
+            --renaven-blanco: #fef9f0;
+            --renaven-gris-fondo: #fdf6f8;
+            --renaven-borde: #fbc4d5;
+        }
+        body.theme-rosa .sidebar { background: #fdd0b5; border-right-color: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link.active { background: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link:hover { background: #fce4ec; }
+        body.theme-rosa .table-dark { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .table-dark th { border-color: #fbc4d5 !important; }
+        body.theme-rosa .btn-success { background: #fbc4d5 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-rosa .btn-success:hover { background: #fdd0b5 !important; }
+        body.theme-rosa .btn-info { background: #fce4ec !important; border-color: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .btn-info:hover { background: #fbc4d5 !important; }
+        body.theme-rosa .btn-warning { background: #fdd0b5 !important; border-color: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .btn-warning:hover { background: #fbc4d5 !important; }
+        body.theme-rosa .btn-danger { background: #fdd0b5 !important; border-color: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .btn-danger:hover { background: #fbc4d5 !important; }
+        body.theme-rosa .btn-secondary { background: #fdd0b5 !important; border-color: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .btn-secondary:hover { background: #fbc4d5 !important; }
+        body.theme-rosa .btn-dark { background: #fdd0b5 !important; border-color: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .btn-dark:hover { background: #fbc4d5 !important; }
+        body.theme-rosa .badge { border-color: #fbc4d5 !important; }
+        body.theme-rosa .badge-weight { border-color: #fbc4d5 !important; }
+        body.theme-rosa .modal-header.bg-success { background: #fbc4d5 !important; border-color: #fdd0b5 !important; }
+        body.theme-rosa .modal-header.bg-info { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .modal-header.bg-warning { background: #fdd0b5 !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .modal-header.bg-danger { background: #fdd0b5 !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .modal-content { border-color: #fbc4d5 !important; }
+        body.theme-rosa .form-control:focus { border-color: #fbc4d5; box-shadow: 0 0 0 0.2rem rgba(251,196,213,0.4); }
+        body.theme-rosa .alert { border-color: #fbc4d5 !important; }
+        body.theme-rosa .sidebar-logo { border-color: #fbc4d5 !important; }
+        body.theme-rosa .low-stock { border-left-color: #fbc4d5 !important; }
+        body.theme-rosa .out-of-stock { border-left-color: #fbc4d5 !important; }
+        /* Filtro rosa */
+        body.theme-rosa #filtroCategoria { background: #fdd0b5 !important; border-color: #fbc4d5 !important; }
+
+        /* 2. Celeste pastel */
+        body.theme-celeste {
+            --renaven-azul-fuerte: #b5d8eb;
+            --renaven-azul-cielo: #d6ecf5;
+            --renaven-blanco: #f9fdff;
+            --renaven-gris-fondo: #f4faff;
+            --renaven-borde: #b5d8eb;
+        }
+        body.theme-celeste .sidebar { background: #a8d0e6; border-right-color: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link.active { background: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link:hover { background: #d6ecf5; }
+        body.theme-celeste .table-dark { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .table-dark th { border-color: #b5d8eb !important; }
+        body.theme-celeste .btn-success { background: #b5d8eb !important; border-color: #a8d0e6 !important; color: #000 !important; }
+        body.theme-celeste .btn-success:hover { background: #a8d0e6 !important; }
+        body.theme-celeste .btn-info { background: #d6ecf5 !important; border-color: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .btn-info:hover { background: #b5d8eb !important; }
+        body.theme-celeste .btn-warning { background: #a8d0e6 !important; border-color: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .btn-warning:hover { background: #b5d8eb !important; }
+        body.theme-celeste .btn-danger { background: #a8d0e6 !important; border-color: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .btn-danger:hover { background: #b5d8eb !important; }
+        body.theme-celeste .btn-secondary { background: #a8d0e6 !important; border-color: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .btn-secondary:hover { background: #b5d8eb !important; }
+        body.theme-celeste .btn-dark { background: #a8d0e6 !important; border-color: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .btn-dark:hover { background: #b5d8eb !important; }
+        body.theme-celeste .badge { border-color: #b5d8eb !important; }
+        body.theme-celeste .badge-weight { border-color: #b5d8eb !important; }
+        body.theme-celeste .modal-header.bg-success { background: #b5d8eb !important; border-color: #a8d0e6 !important; }
+        body.theme-celeste .modal-header.bg-info { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .modal-header.bg-warning { background: #a8d0e6 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .modal-header.bg-danger { background: #a8d0e6 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .modal-content { border-color: #b5d8eb !important; }
+        body.theme-celeste .form-control:focus { border-color: #b5d8eb; box-shadow: 0 0 0 0.2rem rgba(181,216,235,0.4); }
+        body.theme-celeste .alert { border-color: #b5d8eb !important; }
+        body.theme-celeste .sidebar-logo { border-color: #b5d8eb !important; }
+        body.theme-celeste .low-stock { border-left-color: #b5d8eb !important; }
+        body.theme-celeste .out-of-stock { border-left-color: #b5d8eb !important; }
+        /* Filtro celeste */
+        body.theme-celeste #filtroCategoria { background: #a8d0e6 !important; border-color: #b5d8eb !important; }
+
+        /* 3. Menta pastel */
+        body.theme-menta {
+            --renaven-azul-fuerte: #b5e6c3;
+            --renaven-azul-cielo: #d8f0e0;
+            --renaven-blanco: #f6fcf8;
+            --renaven-gris-fondo: #f2faf5;
+            --renaven-borde: #b5e6c3;
+        }
+        body.theme-menta .sidebar { background: #a8dbb8; border-right-color: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link.active { background: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link:hover { background: #d8f0e0; }
+        body.theme-menta .table-dark { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .table-dark th { border-color: #b5e6c3 !important; }
+        body.theme-menta .btn-success { background: #b5e6c3 !important; border-color: #a8dbb8 !important; color: #000 !important; }
+        body.theme-menta .btn-success:hover { background: #a8dbb8 !important; }
+        body.theme-menta .btn-info { background: #d8f0e0 !important; border-color: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .btn-info:hover { background: #b5e6c3 !important; }
+        body.theme-menta .btn-warning { background: #a8dbb8 !important; border-color: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .btn-warning:hover { background: #b5e6c3 !important; }
+        body.theme-menta .btn-danger { background: #a8dbb8 !important; border-color: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .btn-danger:hover { background: #b5e6c3 !important; }
+        body.theme-menta .btn-secondary { background: #a8dbb8 !important; border-color: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .btn-secondary:hover { background: #b5e6c3 !important; }
+        body.theme-menta .btn-dark { background: #a8dbb8 !important; border-color: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .btn-dark:hover { background: #b5e6c3 !important; }
+        body.theme-menta .badge { border-color: #b5e6c3 !important; }
+        body.theme-menta .badge-weight { border-color: #b5e6c3 !important; }
+        body.theme-menta .modal-header.bg-success { background: #b5e6c3 !important; border-color: #a8dbb8 !important; }
+        body.theme-menta .modal-header.bg-info { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .modal-header.bg-warning { background: #a8dbb8 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .modal-header.bg-danger { background: #a8dbb8 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .modal-content { border-color: #b5e6c3 !important; }
+        body.theme-menta .form-control:focus { border-color: #b5e6c3; box-shadow: 0 0 0 0.2rem rgba(181,230,195,0.4); }
+        body.theme-menta .alert { border-color: #b5e6c3 !important; }
+        body.theme-menta .sidebar-logo { border-color: #b5e6c3 !important; }
+        body.theme-menta .low-stock { border-left-color: #b5e6c3 !important; }
+        body.theme-menta .out-of-stock { border-left-color: #b5e6c3 !important; }
+        /* Filtro menta */
+        body.theme-menta #filtroCategoria { background: #a8dbb8 !important; border-color: #b5e6c3 !important; }
+
+        /* 4. Amarillo pastel */
+        body.theme-amarillo {
+            --renaven-azul-fuerte: #f9e7b2;
+            --renaven-azul-cielo: #fdf3d5;
+            --renaven-blanco: #fffef9;
+            --renaven-gris-fondo: #fefcf5;
+            --renaven-borde: #f9e7b2;
+        }
+        body.theme-amarillo .sidebar { background: #f5dc9a; border-right-color: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link.active { background: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link:hover { background: #fdf3d5; }
+        body.theme-amarillo .table-dark { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .table-dark th { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .btn-success { background: #f9e7b2 !important; border-color: #f5dc9a !important; color: #000 !important; }
+        body.theme-amarillo .btn-success:hover { background: #f5dc9a !important; }
+        body.theme-amarillo .btn-info { background: #fdf3d5 !important; border-color: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .btn-info:hover { background: #f9e7b2 !important; }
+        body.theme-amarillo .btn-warning { background: #f5dc9a !important; border-color: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .btn-warning:hover { background: #f9e7b2 !important; }
+        body.theme-amarillo .btn-danger { background: #f5dc9a !important; border-color: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .btn-danger:hover { background: #f9e7b2 !important; }
+        body.theme-amarillo .btn-secondary { background: #f5dc9a !important; border-color: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .btn-secondary:hover { background: #f9e7b2 !important; }
+        body.theme-amarillo .btn-dark { background: #f5dc9a !important; border-color: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .btn-dark:hover { background: #f9e7b2 !important; }
+        body.theme-amarillo .badge { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .badge-weight { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .modal-header.bg-success { background: #f9e7b2 !important; border-color: #f5dc9a !important; }
+        body.theme-amarillo .modal-header.bg-info { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .modal-header.bg-warning { background: #f5dc9a !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .modal-header.bg-danger { background: #f5dc9a !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .modal-content { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .form-control:focus { border-color: #f9e7b2; box-shadow: 0 0 0 0.2rem rgba(249,231,178,0.4); }
+        body.theme-amarillo .alert { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .sidebar-logo { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .low-stock { border-left-color: #f9e7b2 !important; }
+        body.theme-amarillo .out-of-stock { border-left-color: #f9e7b2 !important; }
+        /* Filtro amarillo */
+        body.theme-amarillo #filtroCategoria { background: #f5dc9a !important; border-color: #f9e7b2 !important; }
+
+        /* 5. Lila pastel */
+        body.theme-lila {
+            --renaven-azul-fuerte: #d4c4f0;
+            --renaven-azul-cielo: #e8defa;
+            --renaven-blanco: #fcfaff;
+            --renaven-gris-fondo: #f8f5fe;
+            --renaven-borde: #d4c4f0;
+        }
+        body.theme-lila .sidebar { background: #c9b7e8; border-right-color: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link.active { background: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link:hover { background: #e8defa; }
+        body.theme-lila .table-dark { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .table-dark th { border-color: #d4c4f0 !important; }
+        body.theme-lila .btn-success { background: #d4c4f0 !important; border-color: #c9b7e8 !important; color: #000 !important; }
+        body.theme-lila .btn-success:hover { background: #c9b7e8 !important; }
+        body.theme-lila .btn-info { background: #e8defa !important; border-color: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .btn-info:hover { background: #d4c4f0 !important; }
+        body.theme-lila .btn-warning { background: #c9b7e8 !important; border-color: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .btn-warning:hover { background: #d4c4f0 !important; }
+        body.theme-lila .btn-danger { background: #c9b7e8 !important; border-color: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .btn-danger:hover { background: #d4c4f0 !important; }
+        body.theme-lila .btn-secondary { background: #c9b7e8 !important; border-color: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .btn-secondary:hover { background: #d4c4f0 !important; }
+        body.theme-lila .btn-dark { background: #c9b7e8 !important; border-color: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .btn-dark:hover { background: #d4c4f0 !important; }
+        body.theme-lila .badge { border-color: #d4c4f0 !important; }
+        body.theme-lila .badge-weight { border-color: #d4c4f0 !important; }
+        body.theme-lila .modal-header.bg-success { background: #d4c4f0 !important; border-color: #c9b7e8 !important; }
+        body.theme-lila .modal-header.bg-info { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .modal-header.bg-warning { background: #c9b7e8 !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .modal-header.bg-danger { background: #c9b7e8 !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .modal-content { border-color: #d4c4f0 !important; }
+        body.theme-lila .form-control:focus { border-color: #d4c4f0; box-shadow: 0 0 0 0.2rem rgba(212,196,240,0.4); }
+        body.theme-lila .alert { border-color: #d4c4f0 !important; }
+        body.theme-lila .sidebar-logo { border-color: #d4c4f0 !important; }
+        body.theme-lila .low-stock { border-left-color: #d4c4f0 !important; }
+        body.theme-lila .out-of-stock { border-left-color: #d4c4f0 !important; }
+        /* Filtro lila */
+        body.theme-lila #filtroCategoria { background: #c9b7e8 !important; border-color: #d4c4f0 !important; }
+
+        /* 6. Durazno pastel */
+        body.theme-durazno {
+            --renaven-azul-fuerte: #fdd0b5;
+            --renaven-azul-cielo: #fee5d0;
+            --renaven-blanco: #fffcf9;
+            --renaven-gris-fondo: #fef8f3;
+            --renaven-borde: #fdd0b5;
+        }
+        body.theme-durazno .sidebar { background: #f5c2a4; border-right-color: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link.active { background: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link:hover { background: #fee5d0; }
+        body.theme-durazno .table-dark { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .table-dark th { border-color: #fdd0b5 !important; }
+        body.theme-durazno .btn-success { background: #fdd0b5 !important; border-color: #f5c2a4 !important; color: #000 !important; }
+        body.theme-durazno .btn-success:hover { background: #f5c2a4 !important; }
+        body.theme-durazno .btn-info { background: #fee5d0 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .btn-info:hover { background: #fdd0b5 !important; }
+        body.theme-durazno .btn-warning { background: #f5c2a4 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .btn-warning:hover { background: #fdd0b5 !important; }
+        body.theme-durazno .btn-danger { background: #f5c2a4 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .btn-danger:hover { background: #fdd0b5 !important; }
+        body.theme-durazno .btn-secondary { background: #f5c2a4 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .btn-secondary:hover { background: #fdd0b5 !important; }
+        body.theme-durazno .btn-dark { background: #f5c2a4 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .btn-dark:hover { background: #fdd0b5 !important; }
+        body.theme-durazno .badge { border-color: #fdd0b5 !important; }
+        body.theme-durazno .badge-weight { border-color: #fdd0b5 !important; }
+        body.theme-durazno .modal-header.bg-success { background: #fdd0b5 !important; border-color: #f5c2a4 !important; }
+        body.theme-durazno .modal-header.bg-info { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .modal-header.bg-warning { background: #f5c2a4 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .modal-header.bg-danger { background: #f5c2a4 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .modal-content { border-color: #fdd0b5 !important; }
+        body.theme-durazno .form-control:focus { border-color: #fdd0b5; box-shadow: 0 0 0 0.2rem rgba(253,208,181,0.4); }
+        body.theme-durazno .alert { border-color: #fdd0b5 !important; }
+        body.theme-durazno .sidebar-logo { border-color: #fdd0b5 !important; }
+        body.theme-durazno .low-stock { border-left-color: #fdd0b5 !important; }
+        body.theme-durazno .out-of-stock { border-left-color: #fdd0b5 !important; }
+        /* Filtro durazno */
+        body.theme-durazno #filtroCategoria { background: #f5c2a4 !important; border-color: #fdd0b5 !important; }
+
+        /* ========== TODAS LAS LETRAS EN NEGRITA (excepto iconos) ========== */
+        *:not([class*="fa-"]) {
+            font-weight: bold !important;
+        }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+            font-weight: 400 !important;
+        }
+        .fas, .fa-solid {
+            font-weight: 900 !important;
+        }
+
+        /* FORZAR TODAS LAS LETRAS EN NEGRO */
+        body, body * {
+            color: var(--renaven-texto) !important;
+        }
+        ::placeholder, input::placeholder, textarea::placeholder {
+            color: #9ca3af !important;
+            opacity: 1;
+        }
+
+        body {
+            background: var(--renaven-gris-fondo);
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            color: var(--renaven-texto);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* ========== NAVEGACIÓN POR TECLADO ========== */
+        *:focus {
+            outline: 3px solid #FFD700 !important;
+            outline-offset: 2px !important;
+        }
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--renaven-azul-fuerte);
+            color: #000;
+            padding: 8px 16px;
+            z-index: 1000;
+            text-decoration: none;
+            border-radius: 0 0 8px 0;
+            font-weight: bold;
+        }
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* ========== SIDEBAR ========== */
+        .sidebar {
+            min-height: 100vh;
+            background: var(--renaven-azul-fuerte);
+            border-right: 2px solid var(--renaven-azul-cielo);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .sidebar .nav-link {
+            margin: 5px 0;
+            border-radius: 50px;
+            transition: all 0.3s;
+            padding: 10px 15px;
+            color: #000 !important;
+        }
+        .sidebar .nav-link i {
+            color: #000 !important;
+        }
+        .sidebar .nav-link:hover {
+            background: var(--renaven-azul-cielo);
+            transform: translateX(8px);
+            color: #000 !important;
+        }
+        .sidebar .nav-link:hover i {
+            color: #000 !important;
+        }
+        .sidebar .nav-link.active {
+            background: var(--renaven-azul-cielo);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 1px solid var(--renaven-borde);
+            color: #000 !important;
+        }
+        .sidebar .nav-link.active i {
+            color: #000 !important;
+        }
+        .sidebar h5, .sidebar small {
+            color: #000 !important;
+        }
+
+        .sidebar-logo {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-bottom: 10px;
+            border: 3px solid var(--renaven-azul-cielo);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, border-color 0.3s;
+            background: var(--renaven-blanco);
+        }
+        .sidebar-logo:hover {
+            transform: scale(1.05);
+        }
+
+        /* ========== TABLA ========== */
+        .table {
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            background: var(--renaven-blanco);
+            border: 2px solid var(--renaven-borde);
+            transition: border-color 0.3s;
+        }
+        .table-dark {
+            background: var(--renaven-azul-cielo) !important;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .table-dark th {
+            background: transparent;
+            border: none;
+            padding: 12px;
+            font-weight: 600;
+            border-bottom: 2px solid var(--renaven-borde);
+            color: #000 !important;
+        }
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: var(--renaven-gris-fondo);
+        }
+        .table tbody tr:hover {
+            background-color: var(--renaven-azul-cielo);
+        }
+        .table td, .table th {
+            border-color: var(--renaven-borde) !important;
+        }
+
+        .low-stock {
+            background-color: #fef3c7 !important;
+            border-left: 4px solid var(--renaven-oro);
+        }
+        .out-of-stock {
+            background-color: #fce4ec !important;
+            border-left: 4px solid var(--renaven-rojo);
+            text-decoration: line-through;
+            opacity: 0.8;
+        }
+
+        /* ========== BOTONES ========== */
+        .btn-action {
+            margin: 2px;
+            border-radius: 50px !important;
+            padding: 5px 12px !important;
+        }
+        .btn-success {
+            background: var(--renaven-verde) !important;
+            border: 2px solid var(--renaven-borde) !important;
+            border-radius: 50px !important;
+            padding: 8px 20px !important;
+            transition: all 0.3s ease;
+            color: #000 !important;
+        }
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(40,167,69,0.4);
+            background: #218838 !important;
+            color: #000 !important;
+        }
+        .btn-info {
+            background: var(--renaven-azul-cielo) !important;
+            border: 2px solid var(--renaven-borde) !important;
+            border-radius: 50px !important;
+            padding: 8px 20px !important;
+            transition: all 0.3s ease;
+            color: #000 !important;
+        }
+        .btn-info:hover {
+            background: var(--renaven-azul-fuerte) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            color: #000 !important;
+        }
+        .btn-secondary {
+            border-radius: 50px !important;
+            padding: 8px 20px !important;
+            transition: all 0.3s ease;
+            background: #6c757d !important;
+            border: 2px solid var(--renaven-borde) !important;
+            color: #000 !important;
+        }
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            background: #5a6268 !important;
+            color: #000 !important;
+        }
+        .btn-warning {
+            border-radius: 50px !important;
+            background: var(--renaven-oro) !important;
+            border: 2px solid var(--renaven-borde) !important;
+            color: #000 !important;
+        }
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            color: #000 !important;
+        }
+        .btn-danger {
+            border-radius: 50px !important;
+            background: var(--renaven-rojo) !important;
+            border: 2px solid var(--renaven-borde) !important;
+            color: #000 !important;
+        }
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            color: #000 !important;
+        }
+        .btn-dark {
+            border-radius: 50px !important;
+            background: #23272b !important;
+            border: 2px solid var(--renaven-borde) !important;
+            color: #000 !important;
+        }
+        .btn-dark:hover {
+            transform: translateY(-2px);
+            background: #1a1d20 !important;
+            color: #000 !important;
+        }
+
+        /* ========== MODALES ========== */
+        .modal-content {
+            border-radius: 20px !important;
+            overflow: hidden;
+            background: var(--renaven-blanco);
+            border: 2px solid var(--renaven-borde) !important;
+            transition: border-color 0.3s;
+        }
+        .modal-header {
+            border: none;
+        }
+        .modal-header.bg-success {
+            background: var(--renaven-verde) !important;
+            border-bottom: 2px solid var(--renaven-borde) !important;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .modal-header.bg-info {
+            background: var(--renaven-azul-cielo) !important;
+            border-bottom: 2px solid var(--renaven-borde) !important;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .modal-header.bg-warning {
+            background: var(--renaven-oro) !important;
+            border-bottom: 2px solid var(--renaven-borde) !important;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .modal-header.bg-danger {
+            background: var(--renaven-rojo) !important;
+            border-bottom: 2px solid var(--renaven-borde) !important;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .modal-header .btn-close {
+            filter: brightness(0.3);
+        }
+
+        /* ========== FORMULARIOS ========== */
+        .form-control, .form-select {
+            border-radius: 25px !important;
+            border: 2px solid var(--renaven-borde) !important;
+            padding: 10px 18px;
+            transition: all 0.3s ease;
+            background: var(--renaven-blanco);
+            color: #000 !important;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--renaven-azul-fuerte);
+            box-shadow: 0 0 0 0.2rem rgba(132,182,244,0.25);
+        }
+        .form-label {
+            font-weight: 500;
+            color: #000 !important;
+        }
+
+        /* ========== ALERTAS ========== */
+        .alert {
+            border-radius: 15px;
+            border: 2px solid var(--renaven-borde) !important;
+            transition: border-color 0.3s;
+        }
+        .alert-success {
+            background: #d4edda;
+            border-left: 5px solid var(--renaven-verde) !important;
+        }
+        .alert-danger {
+            background: #f8d7da;
+            border-left: 5px solid var(--renaven-rojo) !important;
+        }
+
+        /* ========== BADGES ========== */
+        .badge {
+            border-radius: 50px;
+            padding: 5px 10px;
+            border: 1px solid var(--renaven-borde) !important;
+            color: #000 !important;
+        }
+        .badge-weight {
+            background: #17a2b8;
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 50px;
+            border: 1px solid var(--renaven-borde);
+            color: #000 !important;
+        }
+
+        h2 {
+            font-weight: bold;
+        }
+        h2 i {
+            color: var(--renaven-azul-fuerte);
+        }
+        hr {
+            border-top: 2px solid var(--renaven-borde);
+        }
+        .text-muted {
+            opacity: 0.7;
+            color: #000 !important;
+        }
+        textarea.form-control {
+            border-radius: 15px !important;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--renaven-gris-fondo);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--renaven-azul-cielo);
+            border-radius: 10px;
+            border: 1px solid var(--renaven-borde);
+        }
+
+        .agotado-texto {
+            color: var(--renaven-rojo) !important;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .table-responsive {
+                font-size: 11px;
+            }
+            .btn-action {
+                padding: 3px 6px !important;
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== SKIP LINK ========== -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <div class="container-fluid" id="main-content" role="main">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 p-0 sidebar no-print">
+                <div class="text-center py-4">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN - Sistema de Facturación" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/80x80?text=R'">
+                    <h5 class="mt-2">RENAVEN</h5>
+                    <small>{{ session.get('role', 'Usuario') }}</small>
+                </div>
+                <nav class="nav flex-column px-3" aria-label="Menú principal">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}" aria-label="Ir al Dashboard">
+                        <i class="fas fa-tachometer-alt me-2" aria-hidden="true"></i> Dashboard
+                    </a>
+                    <a class="nav-link" href="{{ url_for('facturacion') }}" aria-label="Ir a Facturación">
+                        <i class="fas fa-shopping-cart me-2" aria-hidden="true"></i> Facturación
+                    </a>
+                    <a class="nav-link active" href="{{ url_for('inventory') }}" aria-label="Ir a Inventario">
+                        <i class="fas fa-boxes me-2" aria-hidden="true"></i> Inventario
+                    </a>
+                    <a class="nav-link" href="{{ url_for('historial_devoluciones') }}" aria-label="Ver Historial de Devoluciones">
+                        <i class="fas fa-undo-alt me-2" aria-hidden="true"></i> Devoluciones
+                    </a>
+                    <a class="nav-link" href="{{ url_for('historial_facturacion') }}" aria-label="Ver Historial de Facturación">
+                        <i class="fas fa-file-invoice me-2" aria-hidden="true"></i> Historial Facturación
+                    </a>
+                    {% if session.get('role') == 'Dueño' %}
+                    <a class="nav-link" href="{{ url_for('deleted_products') }}" aria-label="Ver Productos Eliminados">
+                        <i class="fas fa-trash-alt me-2" aria-hidden="true"></i> Eliminados
+                    </a>
+                    {% endif %}
+                    <a class="nav-link" href="{{ url_for('daily_closure') }}" aria-label="Ver Cierre Diario">
+                        <i class="fas fa-chart-line me-2" aria-hidden="true"></i> Cierre Diario
+                    </a>
+                    <a class="nav-link" href="{{ url_for('cash_closure') }}" aria-label="Ir a Cierre de Caja">
+                        <i class="fas fa-cash-register me-2" aria-hidden="true"></i> Cierre de Caja
+                    </a>
+                    <a class="nav-link" href="{{ url_for('opening_balance') }}" aria-label="Ir a Apertura de Caja">
+                        <i class="fas fa-money-bill-wave me-2" aria-hidden="true"></i> Apertura de Caja
+                    </a>
+                    <a class="nav-link" href="{{ url_for('ventas_mes') }}" aria-label="Ver Ventas del Mes">
+                        <i class="fas fa-calendar-alt me-2" aria-hidden="true"></i> Ventas del Mes
+                    </a>
+                    <a class="nav-link" href="{{ url_for('monthly_profit') }}" aria-label="Ver Ganancias">
+                        <i class="fas fa-chart-pie me-2" aria-hidden="true"></i> Ganancias
+                    </a>
+                    {% if session.get('role') == 'Dueño' %}
+                    <a class="nav-link" href="{{ url_for('manage_roles') }}" aria-label="Gestionar Roles">
+                        <i class="fas fa-users-cog me-2" aria-hidden="true"></i> Roles
+                    </a>
+                    <a class="nav-link" href="{{ url_for('manage_users') }}" aria-label="Gestionar Usuarios">
+                        <i class="fas fa-user-plus me-2" aria-hidden="true"></i> Usuarios
+                    </a>
+                    <a class="nav-link" href="{{ url_for('exchange_rate') }}" aria-label="Configurar Tasa de Cambio">
+                        <i class="fas fa-dollar-sign me-2" aria-hidden="true"></i> Tasa
+                    </a>
+                    {% endif %}
+                    <hr>
+                    <a class="nav-link" href="{{ url_for('logout') }}" aria-label="Cerrar Sesión">
+                        <i class="fas fa-sign-out-alt me-2" aria-hidden="true"></i> Salir
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+                    <h1 class="fs-2"><i class="fas fa-boxes" aria-hidden="true"></i> Inventario de Productos</h1>
+                    
+                    <!-- ========== BARRA DE ACCIONES CON FILTRO ========== -->
+                    <div class="mt-2 mt-md-0 d-flex flex-wrap gap-2 align-items-center">
+                        
+                        <!-- NUEVO: Filtro de Categoría (Se adapta al tema de accesibilidad) -->
+                        <select id="filtroCategoria" class="form-select" style="width: auto; max-width: 230px; border-radius: 50px !important; padding: 8px 20px !important; border: 2px solid var(--renaven-borde) !important; background: var(--renaven-blanco);" aria-label="Filtrar productos por categoría">
+                            <option value="todas">📁 Todas las Categorías</option>
+                            <!-- JavaScript llenará esto automáticamente -->
+                        </select>
+
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addProductModal" aria-label="Agregar nuevo producto">
+                            <i class="fas fa-plus me-2" aria-hidden="true"></i> Nuevo Producto
+                        </button>
+                        <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#addCategoryModal" aria-label="Agregar nueva categoría">
+                            <i class="fas fa-tag me-2" aria-hidden="true"></i> Nueva Categoría
+                        </button>
+                        <a href="{{ url_for('print_inventory') }}" class="btn btn-secondary" target="_blank" aria-label="Imprimir inventario">
+                            <i class="fas fa-print me-2" aria-hidden="true"></i> Imprimir
+                        </a>
+                        <a href="{{ url_for('corregir_stocks_negativos') }}" class="btn btn-warning" onclick="return confirm('¿Corregir stocks negativos? Esto pondrá en CERO los productos con stock negativo.')" aria-label="Corregir productos con stock negativo a cero">
+                            <i class="fas fa-sync-alt me-2" aria-hidden="true"></i> Corregir Stocks
+                        </a>
+                        {% if session.get('role') == 'Dueño' %}
+                        <a href="{{ url_for('deleted_products') }}" class="btn btn-dark" aria-label="Ver productos eliminados">
+                            <i class="fas fa-trash-alt me-2" aria-hidden="true"></i> Ver Eliminados
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}info-circle{% endif %} me-2" aria-hidden="true"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar mensaje"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div class="table-responsive">
+                    <!-- Se agregó id="tablaInventario" -->
+                    <table id="tablaInventario" class="table table-bordered table-striped" aria-label="Tabla de productos del inventario">
+                        <thead class="table-dark">
+                            <tr>
+                                <th scope="col"><i class="fas fa-barcode" aria-hidden="true"></i> Código</th>
+                                <th scope="col"><i class="fas fa-tag" aria-hidden="true"></i> Producto</th>
+                                <th scope="col"><i class="fas fa-folder" aria-hidden="true"></i> Categoría</th>
+                                <th scope="col"><i class="fas fa-ruler" aria-hidden="true"></i> Unidad</th>
+                                <th scope="col"><i class="fas fa-weight-hanging" aria-hidden="true"></i> Tipo</th>
+                                <th scope="col" class="text-end"><i class="fas fa-cubes" aria-hidden="true"></i> Stock</th>
+                                <th scope="col" class="text-end"><i class="fas fa-chart-line" aria-hidden="true"></i> Costo</th>
+                                <th scope="col" class="text-end"><i class="fas fa-dollar-sign" aria-hidden="true"></i> Precio</th>
+                                <th scope="col" class="text-end"><i class="fas fa-chart-simple" aria-hidden="true"></i> Margen</th>
+                                <th scope="col"><i class="fas fa-calendar" aria-hidden="true"></i> Fecha Llegada</th>
+                                <th scope="col"><i class="fas fa-cogs" aria-hidden="true"></i> Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products %}
+                            {% set stock = product.stock|default(0)|float %}
+                            <!-- Se agregó data-categoria para el filtro -->
+                            <tr data-categoria="{{ product.category|default('-') }}" {% if stock <= 0 %}class="out-of-stock"{% elif stock < 5 %}class="low-stock"{% endif %}>
+                                <td>{{ product.barcode|default('-') }}</td>
+                                <td>
+                                    {{ product.name|default('-') }}
+                                    {% if product.sale_type|default('unit') == 'weight' %}
+                                    <span class="badge-weight" aria-label="Producto por peso">⚖️ Por Peso</span>
+                                    {% endif %}
+                                    {% if stock <= 0 %}
+                                    <span class="badge bg-danger ms-1" style="background: var(--renaven-rojo) !important; border: 1px solid var(--renaven-borde) !important;" aria-label="Producto agotado">AGOTADO</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ product.category|default('-') }}</td>
+                                <td>{{ product.unit|default('-') }}</td>
+                                <td class="text-center">
+                                    {% if product.sale_type|default('unit') == 'weight' %}
+                                        <span class="badge-weight" aria-label="Tipo de venta: por peso"><i class="fas fa-weight-hanging" aria-hidden="true"></i> Peso</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary" style="border: 1px solid var(--renaven-borde);" aria-label="Tipo de venta: por unidad">Unidad</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end fw-bold {% if stock <= 0 %}agotado-texto{% endif %}" aria-label="Stock: {{ stock|format_number }} {% if product.sale_type|default('unit') == 'weight' %}Kilogramos{% else %}unidades{% endif %}">
+                                    {{ stock|format_number }} {% if product.sale_type|default('unit') == 'weight' %}Kg{% endif %}
+                                </td>
+                                <td class="text-end" aria-label="Costo: ${{ product.cost|default(0)|format_usd }}{% if product.sale_type|default('unit') == 'weight' %} por Kg{% endif %}">
+                                    $ {{ product.cost|default(0)|format_usd }}{% if product.sale_type|default('unit') == 'weight' %} /Kg{% endif %}
+                                </td>
+                                <td class="text-end" style="font-weight: bold;" aria-label="Precio: ${{ product.price|default(0)|format_usd }}{% if product.sale_type|default('unit') == 'weight' %} por Kg{% endif %}">
+                                    $ {{ product.price|default(0)|format_usd }}{% if product.sale_type|default('unit') == 'weight' %} /Kg{% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <span class="badge" style="background: #d4edda; border: 1px solid var(--renaven-verde);" aria-label="Margen: {{ product.margin|default(0)|format_number }}%">
+                                        {{ product.margin|default(0)|format_number }}%
+                                    </span>
+                                </td>
+                                <td class="text-center">{{ product.arrival_date|default('-') }}</td>
+                                <td class="text-center">
+                                    {% if stock > 0 %}
+                                    <button class="btn btn-sm btn-warning btn-action btn-editar"
+                                            data-id="{{ product.id }}"
+                                            data-name="{{ product.name|default('')|replace("'", "\\'") }}"
+                                            data-cost="{{ product.cost|default(0) }}"
+                                            data-margin="{{ product.margin|default(0) }}"
+                                            data-stock="{{ stock }}"
+                                            data-barcode="{{ product.barcode|default('') }}"
+                                            data-category="{{ product.category|default('') }}"
+                                            data-unit="{{ product.unit|default('unidad') }}"
+                                            data-sale-type="{{ product.sale_type|default('unit') }}"
+                                            data-date="{{ product.arrival_date|default('') }}"
+                                            aria-label="Editar producto {{ product.name|default('') }}">
+                                        <i class="fas fa-edit" aria-hidden="true"></i> Editar
+                                    </button>
+                                    {% endif %}
+
+                                    {% if session.get('role') == 'Dueño' %}
+                                    <button class="btn btn-sm btn-danger btn-action btn-eliminar"
+                                            data-id="{{ product.id }}"
+                                            data-name="{{ product.name|default('')|replace("'", "\\'") }}"
+                                            aria-label="Eliminar producto {{ product.name|default('') }}">
+                                        <i class="fas fa-trash-alt" aria-hidden="true"></i> Eliminar
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="11" class="text-center py-5">
+                                    <i class="fas fa-box-open fa-3x mb-3 d-block" style="color: var(--renaven-azul-cielo);" aria-hidden="true"></i>
+                                    No hay productos registrados.<br>
+                                    Haga clic en <strong>"Nuevo Producto"</strong> para agregar su inventario.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL AGREGAR PRODUCTO -->
+    <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalTitle" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success">
+                    <h5 class="modal-title" id="addProductModalTitle"><i class="fas fa-plus" aria-hidden="true"></i> Agregar Producto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form method="POST" action="{{ url_for('add_product') }}" aria-label="Formulario para agregar producto">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="barcode" class="form-label"><i class="fas fa-barcode" aria-hidden="true"></i> Código de Barras</label>
+                            <input type="text" id="barcode" name="barcode" class="form-control" placeholder="Opcional" aria-label="Código de barras del producto">
+                        </div>
+                        <div class="mb-3">
+                            <label for="name" class="form-label"><i class="fas fa-tag" aria-hidden="true"></i> Nombre del Producto *</label>
+                            <input type="text" id="name" name="name" class="form-control" required aria-label="Nombre del producto">
+                        </div>
+                        <div class="mb-3">
+                            <label for="category" class="form-label"><i class="fas fa-folder" aria-hidden="true"></i> Categoría</label>
+                            <select id="category" name="category" class="form-select" aria-label="Categoría del producto">
+                                {% for cat in categories %}
+                                <option>{{ cat['name'] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="sale_type" class="form-label"><i class="fas fa-weight-hanging" aria-hidden="true"></i> Tipo de Venta</label>
+                            <select id="sale_type" name="sale_type" class="form-select" onchange="toggleUnitField()" aria-label="Tipo de venta del producto">
+                                <option value="unit">📦 Por Unidad (pieza, caja, etc.)</option>
+                                <option value="weight">⚖️ Por Peso (Kilo, 1/2 Kg, 1/4 Kg)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3" id="unitField">
+                            <label for="unit" class="form-label"><i class="fas fa-ruler" aria-hidden="true"></i> Unidad</label>
+                            <select id="unit" name="unit" class="form-select" aria-label="Unidad de medida del producto">
+                                <option>saco</option>
+                                <option>kg</option>
+                                <option>litro</option>
+                                <option>m</option>
+                                <option>galon</option>
+                                <option>caja</option>
+                                <option>paquete</option>
+                                <option>unidad</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3" id="weightField" style="display: none;">
+                            <label for="unit_weight" class="form-label"><i class="fas fa-weight-hanging" aria-hidden="true"></i> Unidad de Peso</label>
+                            <select id="unit_weight" name="unit" class="form-select" aria-label="Unidad de peso del producto">
+                                <option>kilogramo (kg)</option>
+                            </select>
+                            <small class="text-muted">Este producto se venderá en: 1 Kg, 1/2 Kg, 1/4 Kg</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="cost" class="form-label"><i class="fas fa-chart-line" aria-hidden="true"></i> Costo ($) <span id="cost_unit_label">por unidad</span></label>
+                                <input type="number" step="0.01" id="cost" name="cost" class="form-control" required aria-label="Costo del producto en dólares">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="margin" class="form-label"><i class="fas fa-chart-simple" aria-hidden="true"></i> Margen de Ganancia (%)</label>
+                                <input type="number" step="0.01" id="margin" name="margin" class="form-control" required aria-label="Margen de ganancia porcentual">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="stock" class="form-label"><i class="fas fa-cubes" aria-hidden="true"></i> Stock Inicial <span id="stock_unit_label">(unidades)</span></label>
+                                <input type="number" step="0.01" id="stock" name="stock" class="form-control" required aria-label="Cantidad de stock inicial">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="arrival_date" class="form-label"><i class="fas fa-calendar" aria-hidden="true"></i> Fecha de Llegada</label>
+                                <input type="date" id="arrival_date" name="arrival_date" class="form-control" required aria-label="Fecha de llegada al almacén">
+                                <small class="text-muted">Fecha en que llegó al almacén</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Cancelar">Cancelar</button>
+                        <button type="submit" class="btn btn-success" aria-label="Guardar producto">Guardar Producto</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL AGREGAR CATEGORÍA -->
+    <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalTitle" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info">
+                    <h5 class="modal-title" id="addCategoryModalTitle"><i class="fas fa-tag" aria-hidden="true"></i> Agregar Categoría</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form method="POST" action="{{ url_for('add_category') }}" aria-label="Formulario para agregar categoría">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="category_name" class="form-label"><i class="fas fa-folder" aria-hidden="true"></i> Nombre de la Categoría</label>
+                            <input type="text" id="category_name" name="category_name" class="form-control" required placeholder="Ej: Electrónica, Herramientas, Pintura..." aria-label="Nombre de la nueva categoría">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Cancelar">Cancelar</button>
+                        <button type="submit" class="btn btn-info" aria-label="Agregar categoría">Agregar Categoría</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ELIMINAR PRODUCTO -->
+    <div class="modal fade" id="deleteProductModal" tabindex="-1" aria-labelledby="deleteProductModalTitle" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger">
+                    <h5 class="modal-title" id="deleteProductModalTitle"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Eliminar Producto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form method="POST" action="{{ url_for('delete_product') }}" aria-label="Formulario para eliminar producto">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="product_id" id="delete_product_id">
+                    <div class="modal-body">
+                        <div class="alert alert-danger mb-3">
+                            <i class="fas fa-exclamation-circle me-2" aria-hidden="true"></i>
+                            <strong>¡Advertencia!</strong> Esta acción eliminará permanentemente el producto.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"><i class="fas fa-box" aria-hidden="true"></i> Producto a eliminar:</label>
+                            <p class="fw-bold" id="delete_product_name" style="font-size: 1.1rem;"></p>
+                        </div>
+                        <div class="mb-3">
+                            <label for="motivo_eliminacion" class="form-label"><i class="fas fa-pen-alt" aria-hidden="true"></i> Motivo de eliminación *</label>
+                            <textarea id="motivo_eliminacion" name="motivo_eliminacion" class="form-control" rows="4" required placeholder="Ej: Producto discontinuado, dañado, fuera de temporada, mala rotación, etc." aria-label="Motivo de eliminación del producto"></textarea>
+                            <small class="text-muted">Este motivo quedará registrado en el historial del sistema.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Cancelar">Cancelar</button>
+                        <button type="submit" class="btn btn-danger" aria-label="Eliminar producto permanentemente">
+                            <i class="fas fa-trash-alt me-2" aria-hidden="true"></i> Eliminar Permanentemente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR PRODUCTO -->
+    <div class="modal fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalTitle" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title" id="editProductModalTitle"><i class="fas fa-edit" aria-hidden="true"></i> Editar Producto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form method="POST" action="{{ url_for('edit_product') }}" aria-label="Formulario para editar producto">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="product_id" id="edit_product_id">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="edit_barcode" class="form-label"><i class="fas fa-barcode" aria-hidden="true"></i> Código de Barras</label>
+                            <input type="text" id="edit_barcode" name="barcode" class="form-control" aria-label="Código de barras del producto">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_name" class="form-label"><i class="fas fa-tag" aria-hidden="true"></i> Nombre del Producto *</label>
+                            <input type="text" id="edit_name" name="name" class="form-control" required aria-label="Nombre del producto">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_category" class="form-label"><i class="fas fa-folder" aria-hidden="true"></i> Categoría</label>
+                            <select id="edit_category" name="category" class="form-select" aria-label="Categoría del producto">
+                                {% for cat in categories %}
+                                <option>{{ cat['name'] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_sale_type" class="form-label"><i class="fas fa-weight-hanging" aria-hidden="true"></i> Tipo de Venta</label>
+                            <select id="edit_sale_type" name="sale_type" class="form-select" aria-label="Tipo de venta del producto">
+                                <option value="unit">📦 Por Unidad</option>
+                                <option value="weight">⚖️ Por Peso</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_unit" class="form-label"><i class="fas fa-ruler" aria-hidden="true"></i> Unidad</label>
+                            <select id="edit_unit" name="unit" class="form-select" aria-label="Unidad de medida del producto">
+                                <option>saco</option>
+                                <option>kg</option>
+                                <option>litro</option>
+                                <option>m</option>
+                                <option>galon</option>
+                                <option>caja</option>
+                                <option>paquete</option>
+                                <option>unidad</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="edit_cost" class="form-label"><i class="fas fa-chart-line" aria-hidden="true"></i> Costo ($)</label>
+                                <input type="number" step="0.01" id="edit_cost" name="cost" class="form-control" required aria-label="Costo del producto en dólares">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="edit_margin" class="form-label"><i class="fas fa-chart-simple" aria-hidden="true"></i> Margen (%)</label>
+                                <input type="number" step="0.01" id="edit_margin" name="margin" class="form-control" required aria-label="Margen de ganancia porcentual">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="edit_stock" class="form-label"><i class="fas fa-cubes" aria-hidden="true"></i> Stock</label>
+                                <input type="number" step="0.01" id="edit_stock" name="stock" class="form-control" required aria-label="Cantidad de stock">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="edit_arrival_date" class="form-label"><i class="fas fa-calendar" aria-hidden="true"></i> Fecha Llegada</label>
+                                <input type="date" id="edit_arrival_date" name="arrival_date" class="form-control" aria-label="Fecha de llegada al almacén">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Cancelar">Cancelar</button>
+                        <button type="submit" class="btn btn-warning" aria-label="Guardar cambios del producto">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ========== CARGA DE TEMA GUARDADO Y CONFIGURACIÓN DE FUENTE ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            // ---- Temas pastel ----
+            function applyTheme(themeClass) {
+                document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                if (themeClass) {
+                    document.body.classList.add(themeClass);
+                }
+                localStorage.setItem('selectedTheme', themeClass || '');
+            }
+
+            const savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            }
+
+            // ---- Fondo de pantalla ----
+            const savedBg = localStorage.getItem('backgroundMode');
+            if (savedBg === 'black') {
+                document.body.style.background = '#000000';
+            } else if (savedBg === 'white') {
+                document.body.style.background = '#FFFFFF';
+            } else {
+                document.body.style.background = 'var(--renaven-gris-fondo)';
+            }
+
+            // ---- Tamaño de fuente (base 13px) ----
+            let currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            function applyFontSize() {
+                document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+            // Aplicar el tamaño guardado
+            applyFontSize();
+        });
+
+        // Funciones del inventario
+        function toggleUnitField() {
+            var saleType = document.getElementById('sale_type').value;
+            var unitField = document.getElementById('unitField');
+            var weightField = document.getElementById('weightField');
+            var costLabel = document.getElementById('cost_unit_label');
+            var stockLabel = document.getElementById('stock_unit_label');
+
+            if (saleType === 'weight') {
+                unitField.style.display = 'none';
+                weightField.style.display = 'block';
+                if (costLabel) costLabel.innerHTML = 'por Kilo ($/Kg)';
+                if (stockLabel) stockLabel.innerHTML = '(Kilogramos)';
+            } else {
+                unitField.style.display = 'block';
+                weightField.style.display = 'none';
+                if (costLabel) costLabel.innerHTML = 'por unidad';
+                if (stockLabel) stockLabel.innerHTML = '(unidades)';
+            }
+        }
+
+        document.querySelectorAll('.btn-eliminar').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var id = this.getAttribute('data-id');
+                var nombre = this.getAttribute('data-name');
+                document.getElementById('delete_product_id').value = id;
+                document.getElementById('delete_product_name').innerHTML = '<i class="fas fa-box" aria-hidden="true"></i> ' + nombre;
+                new bootstrap.Modal(document.getElementById('deleteProductModal')).show();
+            });
+        });
+
+        document.querySelectorAll('.btn-editar').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.getElementById('edit_product_id').value = this.getAttribute('data-id');
+                document.getElementById('edit_name').value = this.getAttribute('data-name');
+                document.getElementById('edit_cost').value = this.getAttribute('data-cost');
+                document.getElementById('edit_margin').value = this.getAttribute('data-margin');
+                document.getElementById('edit_stock').value = this.getAttribute('data-stock');
+                document.getElementById('edit_barcode').value = this.getAttribute('data-barcode');
+                document.getElementById('edit_category').value = this.getAttribute('data-category');
+                document.getElementById('edit_unit').value = this.getAttribute('data-unit');
+                document.getElementById('edit_sale_type').value = this.getAttribute('data-sale-type') || 'unit';
+                document.getElementById('edit_arrival_date').value = this.getAttribute('data-date');
+                new bootstrap.Modal(document.getElementById('editProductModal')).show();
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (document.getElementById('sale_type')) {
+                toggleUnitField();
+            }
+        });
+
+        // ========== NUEVO: LÓGICA DE FILTRADO POR CATEGORÍA ==========
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Inicializar el filtro llenándolo con las categorías de la tabla
+            cargarCategoriasEnFiltro();
+
+            // 2. Escuchar cuando el usuario cambia la categoría seleccionada
+            document.getElementById('filtroCategoria').addEventListener('change', filtrarTabla);
+        });
+
+        // Función para llenar el <select> con las categorías únicas de la tabla
+        function cargarCategoriasEnFiltro() {
+            const select = document.getElementById('filtroCategoria');
+            const filas = document.querySelectorAll('#tablaInventario tbody tr[data-categoria]');
+            const categoriasUnicas = new Set();
+
+            // Recorremos las filas y guardamos las categorías únicas
+            filas.forEach(fila => {
+                const categoria = fila.getAttribute('data-categoria').trim();
+                if (categoria && categoria !== '-') {
+                    categoriasUnicas.add(categoria);
+                }
+            });
+
+            // Limpiamos el select dejando solo la opción "Todas"
+            select.innerHTML = '<option value="todas">📁 Todas las Categorías</option>';
+
+            // Agregamos las categorías encontradas (ordenadas alfabéticamente)
+            Array.from(categoriasUnicas).sort().forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = '📁 ' + cat;
+                select.appendChild(option);
+            });
+        }
+
+        // Función para mostrar u ocultar filas según la categoría seleccionada
+        function filtrarTabla() {
+            const categoriaSeleccionada = document.getElementById('filtroCategoria').value.toLowerCase();
+            const filas = document.querySelectorAll('#tablaInventario tbody tr[data-categoria]');
+
+            filas.forEach(fila => {
+                const categoriaFila = fila.getAttribute('data-categoria').toLowerCase();
+                
+                if (categoriaSeleccionada === 'todas' || categoriaFila === categoriaSeleccionada) {
+                    fila.style.display = ''; // Mostrar
+                } else {
+                    fila.style.display = 'none'; // Ocultar
+                }
+            });
+        }
+    </script>
+</body>
+</html>

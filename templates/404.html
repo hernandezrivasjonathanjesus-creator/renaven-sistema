@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página no encontrada - RENAVEN</title>
+    <style>
+        /* ========== PALETA PREDETERMINADA (ORIGINAL LOGIN) ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+            --shadow-color: rgba(132,182,244,0.2);
+            --transition-base: all 0.25s ease-in-out;
+        }
+
+        /* ========== TEMAS PASTEL INDIVIDUALES (SIN ALTO CONTRASTE) ========== */
+        /* 1. Rosa pastel */
+        body.theme-rosa {
+            --renaven-azul-fuerte: #fbc4d5;
+            --renaven-azul-cielo: #fce4ec;
+            --renaven-blanco: #fef9f0;
+            --renaven-gris-fondo: #fdf6f8;
+            --renaven-borde: #fbc4d5;
+        }
+        body.theme-rosa .error-container { border-color: #fbc4d5 !important; background: #fef9f0 !important; }
+        body.theme-rosa .btn { background: #fbc4d5 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-rosa .btn:hover { background: #fdd0b5 !important; }
+        body.theme-rosa .logo { border-color: #fbc4d5 !important; }
+        body.theme-rosa .error-container:hover { box-shadow: 0 12px 40px rgba(251,196,213,0.25) !important; }
+
+        /* 2. Celeste pastel */
+        body.theme-celeste {
+            --renaven-azul-fuerte: #b5d8eb;
+            --renaven-azul-cielo: #d6ecf5;
+            --renaven-blanco: #f9fdff;
+            --renaven-gris-fondo: #f4faff;
+            --renaven-borde: #b5d8eb;
+        }
+        body.theme-celeste .error-container { border-color: #b5d8eb !important; background: #f9fdff !important; }
+        body.theme-celeste .btn { background: #b5d8eb !important; border-color: #a8d0e6 !important; color: #000 !important; }
+        body.theme-celeste .btn:hover { background: #a8d0e6 !important; }
+        body.theme-celeste .logo { border-color: #b5d8eb !important; }
+        body.theme-celeste .error-container:hover { box-shadow: 0 12px 40px rgba(181,216,235,0.25) !important; }
+
+        /* 3. Menta pastel */
+        body.theme-menta {
+            --renaven-azul-fuerte: #b5e6c3;
+            --renaven-azul-cielo: #d8f0e0;
+            --renaven-blanco: #f6fcf8;
+            --renaven-gris-fondo: #f2faf5;
+            --renaven-borde: #b5e6c3;
+        }
+        body.theme-menta .error-container { border-color: #b5e6c3 !important; background: #f6fcf8 !important; }
+        body.theme-menta .btn { background: #b5e6c3 !important; border-color: #a8dbb8 !important; color: #000 !important; }
+        body.theme-menta .btn:hover { background: #a8dbb8 !important; }
+        body.theme-menta .logo { border-color: #b5e6c3 !important; }
+        body.theme-menta .error-container:hover { box-shadow: 0 12px 40px rgba(181,230,195,0.25) !important; }
+
+        /* 4. Amarillo pastel */
+        body.theme-amarillo {
+            --renaven-azul-fuerte: #f9e7b2;
+            --renaven-azul-cielo: #fdf3d5;
+            --renaven-blanco: #fffef9;
+            --renaven-gris-fondo: #fefcf5;
+            --renaven-borde: #f9e7b2;
+        }
+        body.theme-amarillo .error-container { border-color: #f9e7b2 !important; background: #fffef9 !important; }
+        body.theme-amarillo .btn { background: #f9e7b2 !important; border-color: #f5dc9a !important; color: #000 !important; }
+        body.theme-amarillo .btn:hover { background: #f5dc9a !important; }
+        body.theme-amarillo .logo { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .error-container:hover { box-shadow: 0 12px 40px rgba(249,231,178,0.25) !important; }
+
+        /* 5. Lila pastel */
+        body.theme-lila {
+            --renaven-azul-fuerte: #d4c4f0;
+            --renaven-azul-cielo: #e8defa;
+            --renaven-blanco: #fcfaff;
+            --renaven-gris-fondo: #f8f5fe;
+            --renaven-borde: #d4c4f0;
+        }
+        body.theme-lila .error-container { border-color: #d4c4f0 !important; background: #fcfaff !important; }
+        body.theme-lila .btn { background: #d4c4f0 !important; border-color: #c9b7e8 !important; color: #000 !important; }
+        body.theme-lila .btn:hover { background: #c9b7e8 !important; }
+        body.theme-lila .logo { border-color: #d4c4f0 !important; }
+        body.theme-lila .error-container:hover { box-shadow: 0 12px 40px rgba(212,196,240,0.25) !important; }
+
+        /* 6. Durazno pastel */
+        body.theme-durazno {
+            --renaven-azul-fuerte: #fdd0b5;
+            --renaven-azul-cielo: #fee5d0;
+            --renaven-blanco: #fffcf9;
+            --renaven-gris-fondo: #fef8f3;
+            --renaven-borde: #fdd0b5;
+        }
+        body.theme-durazno .error-container { border-color: #fdd0b5 !important; background: #fffcf9 !important; }
+        body.theme-durazno .btn { background: #fdd0b5 !important; border-color: #f5c2a4 !important; color: #000 !important; }
+        body.theme-durazno .btn:hover { background: #f5c2a4 !important; }
+        body.theme-durazno .logo { border-color: #fdd0b5 !important; }
+        body.theme-durazno .error-container:hover { box-shadow: 0 12px 40px rgba(253,208,181,0.25) !important; }
+
+        /* ========== TODAS LAS LETRAS EN NEGRITA (excepto iconos) ========== */
+        *:not([class*="fa-"]) {
+            font-weight: bold !important;
+        }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+            font-weight: 400 !important;
+        }
+        .fas, .fa-solid {
+            font-weight: 900 !important;
+        }
+
+        body {
+            background: var(--renaven-gris-fondo);
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+            font-size: 13px;
+            color: var(--renaven-texto);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .error-container {
+            background: var(--renaven-blanco);
+            padding: 50px;
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            max-width: 550px;
+            border: 2px solid var(--renaven-azul-cielo);
+            transition: all 0.3s ease;
+            color: var(--renaven-texto);
+        }
+
+        .error-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(132,182,244,0.15);
+        }
+
+        .logo {
+            max-width: 80px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            display: inline-block;
+            border: 3px solid var(--renaven-azul-cielo);
+            background: var(--renaven-blanco);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: border-color 0.3s;
+        }
+
+        h1 { 
+            color: var(--renaven-texto); 
+            font-size: 100px; 
+            margin: 0; 
+            font-weight: 800;
+        }
+
+        h2 { 
+            color: var(--renaven-texto); 
+            font-size: 28px;
+            margin: 10px 0 0 0;
+        }
+
+        p { 
+            color: var(--renaven-texto); 
+            margin: 20px 0; 
+            font-size: 16px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--renaven-azul-fuerte);
+            color: #000 !important;
+            padding: 12px 28px;
+            text-decoration: none;
+            border-radius: 50px;
+            margin-top: 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 2px solid var(--renaven-borde);
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .btn:hover { 
+            background: var(--renaven-azul-cielo);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(132,182,244,0.25);
+            color: #000 !important;
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .error-container {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* ========== NAVEGACIÓN POR TECLADO ========== */
+        *:focus {
+            outline: 3px solid #FFD700 !important;
+            outline-offset: 2px !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" class="logo" alt="RENAVEN" onerror="this.src='https://via.placeholder.com/80x80?text=R'">
+        <h1>404</h1>
+        <h2>¡Página no encontrada!</h2>
+        <p>Lo sentimos, la página que buscas no existe o fue movida.</p>
+        <a href="{{ url_for('index') }}" class="btn">🏠 Volver al inicio</a>
+    </div>
+
+    <script>
+        // ========== CARGA DE TEMA GUARDADO Y CONFIGURACIÓN DE FUENTE ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            // ---- Temas pastel ----
+            function applyTheme(themeClass) {
+                document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                if (themeClass) {
+                    document.body.classList.add(themeClass);
+                }
+                localStorage.setItem('selectedTheme', themeClass || '');
+            }
+
+            const savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            }
+
+            // ---- Tamaño de fuente (base 13px) ----
+            let currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            function applyFontSize() {
+                document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+            applyFontSize();
+        });
+    </script>
+</body>
+</html>

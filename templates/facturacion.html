@@ -1,0 +1,2232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Facturación - RENAVEN</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ========== PALETA PREDETERMINADA (ORIGINAL LOGIN) ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-gris-claro: #e2e8f0;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+            --renaven-oro: #FFD700;
+            --renaven-verde: #28a745;
+            --renaven-rojo: #dc3545;
+            --renaven-nota-credito: #6f42c1;
+            --renaven-binance: #F0B90B;
+        }
+
+        /* ========== TEMAS PASTEL INDIVIDUALES (SIN ALTO CONTRASTE) ========== */
+        /* 1. Rosa pastel */
+        body.theme-rosa {
+            --renaven-azul-fuerte: #fbc4d5;
+            --renaven-azul-cielo: #fce4ec;
+            --renaven-blanco: #fef9f0;
+            --renaven-gris-fondo: #fdf6f8;
+            --renaven-borde: #fbc4d5;
+        }
+        body.theme-rosa .sidebar { background: #fdd0b5; border-right-color: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link.active { background: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link:hover { background: #fce4ec; }
+        body.theme-rosa .saldo-bs { background: linear-gradient(135deg, #fce4ec, #fbc4d5) !important; }
+        body.theme-rosa .saldo-usd { background: linear-gradient(135deg, #fce4ec, #fbc4d5) !important; }
+        body.theme-rosa .client-card { background: #fce4ec; border-color: #fbc4d5; }
+        body.theme-rosa .cart-card { border-color: #fbc4d5; }
+        body.theme-rosa .cart-card-header { background: #fbc4d5; border-color: #fdd0b5; }
+        body.theme-rosa .cart-table th { background: #fbc4d5; border-color: #fdd0b5; }
+        body.theme-rosa .cart-table td { border-color: #fbc4d5; }
+        body.theme-rosa .btn-guardar { background: #fbc4d5; border-color: #fdd0b5; color: #000 !important; }
+        body.theme-rosa .btn-guardar:hover { background: #fdd0b5; }
+        body.theme-rosa .btn-catalogo { background: #fdd0b5; border-color: #fbc4d5; color: #000 !important; }
+        body.theme-rosa .btn-catalogo:hover { background: #fbc4d5; }
+        body.theme-rosa .btn-presupuesto { background: #fce4ec; border-color: #fbc4d5; color: #000 !important; }
+        body.theme-rosa .btn-presupuesto:hover { background: #fbc4d5; }
+        body.theme-rosa .btn-devolucion { background: #fdd0b5; border-color: #fbc4d5; color: #000 !important; }
+        body.theme-rosa .btn-devolucion:hover { background: #fbc4d5; }
+        body.theme-rosa .btn-finalizar { background: #fdd0b5; border-color: #fbc4d5; color: #000 !important; }
+        body.theme-rosa .btn-finalizar:hover { background: #fbc4d5; }
+        body.theme-rosa .btn-pagar-header { background: #fdd0b5; border-color: #fbc4d5; color: #000 !important; }
+        body.theme-rosa .btn-pagar-header:hover { background: #fbc4d5; }
+        body.theme-rosa .modal-pago .modal-header { background: #fbc4d5; border-color: #fdd0b5; }
+        body.theme-rosa .modal-devolucion .modal-header { background: #fdd0b5; border-color: #fbc4d5; }
+        body.theme-rosa .cash-info { background: #fce4ec; border-color: #fbc4d5; }
+        body.theme-rosa .total-pagar-modal { background: #fce4ec; border-color: #fbc4d5; }
+        body.theme-rosa .product-card { border-color: #fbc4d5; background: #fce4ec; }
+        body.theme-rosa .product-card:hover { border-color: #fdd0b5; }
+        body.theme-rosa .exchange-rate-info { background: #fce4ec; border-color: #fbc4d5; }
+        body.theme-rosa .form-control:focus { border-color: #fbc4d5; box-shadow: 0 0 0 0.2rem rgba(251,196,213,0.4); }
+        body.theme-rosa .sidebar-logo { border-color: #fbc4d5; }
+
+        /* 2. Celeste pastel */
+        body.theme-celeste {
+            --renaven-azul-fuerte: #b5d8eb;
+            --renaven-azul-cielo: #d6ecf5;
+            --renaven-blanco: #f9fdff;
+            --renaven-gris-fondo: #f4faff;
+            --renaven-borde: #b5d8eb;
+        }
+        body.theme-celeste .sidebar { background: #a8d0e6; border-right-color: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link.active { background: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link:hover { background: #d6ecf5; }
+        body.theme-celeste .saldo-bs { background: linear-gradient(135deg, #d6ecf5, #b5d8eb) !important; }
+        body.theme-celeste .saldo-usd { background: linear-gradient(135deg, #d6ecf5, #b5d8eb) !important; }
+        body.theme-celeste .client-card { background: #d6ecf5; border-color: #b5d8eb; }
+        body.theme-celeste .cart-card { border-color: #b5d8eb; }
+        body.theme-celeste .cart-card-header { background: #b5d8eb; border-color: #a8d0e6; }
+        body.theme-celeste .cart-table th { background: #b5d8eb; border-color: #a8d0e6; }
+        body.theme-celeste .cart-table td { border-color: #b5d8eb; }
+        body.theme-celeste .btn-guardar { background: #b5d8eb; border-color: #a8d0e6; color: #000 !important; }
+        body.theme-celeste .btn-guardar:hover { background: #a8d0e6; }
+        body.theme-celeste .btn-catalogo { background: #a8d0e6; border-color: #b5d8eb; color: #000 !important; }
+        body.theme-celeste .btn-catalogo:hover { background: #b5d8eb; }
+        body.theme-celeste .btn-presupuesto { background: #d6ecf5; border-color: #b5d8eb; color: #000 !important; }
+        body.theme-celeste .btn-presupuesto:hover { background: #b5d8eb; }
+        body.theme-celeste .btn-devolucion { background: #a8d0e6; border-color: #b5d8eb; color: #000 !important; }
+        body.theme-celeste .btn-devolucion:hover { background: #b5d8eb; }
+        body.theme-celeste .btn-finalizar { background: #a8d0e6; border-color: #b5d8eb; color: #000 !important; }
+        body.theme-celeste .btn-finalizar:hover { background: #b5d8eb; }
+        body.theme-celeste .btn-pagar-header { background: #a8d0e6; border-color: #b5d8eb; color: #000 !important; }
+        body.theme-celeste .btn-pagar-header:hover { background: #b5d8eb; }
+        body.theme-celeste .modal-pago .modal-header { background: #b5d8eb; border-color: #a8d0e6; }
+        body.theme-celeste .modal-devolucion .modal-header { background: #a8d0e6; border-color: #b5d8eb; }
+        body.theme-celeste .cash-info { background: #d6ecf5; border-color: #b5d8eb; }
+        body.theme-celeste .total-pagar-modal { background: #d6ecf5; border-color: #b5d8eb; }
+        body.theme-celeste .product-card { border-color: #b5d8eb; background: #d6ecf5; }
+        body.theme-celeste .product-card:hover { border-color: #a8d0e6; }
+        body.theme-celeste .exchange-rate-info { background: #d6ecf5; border-color: #b5d8eb; }
+        body.theme-celeste .form-control:focus { border-color: #b5d8eb; box-shadow: 0 0 0 0.2rem rgba(181,216,235,0.4); }
+        body.theme-celeste .sidebar-logo { border-color: #b5d8eb; }
+
+        /* 3. Menta pastel */
+        body.theme-menta {
+            --renaven-azul-fuerte: #b5e6c3;
+            --renaven-azul-cielo: #d8f0e0;
+            --renaven-blanco: #f6fcf8;
+            --renaven-gris-fondo: #f2faf5;
+            --renaven-borde: #b5e6c3;
+        }
+        body.theme-menta .sidebar { background: #a8dbb8; border-right-color: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link.active { background: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link:hover { background: #d8f0e0; }
+        body.theme-menta .saldo-bs { background: linear-gradient(135deg, #d8f0e0, #b5e6c3) !important; }
+        body.theme-menta .saldo-usd { background: linear-gradient(135deg, #d8f0e0, #b5e6c3) !important; }
+        body.theme-menta .client-card { background: #d8f0e0; border-color: #b5e6c3; }
+        body.theme-menta .cart-card { border-color: #b5e6c3; }
+        body.theme-menta .cart-card-header { background: #b5e6c3; border-color: #a8dbb8; }
+        body.theme-menta .cart-table th { background: #b5e6c3; border-color: #a8dbb8; }
+        body.theme-menta .cart-table td { border-color: #b5e6c3; }
+        body.theme-menta .btn-guardar { background: #b5e6c3; border-color: #a8dbb8; color: #000 !important; }
+        body.theme-menta .btn-guardar:hover { background: #a8dbb8; }
+        body.theme-menta .btn-catalogo { background: #a8dbb8; border-color: #b5e6c3; color: #000 !important; }
+        body.theme-menta .btn-catalogo:hover { background: #b5e6c3; }
+        body.theme-menta .btn-presupuesto { background: #d8f0e0; border-color: #b5e6c3; color: #000 !important; }
+        body.theme-menta .btn-presupuesto:hover { background: #b5e6c3; }
+        body.theme-menta .btn-devolucion { background: #a8dbb8; border-color: #b5e6c3; color: #000 !important; }
+        body.theme-menta .btn-devolucion:hover { background: #b5e6c3; }
+        body.theme-menta .btn-finalizar { background: #a8dbb8; border-color: #b5e6c3; color: #000 !important; }
+        body.theme-menta .btn-finalizar:hover { background: #b5e6c3; }
+        body.theme-menta .btn-pagar-header { background: #a8dbb8; border-color: #b5e6c3; color: #000 !important; }
+        body.theme-menta .btn-pagar-header:hover { background: #b5e6c3; }
+        body.theme-menta .modal-pago .modal-header { background: #b5e6c3; border-color: #a8dbb8; }
+        body.theme-menta .modal-devolucion .modal-header { background: #a8dbb8; border-color: #b5e6c3; }
+        body.theme-menta .cash-info { background: #d8f0e0; border-color: #b5e6c3; }
+        body.theme-menta .total-pagar-modal { background: #d8f0e0; border-color: #b5e6c3; }
+        body.theme-menta .product-card { border-color: #b5e6c3; background: #d8f0e0; }
+        body.theme-menta .product-card:hover { border-color: #a8dbb8; }
+        body.theme-menta .exchange-rate-info { background: #d8f0e0; border-color: #b5e6c3; }
+        body.theme-menta .form-control:focus { border-color: #b5e6c3; box-shadow: 0 0 0 0.2rem rgba(181,230,195,0.4); }
+        body.theme-menta .sidebar-logo { border-color: #b5e6c3; }
+
+        /* 4. Amarillo pastel */
+        body.theme-amarillo {
+            --renaven-azul-fuerte: #f9e7b2;
+            --renaven-azul-cielo: #fdf3d5;
+            --renaven-blanco: #fffef9;
+            --renaven-gris-fondo: #fefcf5;
+            --renaven-borde: #f9e7b2;
+        }
+        body.theme-amarillo .sidebar { background: #f5dc9a; border-right-color: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link.active { background: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link:hover { background: #fdf3d5; }
+        body.theme-amarillo .saldo-bs { background: linear-gradient(135deg, #fdf3d5, #f9e7b2) !important; }
+        body.theme-amarillo .saldo-usd { background: linear-gradient(135deg, #fdf3d5, #f9e7b2) !important; }
+        body.theme-amarillo .client-card { background: #fdf3d5; border-color: #f9e7b2; }
+        body.theme-amarillo .cart-card { border-color: #f9e7b2; }
+        body.theme-amarillo .cart-card-header { background: #f9e7b2; border-color: #f5dc9a; }
+        body.theme-amarillo .cart-table th { background: #f9e7b2; border-color: #f5dc9a; }
+        body.theme-amarillo .cart-table td { border-color: #f9e7b2; }
+        body.theme-amarillo .btn-guardar { background: #f9e7b2; border-color: #f5dc9a; color: #000 !important; }
+        body.theme-amarillo .btn-guardar:hover { background: #f5dc9a; }
+        body.theme-amarillo .btn-catalogo { background: #f5dc9a; border-color: #f9e7b2; color: #000 !important; }
+        body.theme-amarillo .btn-catalogo:hover { background: #f9e7b2; }
+        body.theme-amarillo .btn-presupuesto { background: #fdf3d5; border-color: #f9e7b2; color: #000 !important; }
+        body.theme-amarillo .btn-presupuesto:hover { background: #f9e7b2; }
+        body.theme-amarillo .btn-devolucion { background: #f5dc9a; border-color: #f9e7b2; color: #000 !important; }
+        body.theme-amarillo .btn-devolucion:hover { background: #f9e7b2; }
+        body.theme-amarillo .btn-finalizar { background: #f5dc9a; border-color: #f9e7b2; color: #000 !important; }
+        body.theme-amarillo .btn-finalizar:hover { background: #f9e7b2; }
+        body.theme-amarillo .btn-pagar-header { background: #f5dc9a; border-color: #f9e7b2; color: #000 !important; }
+        body.theme-amarillo .btn-pagar-header:hover { background: #f9e7b2; }
+        body.theme-amarillo .modal-pago .modal-header { background: #f9e7b2; border-color: #f5dc9a; }
+        body.theme-amarillo .modal-devolucion .modal-header { background: #f5dc9a; border-color: #f9e7b2; }
+        body.theme-amarillo .cash-info { background: #fdf3d5; border-color: #f9e7b2; }
+        body.theme-amarillo .total-pagar-modal { background: #fdf3d5; border-color: #f9e7b2; }
+        body.theme-amarillo .product-card { border-color: #f9e7b2; background: #fdf3d5; }
+        body.theme-amarillo .product-card:hover { border-color: #f5dc9a; }
+        body.theme-amarillo .exchange-rate-info { background: #fdf3d5; border-color: #f9e7b2; }
+        body.theme-amarillo .form-control:focus { border-color: #f9e7b2; box-shadow: 0 0 0 0.2rem rgba(249,231,178,0.4); }
+        body.theme-amarillo .sidebar-logo { border-color: #f9e7b2; }
+
+        /* 5. Lila pastel */
+        body.theme-lila {
+            --renaven-azul-fuerte: #d4c4f0;
+            --renaven-azul-cielo: #e8defa;
+            --renaven-blanco: #fcfaff;
+            --renaven-gris-fondo: #f8f5fe;
+            --renaven-borde: #d4c4f0;
+        }
+        body.theme-lila .sidebar { background: #c9b7e8; border-right-color: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link.active { background: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link:hover { background: #e8defa; }
+        body.theme-lila .saldo-bs { background: linear-gradient(135deg, #e8defa, #d4c4f0) !important; }
+        body.theme-lila .saldo-usd { background: linear-gradient(135deg, #e8defa, #d4c4f0) !important; }
+        body.theme-lila .client-card { background: #e8defa; border-color: #d4c4f0; }
+        body.theme-lila .cart-card { border-color: #d4c4f0; }
+        body.theme-lila .cart-card-header { background: #d4c4f0; border-color: #c9b7e8; }
+        body.theme-lila .cart-table th { background: #d4c4f0; border-color: #c9b7e8; }
+        body.theme-lila .cart-table td { border-color: #d4c4f0; }
+        body.theme-lila .btn-guardar { background: #d4c4f0; border-color: #c9b7e8; color: #000 !important; }
+        body.theme-lila .btn-guardar:hover { background: #c9b7e8; }
+        body.theme-lila .btn-catalogo { background: #c9b7e8; border-color: #d4c4f0; color: #000 !important; }
+        body.theme-lila .btn-catalogo:hover { background: #d4c4f0; }
+        body.theme-lila .btn-presupuesto { background: #e8defa; border-color: #d4c4f0; color: #000 !important; }
+        body.theme-lila .btn-presupuesto:hover { background: #d4c4f0; }
+        body.theme-lila .btn-devolucion { background: #c9b7e8; border-color: #d4c4f0; color: #000 !important; }
+        body.theme-lila .btn-devolucion:hover { background: #d4c4f0; }
+        body.theme-lila .btn-finalizar { background: #c9b7e8; border-color: #d4c4f0; color: #000 !important; }
+        body.theme-lila .btn-finalizar:hover { background: #d4c4f0; }
+        body.theme-lila .btn-pagar-header { background: #c9b7e8; border-color: #d4c4f0; color: #000 !important; }
+        body.theme-lila .btn-pagar-header:hover { background: #d4c4f0; }
+        body.theme-lila .modal-pago .modal-header { background: #d4c4f0; border-color: #c9b7e8; }
+        body.theme-lila .modal-devolucion .modal-header { background: #c9b7e8; border-color: #d4c4f0; }
+        body.theme-lila .cash-info { background: #e8defa; border-color: #d4c4f0; }
+        body.theme-lila .total-pagar-modal { background: #e8defa; border-color: #d4c4f0; }
+        body.theme-lila .product-card { border-color: #d4c4f0; background: #e8defa; }
+        body.theme-lila .product-card:hover { border-color: #c9b7e8; }
+        body.theme-lila .exchange-rate-info { background: #e8defa; border-color: #d4c4f0; }
+        body.theme-lila .form-control:focus { border-color: #d4c4f0; box-shadow: 0 0 0 0.2rem rgba(212,196,240,0.4); }
+        body.theme-lila .sidebar-logo { border-color: #d4c4f0; }
+
+        /* 6. Durazno pastel */
+        body.theme-durazno {
+            --renaven-azul-fuerte: #fdd0b5;
+            --renaven-azul-cielo: #fee5d0;
+            --renaven-blanco: #fffcf9;
+            --renaven-gris-fondo: #fef8f3;
+            --renaven-borde: #fdd0b5;
+        }
+        body.theme-durazno .sidebar { background: #f5c2a4; border-right-color: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link.active { background: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link:hover { background: #fee5d0; }
+        body.theme-durazno .saldo-bs { background: linear-gradient(135deg, #fee5d0, #fdd0b5) !important; }
+        body.theme-durazno .saldo-usd { background: linear-gradient(135deg, #fee5d0, #fdd0b5) !important; }
+        body.theme-durazno .client-card { background: #fee5d0; border-color: #fdd0b5; }
+        body.theme-durazno .cart-card { border-color: #fdd0b5; }
+        body.theme-durazno .cart-card-header { background: #fdd0b5; border-color: #f5c2a4; }
+        body.theme-durazno .cart-table th { background: #fdd0b5; border-color: #f5c2a4; }
+        body.theme-durazno .cart-table td { border-color: #fdd0b5; }
+        body.theme-durazno .btn-guardar { background: #fdd0b5; border-color: #f5c2a4; color: #000 !important; }
+        body.theme-durazno .btn-guardar:hover { background: #f5c2a4; }
+        body.theme-durazno .btn-catalogo { background: #f5c2a4; border-color: #fdd0b5; color: #000 !important; }
+        body.theme-durazno .btn-catalogo:hover { background: #fdd0b5; }
+        body.theme-durazno .btn-presupuesto { background: #fee5d0; border-color: #fdd0b5; color: #000 !important; }
+        body.theme-durazno .btn-presupuesto:hover { background: #fdd0b5; }
+        body.theme-durazno .btn-devolucion { background: #f5c2a4; border-color: #fdd0b5; color: #000 !important; }
+        body.theme-durazno .btn-devolucion:hover { background: #fdd0b5; }
+        body.theme-durazno .btn-finalizar { background: #f5c2a4; border-color: #fdd0b5; color: #000 !important; }
+        body.theme-durazno .btn-finalizar:hover { background: #fdd0b5; }
+        body.theme-durazno .btn-pagar-header { background: #f5c2a4; border-color: #fdd0b5; color: #000 !important; }
+        body.theme-durazno .btn-pagar-header:hover { background: #fdd0b5; }
+        body.theme-durazno .modal-pago .modal-header { background: #fdd0b5; border-color: #f5c2a4; }
+        body.theme-durazno .modal-devolucion .modal-header { background: #f5c2a4; border-color: #fdd0b5; }
+        body.theme-durazno .cash-info { background: #fee5d0; border-color: #fdd0b5; }
+        body.theme-durazno .total-pagar-modal { background: #fee5d0; border-color: #fdd0b5; }
+        body.theme-durazno .product-card { border-color: #fdd0b5; background: #fee5d0; }
+        body.theme-durazno .product-card:hover { border-color: #f5c2a4; }
+        body.theme-durazno .exchange-rate-info { background: #fee5d0; border-color: #fdd0b5; }
+        body.theme-durazno .form-control:focus { border-color: #fdd0b5; box-shadow: 0 0 0 0.2rem rgba(253,208,181,0.4); }
+        body.theme-durazno .sidebar-logo { border-color: #fdd0b5; }
+
+        /* ========== TODAS LAS LETRAS EN NEGRITA (excepto iconos) ========== */
+        *:not([class*="fa-"]) {
+            font-weight: bold !important;
+        }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+            font-weight: 400 !important;
+        }
+        .fas, .fa-solid {
+            font-weight: 900 !important;
+        }
+
+        body { 
+            background: var(--renaven-gris-fondo);
+            font-size: 13px;
+            font-family: Arial, sans-serif;
+            color: var(--renaven-texto);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Forzar todos los textos a negro */
+        body, body * {
+            color: var(--renaven-texto) !important;
+        }
+
+        ::placeholder, input::placeholder, textarea::placeholder {
+            color: #9ca3af !important;
+            opacity: 1;
+        }
+
+        *:focus {
+            outline: 3px solid #FFD700 !important;
+            outline-offset: 2px !important;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--renaven-azul-fuerte);
+            color: #000;
+            padding: 8px 16px;
+            z-index: 1000;
+            text-decoration: none;
+            border-radius: 0 0 8px 0;
+            font-weight: bold;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        @media print {
+            body { background: white; }
+            .sidebar, .no-print, .btn-pagar-header, .btn-guardar, .btn-catalogo, 
+            .btn-presupuesto, .btn-devolucion, .modal, .cash-info, .btn-finalizar, .btn-close,
+            .saldo-card {
+                display: none !important;
+            }
+            .col-md-10 { width: 100% !important; }
+        }
+
+        .exchange-rate-info {
+            background: var(--renaven-blanco);
+            border: 2px solid var(--renaven-borde);
+            border-radius: 50px;
+            padding: 4px 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background: var(--renaven-azul-fuerte);
+            border-right: 2px solid var(--renaven-azul-cielo);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .sidebar .nav-link {
+            margin: 4px 0;
+            border-radius: 50px;
+            padding: 8px 15px;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+            color: #000 !important;
+        }
+        .sidebar .nav-link i {
+            color: #000 !important;
+        }
+        .sidebar .nav-link:hover {
+            background: var(--renaven-azul-cielo);
+            transform: translateX(5px);
+            color: #000 !important;
+        }
+        .sidebar .nav-link:hover i {
+            color: #000 !important;
+        }
+        .sidebar .nav-link.active {
+            background: var(--renaven-azul-cielo);
+            color: #000 !important;
+        }
+        .sidebar .nav-link.active i {
+            color: #000 !important;
+        }
+
+        .sidebar-logo {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 3px solid var(--renaven-azul-cielo);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, border-color 0.3s;
+            background: var(--renaven-blanco);
+        }
+        .sidebar-logo:hover {
+            transform: scale(1.05);
+        }
+
+        .sidebar h6, .sidebar small {
+            color: #000 !important;
+        }
+
+        .saldo-card {
+            border-radius: 16px;
+            padding: 12px 16px;
+            color: #000 !important;
+            transition: transform 0.25s, box-shadow 0.25s;
+            cursor: default;
+            margin-bottom: 12px;
+            border: 1px solid var(--renaven-borde);
+        }
+
+        .saldo-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px -8px rgba(0,0,0,0.2);
+        }
+
+        .saldo-card .saldo-label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            font-weight: 500;
+            color: #000 !important;
+        }
+
+        .saldo-card .saldo-monto {
+            font-size: 1.6rem;
+            font-weight: 800;
+            line-height: 1.2;
+            color: #000 !important;
+        }
+
+        .saldo-card .saldo-sub {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            color: #000 !important;
+        }
+
+        .saldo-bs {
+            background: linear-gradient(135deg, var(--renaven-azul-cielo), var(--renaven-azul-fuerte));
+            transition: background 0.3s;
+        }
+
+        .saldo-usd {
+            background: linear-gradient(135deg, var(--renaven-azul-cielo), var(--renaven-azul-fuerte));
+            transition: background 0.3s;
+        }
+
+        .client-card {
+            background: var(--renaven-blanco);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 2px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .client-card h5 { margin-bottom: 10px; font-size: 1.1rem; }
+        .client-card input {
+            background: var(--renaven-blanco);
+            border: 2px solid var(--renaven-borde);
+            font-size: 0.9rem;
+            padding: 8px 12px;
+            border-radius: 50px !important;
+            transition: border-color 0.3s;
+        }
+
+        .btn-guardar, .btn-catalogo, .btn-presupuesto, .btn-devolucion, .btn-finalizar,
+        .btn-pagar-header, .modal-pago .btn, .modal-devolucion .btn {
+            border: 2px solid var(--renaven-borde);
+            border-radius: 50px;
+            padding: 10px 16px;
+            font-weight: 800;
+            font-size: 14px !important;
+            width: 100%;
+            transition: all 0.3s ease;
+            color: #000 !important;
+        }
+
+        .btn-guardar { background: var(--renaven-azul-cielo); color: #000 !important; }
+        .btn-guardar:hover { background: var(--renaven-azul-fuerte); color: #000 !important; }
+
+        .btn-catalogo { background: var(--renaven-verde); color: #000 !important; }
+        .btn-catalogo:hover { background: var(--renaven-azul-cielo); color: #000 !important; }
+
+        .btn-presupuesto { background: var(--renaven-azul-cielo); color: #000 !important; }
+        .btn-presupuesto:hover { background: var(--renaven-azul-fuerte); color: #000 !important; }
+
+        .btn-devolucion { background: var(--renaven-rojo); color: #000 !important; }
+        .btn-devolucion:hover { background: var(--renaven-azul-cielo); color: #000 !important; }
+
+        .btn-finalizar { background: var(--renaven-oro); color: #000 !important; }
+        .btn-finalizar:hover { background: var(--renaven-azul-cielo); color: #000 !important; }
+
+        .btn-pagar-header { 
+            background: var(--renaven-oro); 
+            width: auto;
+            font-size: 14px !important;
+            padding: 8px 20px;
+            color: #000 !important;
+        }
+        .btn-pagar-header:hover { background: var(--renaven-azul-cielo); }
+
+        .btn-devolucion-pago {
+            background: var(--renaven-rojo);
+            color: #000 !important;
+            border: 2px solid var(--renaven-borde);
+            border-radius: 50px;
+            padding: 8px 16px;
+            font-weight: 800;
+            font-size: 13px !important;
+            transition: all 0.3s ease;
+        }
+        .btn-devolucion-pago:hover {
+            background: var(--renaven-azul-cielo);
+            color: #000 !important;
+        }
+
+        .cash-info {
+            background: var(--renaven-blanco);
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 2px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .cash-info h6 { font-size: 0.85rem; margin-bottom: 3px; }
+        .cash-info h3 { font-size: 1.2rem; margin: 0; }
+
+        .cart-card {
+            background: var(--renaven-blanco);
+            border-radius: 12px;
+            border: 2px solid var(--renaven-borde);
+            overflow: hidden;
+            transition: border-color 0.3s, background 0.3s;
+        }
+        .cart-card-header {
+            background: var(--renaven-azul-cielo);
+            border-bottom: 2px solid var(--renaven-borde);
+            padding: 12px 16px;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .cart-card-header h5 { font-size: 1.1rem; margin: 0; font-weight: bold; }
+
+        .cart-table {
+            font-size: 0.9rem;
+            margin-bottom: 0;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .cart-table th, .cart-table td {
+            border: 2px solid var(--renaven-borde);
+            padding: 12px 10px;
+            vertical-align: middle;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+        .cart-table th {
+            background: var(--renaven-azul-cielo);
+            font-size: 0.95rem;
+            font-weight: bold;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .product-card {
+            cursor: pointer;
+            border: 2px solid var(--renaven-borde);
+            border-radius: 10px;
+            background: var(--renaven-blanco);
+            padding: 10px;
+            transition: all 0.3s ease;
+        }
+        .product-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--renaven-azul-cielo);
+            box-shadow: 0 4px 12px rgba(132,182,244,0.2);
+        }
+        .product-card h6 {
+            font-size: 0.95rem;
+            font-weight: bold;
+        }
+
+        .badge-weight {
+            background: #17a2b8;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 50px;
+            margin-left: 5px;
+            color: #000 !important;
+        }
+
+        .badge-stock {
+            font-size: 0.7rem;
+        }
+
+        .modal-pago .modal-content, .modal-devolucion .modal-content {
+            border-radius: 12px;
+            border: 2px solid var(--renaven-borde);
+            transition: border-color 0.3s;
+        }
+        .modal-pago .modal-header, .modal-devolucion .modal-header {
+            background: var(--renaven-azul-cielo);
+            border-bottom: 2px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .modal-pago .modal-header .modal-title,
+        .modal-devolucion .modal-header .modal-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .total-pagar-modal {
+            background: var(--renaven-azul-cielo);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 2px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .total-pagar-modal h3 {
+            font-size: 1.5rem;
+        }
+
+        .pago-item-modal {
+            background: var(--renaven-gris-fondo);
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            border-left: 4px solid var(--renaven-azul-fuerte);
+            border-top: 2px solid var(--renaven-borde);
+            border-right: 2px solid var(--renaven-borde);
+            border-bottom: 2px solid var(--renaven-borde);
+            font-size: 0.9rem;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .pago-item-modal.devolucion-item-pago {
+            border-left: 4px solid var(--renaven-rojo);
+            background: #fee2e2;
+        }
+
+        .pago-item-modal.binance-item {
+            border-left: 4px solid var(--renaven-binance);
+            background: #fff8e0;
+        }
+
+        .pago-item-modal.nota-credito-item {
+            border-left: 4px solid var(--renaven-nota-credito);
+            background: #f0e6ff;
+        }
+
+        .vuelto-card-modal {
+            background: var(--renaven-azul-cielo);
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 10px;
+            text-align: center;
+            border: 2px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .devolucion-item {
+            background: var(--renaven-blanco);
+            border: 2px solid var(--renaven-borde);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .devolucion-item:hover {
+            background: #fee2e2;
+        }
+        .resumen-devolucion {
+            background: var(--renaven-azul-cielo);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 15px;
+            border: 2px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        input, select {
+            border-radius: 50px !important;
+            border: 2px solid var(--renaven-borde) !important;
+            padding: 8px 12px !important;
+            font-size: 0.9rem !important;
+            background: var(--renaven-blanco);
+            color: #000 !important;
+            transition: border-color 0.3s;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .header-top h2 {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .descuento-valor {
+            font-weight: bold;
+        }
+
+        .col-md-10 { padding: 15px !important; }
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: block;
+            color: #000 !important;
+        }
+        hr {
+            margin: 10px 0;
+            border-color: var(--renaven-borde);
+        }
+
+        .btn-close {
+            background-color: white;
+            border-radius: 50%;
+            opacity: 0.8;
+        }
+
+        .list-group-item {
+            background-color: white;
+            border: 2px solid var(--renaven-borde);
+            cursor: pointer;
+        }
+        .list-group-item:hover {
+            background-color: var(--renaven-azul-cielo);
+        }
+
+        a.text-danger {
+            color: var(--renaven-rojo) !important;
+        }
+
+        .ref-input {
+            font-size: 0.85rem !important;
+            padding: 6px 12px !important;
+        }
+
+        .ref-input:required {
+            border-color: var(--renaven-rojo) !important;
+        }
+
+        .error-message {
+            color: var(--renaven-rojo);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .success-message {
+            color: var(--renaven-verde);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .monto-disponible-info {
+            font-size: 0.8rem;
+            color: #0d6e2b;
+            margin-top: 3px;
+            font-weight: 500;
+        }
+
+        .monto-disponible-info .fa-info-circle {
+            color: #0d6e2b;
+        }
+
+        @media (max-width: 768px) {
+            .saldo-card .saldo-monto {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <div class="col-md-2 sidebar p-2 no-print">
+                <div class="text-center mb-3">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/60x60?text=R'">
+                    <h6 class="mt-1">RENAVEN</h6>
+                    <small>{{ session.get('role', 'Usuario') }}</small>
+                </div>
+                <nav class="nav flex-column" aria-label="Menú principal">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt me-2" aria-hidden="true"></i> Dashboard</a>
+                    <a class="nav-link active" href="{{ url_for('facturacion') }}"><i class="fas fa-shopping-cart me-2" aria-hidden="true"></i> Facturación</a>
+                    <a class="nav-link" href="{{ url_for('inventory') }}"><i class="fas fa-boxes me-2" aria-hidden="true"></i> Inventario</a>
+                    <a class="nav-link" href="{{ url_for('cash_closure') }}"><i class="fas fa-cash-register me-2" aria-hidden="true"></i> Cierre de Caja</a>
+                    <a class="nav-link" href="{{ url_for('opening_balance') }}"><i class="fas fa-money-bill-wave me-2" aria-hidden="true"></i> Apertura</a>
+                    <a class="nav-link" href="{{ url_for('historial_caja') }}"><i class="fas fa-wallet me-2" aria-hidden="true"></i> Historial Caja</a>
+                    <a class="nav-link" href="{{ url_for('historial_devoluciones') }}"><i class="fas fa-undo-alt me-2" aria-hidden="true"></i> Devoluciones</a>
+                    <a class="nav-link" href="{{ url_for('historial_facturacion') }}"><i class="fas fa-file-invoice me-2" aria-hidden="true"></i> Historial</a>
+                    <hr>
+                    <a class="nav-link" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2" aria-hidden="true"></i> Salir</a>
+                </nav>
+            </div>
+            
+            <div class="col-md-10 p-3" id="main-content">
+                <div class="header-top">
+                    <div class="page-title">
+                        <h1 class="fs-2"><i class="fas fa-shopping-cart" aria-hidden="true"></i> Facturación</h1>
+                    </div>
+                    <div class="exchange-rate-info">
+                        <i class="fas fa-dollar-sign" aria-hidden="true"></i>
+                        <strong>USD:</strong>
+                        <span>Bs. {{ exchange_rate|default(40)|format_bs }}</span>
+                    </div>
+                </div>
+                
+                <div class="row g-2 mb-3">
+                    <div class="col-md-4 col-6">
+                        <div class="saldo-card saldo-bs">
+                            <div class="saldo-label"><i class="fas fa-cash-stack me-1" aria-hidden="true"></i> Saldo Bs.</div>
+                            <div class="saldo-monto" id="saldoBsDisplay" aria-live="polite">Bs. {{ saldo_bs|default(0)|format_bs }}</div>
+                            <div class="saldo-sub">Actualizado en tiempo real</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="saldo-card saldo-usd">
+                            <div class="saldo-label"><i class="fas fa-currency-dollar me-1" aria-hidden="true"></i> Saldo USD</div>
+                            <div class="saldo-monto" id="saldoUsdDisplay" aria-live="polite">${{ saldo_usd|default(0)|format_usd_venezuela }}</div>
+                            <div class="saldo-sub">Actualizado en tiempo real</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-12">
+                        <div class="cash-info">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h6>💰 Fondo USD</h6>
+                                    <h3>$ <span id="cashUSD">0.00</span></h3>
+                                </div>
+                                <div class="col-6">
+                                    <h6>💵 Fondo Bs</h6>
+                                    <h3>Bs. <span id="cashBS">0.00</span></h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="client-card">
+                    <h2 class="fs-5"><i class="fas fa-user-friends" aria-hidden="true"></i> Datos del Cliente</h2>
+                    <div class="row">
+                        <div class="col-md-12 mb-2">
+                            <input type="text" id="buscarCliente" class="form-control" placeholder="🔍 Buscar cliente (cédula o nombre)" aria-label="Buscar cliente">
+                            <div id="listaClientes" class="mt-1" style="max-height: 100px; overflow-y: auto; display: none; background: white; border-radius: 10px; border: 2px solid var(--renaven-borde);"></div>
+                        </div>
+                        <div class="col-md-3 mb-1">
+                            <input type="text" id="client_id" class="form-control" placeholder="📄 Cédula/RIF" aria-label="Cédula o RIF del cliente">
+                        </div>
+                        <div class="col-md-4 mb-1">
+                            <input type="text" id="client_name" class="form-control" placeholder="👤 Nombre" aria-label="Nombre del cliente">
+                        </div>
+                        <div class="col-md-3 mb-1">
+                            <input type="text" id="client_phone" class="form-control" placeholder="📞 Teléfono" aria-label="Teléfono del cliente">
+                        </div>
+                        <div class="col-md-2 mb-1">
+                            <input type="text" id="client_address" class="form-control" placeholder="📍 Dirección" aria-label="Dirección del cliente">
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-3">
+                            <button class="btn-guardar" onclick="guardarClienteFrecuente()" aria-label="Guardar cliente frecuente"><i class="fas fa-save" aria-hidden="true"></i> Guardar</button>
+                        </div>
+                        <div class="col-3">
+                            <button class="btn-catalogo" onclick="abrirCatalogo()" aria-label="Abrir catálogo de productos"><i class="fas fa-box-open" aria-hidden="true"></i> Producto</button>
+                        </div>
+                        <div class="col-3">
+                            <button class="btn-presupuesto" onclick="generarPresupuesto()" aria-label="Generar presupuesto"><i class="fas fa-file-invoice" aria-hidden="true"></i> Presupuesto</button>
+                        </div>
+                        <div class="col-3">
+                            <button class="btn-devolucion" onclick="abrirModalDevolucion()" aria-label="Abrir modal de devolución">
+                                <i class="fas fa-undo-alt" aria-hidden="true"></i> Devolución
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="cart-card">
+                    <div class="cart-card-header d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0 fs-5"><i class="fas fa-shopping-cart" aria-hidden="true"></i> Carrito de Compras</h3>
+                        <button class="btn-pagar-header" onclick="abrirModalPago()" id="btnPago" disabled aria-label="Abrir modal de pago">
+                            <i class="fas fa-money-bill-wave" aria-hidden="true"></i> Pagar
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table cart-table mb-0" aria-label="Tabla de productos en el carrito">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%">Código</th>
+                                    <th style="width: 35%">Producto</th>
+                                    <th style="width: 10%">Cantidad</th>
+                                    <th style="width: 20%">Precio Unitario USD</th>
+                                    <th style="width: 15%">Total Bs</th>
+                                    <th style="width: 5%"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="cartItems">
+                                <tr><td colspan="6" class="text-center py-3">🛒 Carrito vacío</td></tr>
+                            </tbody>
+                            <tfoot id="cartFooter" style="display: none;">
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>SUBTOTAL:</strong></td>
+                                    <td class="text-end"><strong>$ <span id="subtotal">0.00</span></strong></td>
+                                    <td class="text-end"><strong>Bs. <span id="subtotalBS">0.00</span></strong></td>
+                                </tr>
+                                <tr id="descuentoRow" style="display: none;">
+                                    <td colspan="3" class="text-end"><strong>DESCUENTO (5%):</strong></td>
+                                    <td class="text-end"><strong class="descuento-valor">-$ <span id="descuento">0.00</span></strong></td>
+                                    <td class="text-end"><strong class="descuento-valor">-Bs. <span id="descuentoBS">0.00</span></strong></td>
+                                </tr>
+                                <tr id="devolucionRow" style="display: none;">
+                                    <td colspan="3" class="text-end" style="color: var(--renaven-rojo);"><strong>DESCUENTOS/DEVOLUCIONES:</strong></td>
+                                    <td class="text-end" style="color: var(--renaven-rojo);"><strong>-$ <span id="devolucionUSD">0.00</span></strong></td>
+                                    <td class="text-end" style="color: var(--renaven-rojo);"><strong>-Bs. <span id="devolucionBS">0.00</span></strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>IVA (16%):</strong></td>
+                                    <td class="text-end"><strong>$ <span id="tax">0.00</span></strong></td>
+                                    <td class="text-end"><strong>Bs. <span id="taxBS">0.00</span></strong></td>
+                                </tr>
+                                <tr style="background: var(--renaven-azul-cielo); font-weight: bold; font-size: 1.1rem;">
+                                    <td colspan="3" class="text-end"><strong>TOTAL A PAGAR:</strong></td>
+                                    <td class="text-end"><strong>$ <span id="totalUSD">0.00</span></strong></td>
+                                    <td class="text-end"><strong>Bs. <span id="totalBS">0.00</span></strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL DE PAGO -->
+    <div class="modal fade modal-pago" id="modalPago" tabindex="-1" data-bs-backdrop="static" aria-labelledby="modalPagoTitle" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalPagoTitle"><i class="fas fa-money-bill-wave" aria-hidden="true"></i> Forma de Pago</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="total-pagar-modal">
+                        <h6>💰 TOTAL A PAGAR</h6>
+                        <h3 id="modalTotalAPagar">$0.00</h3>
+                        <h6 id="modalTotalBsPagar">Bs. 0.00</h6>
+                        <small>Tasa: 1 USD = Bs. {{ exchange_rate|default(40)|format_bs }}</small>
+                    </div>
+                    
+                    <!-- NOTA DE DEVOLUCIÓN (Saldo a favor del cliente) -->
+                    <div class="card mb-2" style="border: 2px solid var(--renaven-nota-credito);">
+                        <div class="card-header" style="background: var(--renaven-nota-credito); color: white; font-weight: bold;">
+                            <i class="fas fa-file-invoice" aria-hidden="true"></i> Nota de Devolución (Saldo a favor)
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-8">
+                                    <label for="notaCreditoInput">🔢 N° Nota de Devolución:</label>
+                                    <input type="text" id="notaCreditoInput" class="form-control" placeholder="Ej: 0017" aria-label="Número de nota de devolución">
+                                    <small class="text-muted">Ingrese el número de nota de devolución del cliente</small>
+                                </div>
+                                <div class="col-4">
+                                    <label>&nbsp;</label>
+                                    <button class="btn w-100" style="background: var(--renaven-nota-credito); color: white; border-radius: 50px;" onclick="buscarNotaDevolucion()" aria-label="Buscar nota de devolución">
+                                        <i class="fas fa-search" aria-hidden="true"></i> Buscar
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="notaCreditoInfo" style="display: none;" class="mt-2">
+                                <div class="p-2" style="background: #f0e6ff; border-radius: 8px; border: 1px solid var(--renaven-nota-credito);">
+                                    <div class="row small">
+                                        <div class="col-6"><strong>Cliente:</strong> <span id="ncCliente"></span></div>
+                                        <div class="col-6"><strong>Monto Total:</strong> $<span id="ncMonto"></span></div>
+                                    </div>
+                                    <div class="row small mt-1">
+                                        <div class="col-6"><strong>Usado:</strong> $<span id="ncUsado"></span></div>
+                                        <div class="col-6"><strong>Disponible:</strong> $<span id="ncDisponible"></span></div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <label for="montoNotaCredito">💵 Monto a usar (USD):</label>
+                                        <div class="input-group">
+                                            <input type="text" id="montoNotaCredito" class="form-control" placeholder="Ingrese el monto en USD" aria-label="Monto a usar en dólares">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="usarTodoDisponible()" style="border-radius: 0 50px 50px 0; border: 2px solid var(--renaven-borde);">
+                                                <i class="fas fa-arrow-right" aria-hidden="true"></i> Usar todo
+                                            </button>
+                                        </div>
+                                        <div id="ncInfo" class="monto-disponible-info" style="display:none;">
+                                            <i class="fas fa-info-circle" aria-hidden="true"></i> <span id="ncInfoTexto"></span>
+                                        </div>
+                                        <div id="ncError" class="error-message"></div>
+                                    </div>
+                                    <button class="btn mt-2" style="background: var(--renaven-nota-credito); color: white; border-radius: 50px; width: 100%;" onclick="aplicarNotaDevolucion()" aria-label="Aplicar nota de devolución">
+                                        <i class="fas fa-check-circle" aria-hidden="true"></i> Aplicar Devolución
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <label for="metodoPago">Método de pago</label>
+                            <select id="metodoPago" class="form-control" aria-label="Método de pago">
+                                <option value="efectivo_bs">💵 Bs. Efectivo</option>
+                                <option value="efectivo_usd">💵 USD Efectivo (5% OFF)</option>
+                                <option value="zelle">🏦 Zelle (5% OFF)</option>
+                                <option value="binance">🪙 Binance</option>
+                                <option value="movil">📱 Pago Móvil</option>
+                                <option value="transferencia">🔄 Transferencia</option>
+                                <option value="tarjeta">💳 Tarjeta</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label for="montoPago">Monto</label>
+                            <input type="text" id="montoPago" class="form-control" placeholder="Ej: 1.500,50" aria-label="Monto a pagar">
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-2" id="referenciaContainer" style="display: none;">
+                        <div class="col-12">
+                            <label for="referenciaPago">📝 Número de Referencia <span class="text-danger">*</span></label>
+                            <input type="text" id="referenciaPago" class="form-control" placeholder="Ingrese el número de referencia o comprobante" aria-label="Número de referencia">
+                            <small class="text-muted">Requerido para pagos móviles, transferencias y Binance</small>
+                        </div>
+                    </div>
+                    
+                    <button class="btn w-100 mt-2" style="background: var(--renaven-azul-cielo); border: 2px solid var(--renaven-borde); border-radius: 50px;" onclick="agregarPago()" aria-label="Agregar pago">
+                        <i class="fas fa-plus-circle" aria-hidden="true"></i> Agregar Pago
+                    </button>
+                    <div id="pagosRealizadosModal" class="mt-3" style="max-height: 200px; overflow-y: auto;"></div>
+                    <div id="vueltoContainerModal" style="display: none;" class="vuelto-card-modal">
+                        <h6>💰 VUELTO / CAMBIO</h6>
+                        <h4 id="vueltoUSDModal">$0.00</h4>
+                        <h5 id="vueltoBSModal">Bs. 0.00</h5>
+                    </div>
+                    <button id="btnFinalizarModal" class="btn-finalizar" onclick="finalizarVenta()" disabled aria-label="Finalizar venta">
+                        <i class="fas fa-check-circle" aria-hidden="true"></i> Finalizar Venta
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL DE DEVOLUCIÓN -->
+    <div class="modal fade modal-devolucion" id="modalDevolucion" tabindex="-1" data-bs-backdrop="static" aria-labelledby="modalDevolucionTitle" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: var(--renaven-rojo);">
+                    <h5 class="modal-title" id="modalDevolucionTitle"><i class="fas fa-undo-alt" aria-hidden="true"></i> Devolución de Productos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="facturaDevolucion">🔢 Número de Factura:</label>
+                            <input type="number" id="facturaDevolucion" class="form-control" placeholder="Ej: 1, 2, 3..." aria-label="Número de factura">
+                        </div>
+                        <div class="col-md-6">
+                            <label>&nbsp;</label>
+                            <button class="btn w-100" style="background: var(--renaven-azul-cielo); border: 2px solid var(--renaven-borde); border-radius: 50px;" onclick="buscarFacturaDevolucion()" aria-label="Buscar factura para devolución">
+                                <i class="fas fa-search" aria-hidden="true"></i> Buscar Factura
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="infoFacturaDevolucion" style="display: none;">
+                        <div class="devolucion-item">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong><i class="fas fa-receipt" aria-hidden="true"></i> Factura N°:</strong> <span id="facturaNumero"></span><br>
+                                    <strong><i class="fas fa-calendar" aria-hidden="true"></i> Fecha:</strong> <span id="facturaFecha"></span><br>
+                                    <strong><i class="fas fa-user" aria-hidden="true"></i> Cliente:</strong> <span id="facturaCliente"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong><i class="fas fa-dollar-sign" aria-hidden="true"></i> Total Factura:</strong> $<span id="facturaTotal"></span><br>
+                                    <strong><i class="fas fa-exchange-alt" aria-hidden="true"></i> Total Devuelto:</strong> $<span id="totalDevuelto"></span><br>
+                                    <strong><i class="fas fa-check-circle" aria-hidden="true"></i> Disponible:</strong> $<span id="disponibleDevolver"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <h6><i class="fas fa-boxes" aria-hidden="true"></i> Productos a Devolver:</h6>
+                            <div id="productosDevolucion" style="max-height: 300px; overflow-y: auto;"></div>
+                        </div>
+                        
+                        <div class="resumen-devolucion">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>💰 Subtotal a Devolver:</strong><br>
+                                    $<span id="subtotalDevolucion">0.00</span> USD
+                                </div>
+                                <div class="col-md-6">
+                                    <strong for="motivoDevolucion">📝 Motivo de Devolución:</strong>
+                                    <select id="motivoDevolucion" class="form-control mt-1" aria-label="Motivo de devolución">
+                                        <option value="Producto defectuoso">🔧 Producto defectuoso</option>
+                                        <option value="Producto equivocado">❌ Producto equivocado</option>
+                                        <option value="Cliente no satisfecho">😞 Cliente no satisfecho</option>
+                                        <option value="Daño en transporte">📦 Daño en transporte</option>
+                                        <option value="Otro">📝 Otro</option>
+                                    </select>
+                                    <input type="text" id="motroOtro" class="form-control mt-1" placeholder="Especifique otro motivo" style="display: none;" aria-label="Especificar otro motivo">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn w-100 mt-3" id="btnProcesarDevolucion" style="background: var(--renaven-rojo); color: white;" disabled aria-label="Procesar devolución">
+                            <i class="fas fa-check-circle" aria-hidden="true"></i> PROCESAR DEVOLUCIÓN
+                        </button>
+                    </div>
+                    
+                    <div id="sinFacturaDevolucion" class="text-center p-3" style="display: block;">
+                        <i class="fas fa-search fa-3x text-muted" aria-hidden="true"></i>
+                        <p class="mt-2">Ingrese el número de factura para buscar los productos a devolver</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL CATÁLOGO -->
+    <div class="modal fade" id="catalogoModal" tabindex="-1" aria-labelledby="catalogoModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header" style="background: var(--renaven-azul-cielo);">
+                    <h5 class="modal-title" id="catalogoModalTitle">📦 Lista de Productos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-2">
+                        <div class="col-md-8">
+                            <input type="text" id="searchProduct" class="form-control" placeholder="Buscar productos..." aria-label="Buscar productos">
+                        </div>
+                        <div class="col-md-4">
+                            <select id="categoryFilter" class="form-select" aria-label="Filtrar por categoría">
+                                <option value="Todas">Todas las categorías</option>
+                                {% for cat in categories|default([]) %}
+                                <option value="{{ cat.name }}">{{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div id="productsList" class="row" style="max-height: 400px; overflow-y: auto;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ========== CARGA DE TEMA GUARDADO Y CONFIGURACIÓN DE FUENTE ==========
+    document.addEventListener('DOMContentLoaded', function() {
+        // ---- Temas pastel ----
+        function applyTheme(themeClass) {
+            document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+            if (themeClass) {
+                document.body.classList.add(themeClass);
+            }
+            localStorage.setItem('selectedTheme', themeClass || '');
+        }
+
+        const savedTheme = localStorage.getItem('selectedTheme');
+        if (savedTheme) {
+            applyTheme(savedTheme);
+        }
+
+        // ---- Tamaño de fuente (base 13px) ----
+        let currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+        function applyFontSize() {
+            document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+            localStorage.setItem('fontSize', currentFontSize);
+        }
+        applyFontSize();
+
+        // ========== EVENTO PARA MOSTRAR CAMPO DE REFERENCIA ==========
+        document.getElementById('metodoPago').addEventListener('change', function() {
+            const refContainer = document.getElementById('referenciaContainer');
+            const metodo = this.value;
+            if (metodo === 'movil' || metodo === 'transferencia' || metodo === 'binance') {
+                refContainer.style.display = 'block';
+                document.getElementById('referenciaPago').required = true;
+                document.getElementById('referenciaPago').setAttribute('aria-required', 'true');
+            } else {
+                refContainer.style.display = 'none';
+                document.getElementById('referenciaPago').required = false;
+                document.getElementById('referenciaPago').removeAttribute('aria-required');
+            }
+        });
+        
+        // Enter para buscar nota de devolución
+        document.getElementById('notaCreditoInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                buscarNotaDevolucion();
+            }
+        });
+        
+        // Enter para buscar factura de devolución
+        document.getElementById('facturaDevolucion').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                buscarFacturaDevolucion();
+            }
+        });
+    });
+    
+    // ========== CONFIGURACIÓN ==========
+    const exchangeRate = parseFloat('{{ exchange_rate | default(40) }}');
+    const discountPercent = parseFloat('{{ discount_percent | default(5) }}');
+    let saldoBs = parseFloat('{{ saldo_bs|default(0) }}');
+    let saldoUsd = parseFloat('{{ saldo_usd|default(0) }}');
+    
+    let totalSinDescuento = 0;
+    let totalConDescuento = 0;
+    let descuentoAplicado = 0;
+    let devolucionAplicada = 0;
+    let notaCreditoAplicada = 0;
+    let totalBs = 0;
+    let pagos = [];
+    let facturaDevolucionData = null;
+    let notaCreditoData = null;
+    let productosFactura = null; // Guardar productos de la factura para devolución
+    
+    // ========== FUNCIONES DE FORMATO ==========
+    function parseNumberVenezuela(valor) {
+        if (!valor || valor === '') return 0;
+        if (typeof valor === 'number') return valor;
+        
+        let str = valor.toString().trim();
+        let tienePuntos = str.includes('.');
+        let tieneComa = str.includes(',');
+        
+        if (tienePuntos && tieneComa) {
+            let sinPuntos = str.replace(/\./g, '');
+            let conPuntoDecimal = sinPuntos.replace(',', '.');
+            let numero = parseFloat(conPuntoDecimal);
+            return isNaN(numero) ? 0 : numero;
+        } 
+        else if (tieneComa && !tienePuntos) {
+            if (str.indexOf(',') > str.indexOf('.') || !str.includes('.')) {
+                let conPunto = str.replace(',', '.');
+                let numero = parseFloat(conPunto);
+                return isNaN(numero) ? 0 : numero;
+            } else {
+                let numero = parseFloat(str);
+                return isNaN(numero) ? 0 : numero;
+            }
+        }
+        else {
+            let numero = parseFloat(str);
+            return isNaN(numero) ? 0 : numero;
+        }
+    }
+    
+    function formatNumberVenezuela(numero, decimals = 2) {
+        if (isNaN(numero) || numero === null || numero === '') return '0,00';
+        numero = Math.round(numero * 100) / 100;
+        
+        let partes = numero.toFixed(decimals).split('.');
+        let entero = parseInt(partes[0]);
+        let decimal = partes[1];
+        
+        let enteroFormateado = entero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        return `${enteroFormateado},${decimal}`;
+    }
+    
+    function formatNumberUSD(numero, decimals = 2) {
+        if (isNaN(numero) || numero === null || numero === '') return '0.00';
+        numero = Math.round(numero * 100) / 100;
+        
+        let partes = numero.toFixed(decimals).split('.');
+        let entero = parseInt(partes[0]);
+        let decimal = partes[1];
+        
+        let enteroFormateado = entero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return `${enteroFormateado}.${decimal}`;
+    }
+    
+    // ========== ACTUALIZAR SALDO ==========
+    function actualizarSaldo() {
+        let saldoBsDisplay = document.getElementById('saldoBsDisplay');
+        let saldoUsdDisplay = document.getElementById('saldoUsdDisplay');
+        
+        if (saldoBsDisplay) saldoBsDisplay.innerHTML = 'Bs. ' + formatNumberVenezuela(saldoBs);
+        if (saldoUsdDisplay) saldoUsdDisplay.innerHTML = '$' + formatNumberUSD(saldoUsd);
+    }
+    
+    async function fetchSaldoActual() {
+        try {
+            var response = await fetch('/api/saldo_actual', {
+                headers: { 
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            
+            var data = await response.json();
+            
+            if (data.success) {
+                saldoBs = parseFloat(data.saldo_bs) || 0;
+                saldoUsd = parseFloat(data.saldo_usd) || 0;
+                actualizarSaldo();
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('❌ Error obteniendo saldo:', error.message);
+            return false;
+        }
+    }
+    
+    // ================================================================
+    //   ACTUALIZAR TOTALES DEL CARRITO (CORREGIDO - IGUAL QUE BACKEND)
+    // ================================================================
+    function actualizarTotales() {
+        // 1. Determinar si se aplica descuento (solo si hay pago en USD Efectivo o Zelle)
+        let tienePagoUSD = pagos.some(p => p.tipo === 'efectivo_usd' || p.tipo === 'zelle');
+        
+        if (tienePagoUSD) {
+            descuentoAplicado = totalSinDescuento * (discountPercent / 100);
+            totalConDescuento = totalSinDescuento - descuentoAplicado;
+        } else {
+            descuentoAplicado = 0;
+            totalConDescuento = totalSinDescuento;
+        }
+        
+        // 2. Calcular IVA sobre el subtotal CON DESCUENTO (NUNCA sobre saldo negativo)
+        let iva = totalConDescuento * 0.16;
+        let totalConIva = totalConDescuento + iva;
+        
+        // 3. Restar las devoluciones y notas de crédito del TOTAL CON IVA
+        let totalDescuentos = devolucionAplicada + notaCreditoAplicada;
+        let totalFinalUSD = totalConIva - totalDescuentos;
+        
+        // 4. Calcular total en Bs.
+        totalBs = totalFinalUSD * exchangeRate;
+        
+        // 5. Actualizar la tabla
+        let subtotalBs = totalSinDescuento * exchangeRate;
+        let descuentoBs = descuentoAplicado * exchangeRate;
+        let totalDescuentosBs = totalDescuentos * exchangeRate;
+        let taxBs = iva * exchangeRate;
+        
+        document.getElementById('subtotal').innerText = formatNumberUSD(totalSinDescuento);
+        document.getElementById('subtotalBS').innerText = formatNumberVenezuela(subtotalBs);
+        document.getElementById('descuento').innerText = formatNumberUSD(descuentoAplicado);
+        document.getElementById('descuentoBS').innerText = formatNumberVenezuela(descuentoBs);
+        
+        let devRow = document.getElementById('devolucionRow');
+        if (totalDescuentos > 0) {
+            devRow.style.display = 'table-row';
+            document.getElementById('devolucionUSD').innerText = formatNumberUSD(totalDescuentos);
+            document.getElementById('devolucionBS').innerText = formatNumberVenezuela(totalDescuentosBs);
+        } else {
+            devRow.style.display = 'none';
+        }
+        
+        document.getElementById('tax').innerText = formatNumberUSD(iva);
+        document.getElementById('taxBS').innerText = formatNumberVenezuela(taxBs);
+        document.getElementById('totalUSD').innerText = formatNumberUSD(totalFinalUSD);
+        document.getElementById('totalBS').innerText = formatNumberVenezuela(totalBs);
+        
+        document.getElementById('cartFooter').style.display = totalSinDescuento > 0 ? 'table-footer-group' : 'none';
+        document.getElementById('btnPago').disabled = totalSinDescuento <= 0;
+        
+        let descuentoRow = document.getElementById('descuentoRow');
+        if (descuentoAplicado > 0) {
+            descuentoRow.style.display = 'table-row';
+        } else {
+            descuentoRow.style.display = 'none';
+        }
+        
+        // 6. Actualizar modal de pago si está abierto
+        if (document.getElementById('modalPago').classList.contains('show')) {
+            document.getElementById('modalTotalAPagar').innerHTML = `$${formatNumberVenezuela(totalFinalUSD)} USD`;
+            document.getElementById('modalTotalBsPagar').innerHTML = `Bs. ${formatNumberVenezuela(totalBs)}`;
+            verificarPagoCompleto();
+        }
+    }
+    
+    // ========== CARGAR CARRITO ==========
+    function cargarCarrito() {
+        fetch('/get_cart')
+            .then(r => r.json())
+            .then(data => {
+                let container = document.getElementById('cartItems');
+                if (data.items.length === 0) {
+                    container.innerHTML = '<tr><td colspan="6" class="text-center py-3">🛒 Carrito vacío</td></tr>';
+                    totalSinDescuento = 0;
+                    devolucionAplicada = 0;
+                    notaCreditoAplicada = 0;
+                    document.getElementById('cartFooter').style.display = 'none';
+                    actualizarTotales();
+                    return;
+                }
+                let subtotal = 0;
+                container.innerHTML = '';
+                data.items.forEach((item, i) => {
+                    let totalItem = item.price * item.quantity;
+                    let totalItemBs = totalItem * exchangeRate;
+                    subtotal += totalItem;
+                    
+                    let displayQuantity = item.quantity_text || item.quantity;
+                    
+                    container.innerHTML += `
+                        <tr>
+                            <td>${item.barcode || '-'}</td>
+                            <td class="text-start">${item.name}${item.sale_type === 'weight' ? ' <span class="badge-weight">⚖️ Por Peso</span>' : ''}</td>
+                            <td class="text-center">${displayQuantity}${item.sale_type === 'weight' ? ' Kg' : ''}</td>
+                            <td class="text-end">$${formatNumberUSD(item.price)}${item.sale_type === 'weight' ? ' /Kg' : ''}</td>
+                            <td class="text-end">Bs. ${formatNumberVenezuela(totalItemBs)}</td>
+                            <td class="text-center"><a href="/remove_from_cart/${i}" class="text-danger" onclick="return confirm('¿Eliminar?')" aria-label="Eliminar producto del carrito"><i class="fas fa-trash-alt" aria-hidden="true"></i></a></td>
+                        </tr>
+                    `;
+                });
+                totalSinDescuento = subtotal;
+                document.getElementById('cartFooter').style.display = 'table-footer-group';
+                actualizarTotales();
+            });
+    }
+    
+    // ==============================================================
+    //   FUNCIONES PARA NOTA DE DEVOLUCIÓN (SALDO A FAVOR)
+    // ==============================================================
+    function buscarNotaDevolucion() {
+        let ncNum = document.getElementById('notaCreditoInput').value.trim();
+        if (!ncNum) {
+            alert('❌ Ingrese el número de nota de devolución');
+            return;
+        }
+
+        document.getElementById('ncError').classList.remove('show');
+        document.getElementById('ncError').innerHTML = '';
+        document.getElementById('ncInfo').style.display = 'none';
+
+        let btn = document.querySelector('[onclick="buscarNotaDevolucion()"]');
+        let originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando...';
+        btn.disabled = true;
+
+        fetch(`/buscar_nota_credito?nc=${encodeURIComponent(ncNum)}`)
+            .then(r => {
+                if (!r.ok) throw new Error('Error en la solicitud');
+                return r.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    alert('❌ ' + data.error);
+                    document.getElementById('notaCreditoInfo').style.display = 'none';
+                    return;
+                }
+
+                notaCreditoData = data;
+
+                document.getElementById('ncCliente').innerText = data.cliente_nombre || data.cliente || 'N/A';
+                document.getElementById('ncMonto').innerText = formatNumberVenezuela(parseFloat(data.monto_total) || 0);
+                document.getElementById('ncUsado').innerText = formatNumberVenezuela(parseFloat(data.monto_usado) || 0);
+                document.getElementById('ncDisponible').innerText = formatNumberVenezuela(parseFloat(data.disponible) || 0);
+
+                let montoInput = document.getElementById('montoNotaCredito');
+                montoInput.value = '';
+                montoInput.placeholder = `Monto disponible: $${formatNumberVenezuela(data.disponible || 0)} USD`;
+
+                let infoDiv = document.getElementById('ncInfo');
+                let infoText = document.getElementById('ncInfoTexto');
+                infoText.innerHTML = `💰 Puede usar hasta $${formatNumberVenezuela(data.disponible || 0)} USD. El monto se restará del total de la venta, pudiendo quedar saldo a favor.`;
+                infoDiv.style.display = 'block';
+                infoDiv.style.color = '#0d6e2b';
+
+                document.getElementById('notaCreditoInfo').style.display = 'block';
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('❌ Error al buscar nota de devolución: ' + err.message);
+                document.getElementById('notaCreditoInfo').style.display = 'none';
+            })
+            .finally(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+    }
+
+    function usarTodoDisponible() {
+        if (!notaCreditoData) {
+            alert('⚠️ Primero busque una nota de devolución');
+            return;
+        }
+        let disponible = notaCreditoData.disponible || 0;
+        if (disponible <= 0) {
+            alert('⚠️ No hay saldo disponible en esta nota.');
+            return;
+        }
+        document.getElementById('montoNotaCredito').value = formatNumberVenezuela(disponible);
+        let infoDiv = document.getElementById('ncInfo');
+        let infoText = document.getElementById('ncInfoTexto');
+        infoText.innerHTML = `✅ Se cargó $${formatNumberVenezuela(disponible)} USD (monto total disponible). Se aplicará sin restricciones.`;
+        infoDiv.style.display = 'block';
+        infoDiv.style.color = '#0d6e2b';
+    }
+
+    function aplicarNotaDevolucion() {
+        if (!notaCreditoData) {
+            alert('⚠️ Primero busque una nota de devolución');
+            return;
+        }
+
+        let montoRaw = document.getElementById('montoNotaCredito').value.trim();
+        let errorEl = document.getElementById('ncError');
+        errorEl.classList.remove('show');
+        errorEl.innerHTML = '';
+
+        if (!montoRaw) {
+            errorEl.innerHTML = '⚠️ Ingrese el monto a usar en USD';
+            errorEl.classList.add('show');
+            return;
+        }
+
+        let monto = parseNumberVenezuela(montoRaw);
+        let disponible = notaCreditoData.disponible || 0;
+
+        if (isNaN(monto) || monto <= 0) {
+            errorEl.innerHTML = '⚠️ Ingrese un monto válido mayor a 0';
+            errorEl.classList.add('show');
+            return;
+        }
+
+        if (monto > disponible) {
+            errorEl.innerHTML = `⚠️ El monto ($${formatNumberVenezuela(monto)}) excede el disponible ($${formatNumberVenezuela(disponible)})`;
+            errorEl.classList.add('show');
+            return;
+        }
+
+        if (!confirm(`¿Confirmar uso de $${formatNumberVenezuela(monto)} USD de la nota de devolución #${notaCreditoData.numero}?`)) {
+            return;
+        }
+
+        pagos.push({
+            tipo: 'nota_credito',
+            nombre: '📄 Nota de Devolución',
+            montoOriginal: monto,
+            montoUSD: monto,
+            esDevolucion: true,
+            notaCreditoNumero: notaCreditoData.numero
+        });
+
+        notaCreditoAplicada += monto;
+        document.getElementById('montoNotaCredito').value = '';
+        document.getElementById('notaCreditoInfo').style.display = 'none';
+        document.getElementById('notaCreditoInput').value = '';
+        document.getElementById('ncInfo').style.display = 'none';
+        notaCreditoData = null;
+
+        actualizarListaPagos();
+        actualizarTotales();
+        verificarPagoCompleto();
+
+        let successMsg = document.createElement('div');
+        successMsg.className = 'success-message show';
+        successMsg.innerHTML = `✅ Nota de devolución de $${formatNumberVenezuela(monto)} USD aplicada correctamente.`;
+        successMsg.style.marginTop = '8px';
+        successMsg.style.padding = '10px';
+        successMsg.style.background = '#d1fae5';
+        successMsg.style.borderRadius = '8px';
+        successMsg.style.color = '#065f46';
+        successMsg.style.border = '1px solid #0d6e2b';
+        successMsg.style.fontWeight = '500';
+        successMsg.style.display = 'block';
+        document.getElementById('notaCreditoInfo').parentNode.appendChild(successMsg);
+        setTimeout(() => { successMsg.remove(); }, 4000);
+    }
+    
+    // ========== FUNCIONES DE PAGO ==========
+    function abrirModalPago() {
+        if (totalSinDescuento > 0) {
+            let totalFinalUSD = parseNumberVenezuela(document.getElementById('totalUSD').innerText);
+            document.getElementById('modalTotalAPagar').innerHTML = `$${formatNumberVenezuela(totalFinalUSD)} USD`;
+            document.getElementById('modalTotalBsPagar').innerHTML = `Bs. ${formatNumberVenezuela(totalBs)}`;
+            document.getElementById('vueltoContainerModal').style.display = 'none';
+            document.getElementById('btnFinalizarModal').disabled = true;
+            actualizarListaPagos();
+            new bootstrap.Modal(document.getElementById('modalPago')).show();
+        } else {
+            alert('No hay productos en el carrito');
+        }
+    }
+    
+    function agregarPago() {
+        let metodo = document.getElementById('metodoPago').value;
+        let montoRaw = document.getElementById('montoPago').value;
+        
+        if (!montoRaw || montoRaw === '') {
+            alert('❌ Ingrese un monto válido');
+            return;
+        }
+        
+        if (metodo === 'movil' || metodo === 'transferencia' || metodo === 'binance') {
+            let referencia = document.getElementById('referenciaPago').value.trim();
+            if (!referencia) {
+                alert('❌ Ingrese el número de referencia para ' + 
+                    (metodo === 'movil' ? 'Pago Móvil' : metodo === 'transferencia' ? 'Transferencia' : 'Binance'));
+                document.getElementById('referenciaPago').focus();
+                return;
+            }
+        }
+        
+        let monto = parseNumberVenezuela(montoRaw);
+        
+        let nombres = { 
+            'efectivo_bs': '💵 Bs. Efectivo', 
+            'efectivo_usd': '💵 USD Efectivo', 
+            'zelle': '🏦 Zelle', 
+            'binance': '🪙 Binance',
+            'movil': '📱 Pago Móvil', 
+            'transferencia': '🔄 Transferencia', 
+            'tarjeta': '💳 Tarjeta' 
+        };
+        
+        if (isNaN(monto) || monto <= 0) { 
+            alert('❌ Ingrese un monto válido (Ej: 1.500,50)'); 
+            return; 
+        }
+        
+        let montoUSD = (metodo === 'efectivo_usd' || metodo === 'zelle') ? monto : monto / exchangeRate;
+        
+        let pago = { 
+            tipo: metodo, 
+            nombre: nombres[metodo], 
+            montoOriginal: monto, 
+            montoUSD: montoUSD,
+            esDevolucion: false,
+            referencia: null
+        };
+        
+        if (metodo === 'movil' || metodo === 'transferencia' || metodo === 'binance') {
+            pago.referencia = document.getElementById('referenciaPago').value.trim();
+        }
+        
+        pagos.push(pago);
+        
+        actualizarListaPagos();
+        actualizarTotales();
+        verificarPagoCompleto();
+        document.getElementById('montoPago').value = '';
+        document.getElementById('referenciaPago').value = '';
+    }
+    
+    // ====================================================
+    //  VERIFICAR PAGO COMPLETO - CORREGIDO (EXCLUYE NOTA CRÉDITO Y DEVOLUCIÓN)
+    // ====================================================
+    function verificarPagoCompleto() {
+        // 1. Calcular el total de PAGOS REALES (excluyendo nota de crédito y devolución)
+        let totalPagadoReal = pagos
+            .filter(p => p.tipo !== 'nota_credito' && p.tipo !== 'devolucion')
+            .reduce((sum, p) => sum + p.montoUSD, 0);
+        
+        // 2. Obtener el total con IVA (ya incluye la nota de crédito restada)
+        let totalConIva = parseNumberVenezuela(document.getElementById('totalUSD').innerText);
+        
+        // 3. El vuelto es lo que sobra de los pagos reales después de cubrir el total
+        let vuelto = totalPagadoReal - totalConIva;
+        
+        if (vuelto >= -0.01) { // tolerancia de 1 centavo
+            document.getElementById('vueltoContainerModal').style.display = 'block';
+            document.getElementById('vueltoUSDModal').innerHTML = `$${formatNumberVenezuela(vuelto)} USD`;
+            document.getElementById('vueltoBSModal').innerHTML = `Bs. ${formatNumberVenezuela(vuelto * exchangeRate)}`;
+            document.getElementById('btnFinalizarModal').disabled = false;
+        } else {
+            document.getElementById('vueltoContainerModal').style.display = 'none';
+            document.getElementById('btnFinalizarModal').disabled = true;
+        }
+    }
+    
+    // ========== ACTUALIZAR LISTA DE PAGOS (MODIFICADO) ==========
+    function actualizarListaPagos() {
+        let container = document.getElementById('pagosRealizadosModal');
+        if (pagos.length === 0) { 
+            container.innerHTML = '<div class="text-muted text-center p-2">No hay pagos registrados</div>'; 
+            return; 
+        }
+        let html = '';
+        pagos.forEach((pago, i) => {
+            let metodosUSD = ['efectivo_usd', 'zelle', 'nota_credito', 'devolucion'];
+            let montoMostrar = metodosUSD.includes(pago.tipo) 
+                ? `$${formatNumberUSD(pago.montoOriginal)}` 
+                : `Bs. ${formatNumberVenezuela(pago.montoOriginal)}`;
+            
+            let claseExtra = '';
+            let detalle = '';
+            if (pago.esDevolucion) {
+                if (pago.tipo === 'nota_credito') {
+                    claseExtra = 'nota-credito-item';
+                    detalle = `<br><small>NC: ${pago.notaCreditoNumero || ''}</small>`;
+                } else if (pago.tipo === 'devolucion') {
+                    claseExtra = 'devolucion-item-pago';
+                    detalle = `<br><small>Devolución N° ${pago.returnNumber || pago.facturaNumero || ''}</small>`;
+                }
+            } else if (pago.tipo === 'binance') {
+                claseExtra = 'binance-item';
+            }
+            
+            let refInfo = pago.referencia ? `<br><small class="text-muted">Ref: ${pago.referencia}</small>` : '';
+            
+            html += `<div class="pago-item-modal ${claseExtra}">
+                        <div>
+                            <strong>${pago.nombre}</strong>
+                            ${detalle}
+                            ${refInfo}
+                            <br><small>${montoMostrar}</small>
+                        </div>
+                        <div>
+                            <span class="fw-bold">$${formatNumberVenezuela(pago.montoUSD)}</span>
+                            <button class="btn btn-sm btn-link text-danger" onclick="eliminarPago(${i})" aria-label="Eliminar pago">
+                                <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>`;
+        });
+        container.innerHTML = html;
+    }
+    
+    function eliminarPago(index) { 
+        let pago = pagos[index];
+        if (pago.esDevolucion) {
+            if (pago.tipo === 'nota_credito') {
+                notaCreditoAplicada -= pago.montoUSD;
+            } else {
+                devolucionAplicada -= pago.montoUSD;
+            }
+        }
+        pagos.splice(index, 1); 
+        actualizarListaPagos(); 
+        actualizarTotales();
+        verificarPagoCompleto(); 
+    }
+    
+    // ========== FINALIZAR VENTA (CORREGIDO) ==========
+    function finalizarVenta() {
+        let clientId = document.getElementById('client_id').value.trim();
+        let clientName = document.getElementById('client_name').value.trim();
+        let clientAddress = document.getElementById('client_address').value.trim();
+        
+        if (!clientId || !clientName || !clientAddress) { 
+            alert('Complete cédula, nombre y dirección del cliente'); 
+            return; 
+        }
+        
+        // 1. Calcular total de pagos reales (excluyendo nota de crédito y devolución)
+        let totalPagadoReal = pagos
+            .filter(p => p.tipo !== 'nota_credito' && p.tipo !== 'devolucion')
+            .reduce((sum, p) => sum + p.montoUSD, 0);
+        
+        let totalConIva = parseNumberVenezuela(document.getElementById('totalUSD').innerText);
+        
+        // 2. Verificar que los pagos reales cubran el total (no es obligatorio si hay saldo a favor)
+        if (totalPagadoReal < totalConIva - 0.01) {
+            alert(`⚠️ El monto pagado ($${formatNumberVenezuela(totalPagadoReal)} USD) es menor al total ($${formatNumberVenezuela(totalConIva)} USD).`);
+            return;
+        }
+        
+        // 3. Preparar los datos para el backend
+        let pagosData = { 
+            efectivo_bs: 0, 
+            efectivo_usd: 0, 
+            zelle: 0, 
+            binance: 0,
+            movil: 0, 
+            transferencia: 0, 
+            tarjeta: 0,
+            devolucion: 0,
+            nota_credito: 0,
+            referencias: {}
+        };
+        
+        pagos.forEach(p => { 
+            if (p.esDevolucion) {
+                if (p.tipo === 'nota_credito') {
+                    pagosData.nota_credito += p.montoOriginal; // ya está en USD
+                    pagosData.referencias['nota_credito_' + (p.notaCreditoNumero || '')] = p.montoOriginal;
+                } else if (p.tipo === 'devolucion') {
+                    pagosData.devolucion += p.montoOriginal; // ya está en USD
+                    pagosData.referencias['devolucion_' + (p.returnNumber || p.facturaNumero || '')] = p.montoOriginal;
+                }
+            } else {
+                pagosData[p.tipo] += p.montoOriginal;
+                if (p.referencia) {
+                    pagosData.referencias[p.tipo + '_' + p.referencia] = p.montoOriginal;
+                }
+            }
+        });
+        
+        // 4. Enviar el formulario
+        let form = document.createElement('form'); 
+        form.method = 'POST'; 
+        form.action = '/checkout';
+        form.style.display = 'none';
+        
+        let campos = ['client_id', 'client_name', 'client_phone', 'client_address'];
+        campos.forEach(id => {
+            let input = document.createElement('input'); 
+            input.type = 'hidden'; 
+            input.name = id; 
+            input.value = document.getElementById(id).value; 
+            form.appendChild(input);
+        });
+        
+        let pagosInput = document.createElement('input'); 
+        pagosInput.type = 'hidden'; 
+        pagosInput.name = 'pagos'; 
+        pagosInput.value = JSON.stringify(pagosData); 
+        form.appendChild(pagosInput);
+        
+        document.body.appendChild(form); 
+        form.submit();
+    }
+    
+    // ========== FUNCIONES DE CLIENTES ==========
+    function buscarClientes() {
+        let search = document.getElementById('buscarCliente').value.trim();
+        if (search.length < 2) { 
+            document.getElementById('listaClientes').style.display = 'none'; 
+            return; 
+        }
+        fetch(`/buscar_clientes?search=${search}`)
+            .then(r => r.json())
+            .then(data => {
+                let html = '<div class="list-group">';
+                data.forEach(c => {
+                    html += `<div class="list-group-item list-group-item-action" onclick="seleccionarCliente('${c.cedula}', '${c.nombre}', '${c.telefono || ''}', '${c.direccion}')" role="button" tabindex="0">
+                                <strong>${c.cedula}</strong><br><small>${c.nombre}</small>
+                            </div>`;
+                });
+                html += '</div>';
+                document.getElementById('listaClientes').innerHTML = html;
+                document.getElementById('listaClientes').style.display = 'block';
+            });
+    }
+    
+    function seleccionarCliente(cedula, nombre, telefono, direccion) {
+        document.getElementById('client_id').value = cedula;
+        document.getElementById('client_name').value = nombre;
+        document.getElementById('client_phone').value = telefono;
+        document.getElementById('client_address').value = direccion;
+        document.getElementById('listaClientes').style.display = 'none';
+        document.getElementById('buscarCliente').value = '';
+    }
+    
+    function guardarClienteFrecuente() {
+        let data = { 
+            cedula: document.getElementById('client_id').value.trim(), 
+            nombre: document.getElementById('client_name').value.trim().toUpperCase(), 
+            telefono: document.getElementById('client_phone').value.trim(), 
+            direccion: document.getElementById('client_address').value.trim().toUpperCase() 
+        };
+        if (!data.cedula || !data.nombre || !data.direccion) { 
+            alert('Complete cédula, nombre y dirección'); 
+            return; 
+        }
+        fetch('/guardar_cliente', { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(data) 
+        }).then(r => r.json()).then(d => { 
+            if (d.success) alert('✅ Cliente guardado correctamente'); 
+            else alert('Error: ' + d.error); 
+        });
+    }
+    
+    // ========== FUNCIONES DE CATÁLOGO ==========
+    function abrirCatalogo() { 
+        new bootstrap.Modal(document.getElementById('catalogoModal')).show(); 
+        cargarProductos(); 
+    }
+    
+    function cargarProductos() {
+        let search = document.getElementById('searchProduct').value;
+        let category = document.getElementById('categoryFilter').value;
+        fetch(`/buscar_productos?search=${search}&category=${category}`)
+            .then(r => r.json())
+            .then(data => {
+                let container = document.getElementById('productsList');
+                container.innerHTML = '';
+                let productosDisponibles = data.filter(p => p.stock > 0);
+                if (productosDisponibles.length === 0) { 
+                    container.innerHTML = '<div class="col-12 text-center p-3">📦 No hay productos disponibles</div>'; 
+                    return; 
+                }
+                productosDisponibles.forEach(p => {
+                    let stockText = p.stock <= 5 ? `⚠️ Stock: ${p.stock}` : `Stock: ${p.stock}`;
+                    let tipoBadge = p.sale_type === 'weight' ? ' <span class="badge-weight">⚖️ Por Peso</span>' : '';
+                    container.innerHTML += `<div class="col-md-4 col-lg-3 mb-2">
+                        <div class="product-card p-2" onclick="agregarAlCarrito(${p.id}, '${p.name.replace(/'/g, "\\'")}', ${p.price}, ${p.stock}, '${p.sale_type || 'unit'}')" role="button" tabindex="0">
+                            <small>${p.barcode || '-'}</small>
+                            <h6>${p.name}${tipoBadge}</h6>
+                            <span class="badge-stock">${stockText}</span>
+                            <div class="text-end mt-1"><strong>$${formatNumberUSD(p.price)}${p.sale_type === 'weight' ? ' /Kg' : ''}</strong></div>
+                        </div>
+                    </div>`;
+                });
+            });
+    }
+    
+    function agregarAlCarrito(id, name, price, stockDisponible, saleType) {
+        let cantidad;
+        
+        if (saleType === 'weight') {
+            let peso = prompt(
+                '⚖️ INGRESE EL PESO EN KILOGRAMOS para ' + name + ':\n\n' +
+                `Stock disponible: ${stockDisponible} Kg`,
+                '1'
+            );
+            if (!peso) return;
+            peso = parseNumberVenezuela(peso);
+            if (isNaN(peso) || peso <= 0) { 
+                alert('❌ Ingrese un peso válido en kilogramos'); 
+                return; 
+            }
+            if (peso > stockDisponible) { 
+                alert(`⚠️ Stock insuficiente. Solo hay ${stockDisponible} Kg disponibles.`); 
+                return; 
+            }
+            cantidad = peso;
+        } else {
+            let cant = prompt('Cantidad:', '1');
+            if (!cant) return;
+            cant = parseNumberVenezuela(cant);
+            if (isNaN(cant) || cant <= 0) { 
+                alert('❌ Ingrese una cantidad válida'); 
+                return; 
+            }
+            cantidad = cant;
+        }
+        
+        fetch('/add_to_cart', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id: id, quantity: cantidad })
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                cargarCarrito();
+                cargarProductos();
+            } else {
+                alert(d.error || 'Error al agregar el producto');
+            }
+        });
+    }
+    
+    // ========== FUNCIONES DE DEVOLUCIÓN (MODIFICADAS) ==========
+    function abrirModalDevolucion() {
+        document.getElementById('facturaDevolucion').value = '';
+        document.getElementById('infoFacturaDevolucion').style.display = 'none';
+        document.getElementById('sinFacturaDevolucion').style.display = 'block';
+        document.getElementById('btnProcesarDevolucion').disabled = true;
+        document.getElementById('productosDevolucion').innerHTML = '';
+        document.getElementById('subtotalDevolucion').innerText = '0.00';
+        window.productosFactura = null;
+        window.itemsDevolucionActual = [];
+        window.subtotalDevolucionActual = 0;
+        new bootstrap.Modal(document.getElementById('modalDevolucion')).show();
+    }
+    
+    function buscarFacturaDevolucion() {
+        let facturaNum = document.getElementById('facturaDevolucion').value.trim();
+        if (!facturaNum) {
+            alert('Ingrese el número de factura');
+            return;
+        }
+        
+        fetch(`/buscar_factura_devolucion?invoice=${facturaNum}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    alert('❌ ' + data.error);
+                    return;
+                }
+                
+                document.getElementById('facturaNumero').innerText = data.sale.invoice_number;
+                document.getElementById('facturaFecha').innerText = data.sale.date.substring(0, 10);
+                document.getElementById('facturaCliente').innerText = data.sale.client_name;
+                document.getElementById('facturaTotal').innerText = formatNumberVenezuela(parseFloat(data.sale.total_usd));
+                document.getElementById('totalDevuelto').innerText = formatNumberVenezuela(data.total_devuelto);
+                document.getElementById('disponibleDevolver').innerText = formatNumberVenezuela(data.disponible);
+                
+                let productosHtml = '';
+                data.items.forEach((item, idx) => {
+                    productosHtml += `
+                        <div class="devolucion-item" id="devItem_${idx}">
+                            <div class="row align-items-center">
+                                <div class="col-md-5">
+                                    <strong>${item.name}</strong><br>
+                                    <small>Precio: $${formatNumberVenezuela(parseFloat(item.price))} | Original: ${item.quantity} ${item.sale_type === 'weight' ? 'Kg' : ''}</small>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <label for="cantDev_${idx}">Cantidad a devolver:</label>
+                                    <input type="number" class="form-control" id="cantDev_${idx}" 
+                                           min="0" max="${item.quantity}" step="${item.sale_type === 'weight' ? '0.01' : '1'}"
+                                           value="0" onchange="actualizarResumenDevolucion()" aria-label="Cantidad a devolver">
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Subtotal:</label>
+                                    <div id="subtotalDev_${idx}">$0.00</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                document.getElementById('productosDevolucion').innerHTML = productosHtml;
+                document.getElementById('infoFacturaDevolucion').style.display = 'block';
+                document.getElementById('sinFacturaDevolucion').style.display = 'none';
+                
+                window.productosFactura = data.items;
+                actualizarResumenDevolucion();
+            })
+            .catch(err => {
+                alert('Error al buscar factura: ' + err);
+            });
+    }
+    
+    // ========== ACTUALIZAR RESUMEN DEVOLUCIÓN (MODIFICADO) ==========
+    function actualizarResumenDevolucion() {
+        if (!window.productosFactura) return;
+        
+        let subtotal = 0;
+        let itemsDevolucion = [];
+        
+        for (let i = 0; i < window.productosFactura.length; i++) {
+            let cantidad = parseFloat(document.getElementById(`cantDev_${i}`).value) || 0;
+            let precio = parseFloat(window.productosFactura[i].price);
+            let subtotalItem = cantidad * precio;
+            subtotal += subtotalItem;
+            
+            document.getElementById(`subtotalDev_${i}`).innerHTML = `$${formatNumberVenezuela(subtotalItem)}`;
+            
+            if (cantidad > 0) {
+                itemsDevolucion.push({
+                    id: window.productosFactura[i].id,
+                    name: window.productosFactura[i].name,
+                    quantity: cantidad,
+                    price: precio
+                });
+            }
+        }
+        
+        document.getElementById('subtotalDevolucion').innerText = formatNumberVenezuela(subtotal);
+        
+        let btnProcesar = document.getElementById('btnProcesarDevolucion');
+        let disponible = parseNumberVenezuela(document.getElementById('disponibleDevolver').innerText);
+        
+        if (subtotal > 0 && subtotal <= disponible + 0.01) {
+            btnProcesar.disabled = false;
+            btnProcesar.style.background = 'var(--renaven-rojo)';
+            btnProcesar.style.fontWeight = '800';
+            window.itemsDevolucionActual = itemsDevolucion;
+            window.subtotalDevolucionActual = subtotal;
+            btnProcesar.onclick = procesarDevolucionYOfrecerPago;
+        } else {
+            btnProcesar.disabled = true;
+            if (subtotal > disponible) {
+                document.getElementById('subtotalDevolucion').style.color = 'red';
+            } else {
+                document.getElementById('subtotalDevolucion').style.color = '#000000';
+            }
+        }
+    }
+    
+    // ========== NUEVA FUNCIÓN: PROCESAR DEVOLUCIÓN Y OFRECER COMO PAGO ==========
+    function procesarDevolucionYOfrecerPago() {
+        let itemsDevolucion = window.itemsDevolucionActual || [];
+        let subtotal = window.subtotalDevolucionActual || 0;
+        
+        if (itemsDevolucion.length === 0) {
+            alert('Seleccione al menos un producto para devolver');
+            return;
+        }
+        
+        let motivoSelect = document.getElementById('motivoDevolucion');
+        let motivo = motivoSelect.value;
+        if (motivo === 'Otro') {
+            motivo = document.getElementById('motroOtro').value.trim();
+            if (!motivo) {
+                alert('Especifique el motivo de la devolución');
+                return;
+            }
+        }
+        
+        if (!confirm(`¿Confirmar devolución de ${itemsDevolucion.length} producto(s) por un total de $${formatNumberVenezuela(subtotal)} USD?`)) {
+            return;
+        }
+        
+        let btn = document.getElementById('btnProcesarDevolucion');
+        let originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        btn.disabled = true;
+        
+        fetch('/procesar_devolucion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                invoice_number: parseInt(document.getElementById('facturaDevolucion').value),
+                items: itemsDevolucion,
+                reason: motivo
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                if (confirm(`✅ Devolución N° ${data.return_number} procesada exitosamente.\nMonto devuelto: $${formatNumberVenezuela(data.total_usd)} USD\n\n¿Desea aplicar este monto como PAGO en la factura actual?`)) {
+                    let montoUSD = parseFloat(data.total_usd) || 0;
+                    if (montoUSD > 0) {
+                        let existe = pagos.some(p => p.tipo === 'devolucion' && p.facturaNumero === parseInt(document.getElementById('facturaDevolucion').value));
+                        if (!existe) {
+                            pagos.push({
+                                tipo: 'devolucion',
+                                nombre: '↩️ Devolución',
+                                montoOriginal: montoUSD,
+                                montoUSD: montoUSD,
+                                esDevolucion: true,
+                                facturaNumero: parseInt(document.getElementById('facturaDevolucion').value),
+                                returnNumber: data.return_number
+                            });
+                            actualizarListaPagos();
+                            actualizarTotales();
+                            verificarPagoCompleto();
+                            alert(`💰 Se ha aplicado $${formatNumberVenezuela(montoUSD)} USD como pago.`);
+                        } else {
+                            alert('⚠️ Ya se aplicó un pago por devolución de esta factura.');
+                        }
+                    }
+                } else {
+                    alert(`✅ Devolución N° ${data.return_number} procesada. Puede usarla como pago desde el modal de pago buscando la nota de crédito.`);
+                }
+                
+                bootstrap.Modal.getInstance(document.getElementById('modalDevolucion')).hide();
+                cargarCarrito();
+                fetchSaldoActual();
+            } else {
+                alert('❌ Error: ' + data.error);
+            }
+        })
+        .catch(err => {
+            alert('❌ Error al procesar devolución: ' + err);
+        })
+        .finally(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    }
+    
+    // ========== OTRAS FUNCIONES ==========
+    function cargarFondo() { 
+        fetch('/get_cash_fund')
+            .then(r => r.json())
+            .then(d => { 
+                document.getElementById('cashUSD').innerText = formatNumberUSD(d.usd); 
+                document.getElementById('cashBS').innerText = formatNumberVenezuela(d.bs); 
+            }); 
+    }
+    
+    function generarPresupuesto() {
+        let clientName = document.getElementById('client_name').value.trim();
+        if (!clientName) { 
+            alert('Ingrese el nombre del cliente'); 
+            return; 
+        }
+        let form = document.createElement('form'); 
+        form.method = 'POST'; 
+        form.action = '/presupuesto';
+        form.style.display = 'none';
+        
+        let campos = { 
+            'client_id': document.getElementById('client_id').value, 
+            'client_name': clientName.toUpperCase(), 
+            'client_phone': document.getElementById('client_phone').value, 
+            'client_address': document.getElementById('client_address').value.toUpperCase() 
+        };
+        
+        for (let [name, value] of Object.entries(campos)) { 
+            let input = document.createElement('input'); 
+            input.type = 'hidden'; 
+            input.name = name; 
+            input.value = value; 
+            form.appendChild(input); 
+        }
+        document.body.appendChild(form); 
+        form.submit();
+    }
+    
+    // ========== EVENT LISTENERS ==========
+    document.getElementById('motivoDevolucion')?.addEventListener('change', function() {
+        let otroInput = document.getElementById('motroOtro');
+        if (this.value === 'Otro') {
+            otroInput.style.display = 'block';
+        } else {
+            otroInput.style.display = 'none';
+        }
+    });
+    
+    document.getElementById('metodoPago')?.addEventListener('change', function() {
+        let input = document.getElementById('montoPago');
+        let metodosUSD = ['efectivo_usd', 'zelle', 'binance'];
+        if (metodosUSD.includes(this.value)) {
+            input.placeholder = 'Monto en USD (Ej: 100.50)';
+        } else {
+            input.placeholder = 'Monto en Bs (Ej: 1.500,50)';
+        }
+    });
+    
+    document.getElementById('buscarCliente')?.addEventListener('input', buscarClientes);
+    document.getElementById('searchProduct')?.addEventListener('input', cargarProductos);
+    document.getElementById('categoryFilter')?.addEventListener('change', cargarProductos);
+    
+    // ========== INICIALIZAR ==========
+    cargarFondo();
+    cargarCarrito();
+    fetchSaldoActual();
+    
+    setInterval(function() {
+        fetchSaldoActual();
+    }, 30000);
+    
+    setInterval(cargarFondo, 10000);
+</script>
+</body>
+</html>

@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Apertura de Caja - RENAVEN</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ========== PALETA PREDETERMINADA ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-gris-claro: #e2e8f0;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+            --renaven-verde: #28a745;
+            --renaven-oro: #FFD700;
+            --renaven-rojo: #dc2626;
+            --shadow-color: rgba(132,182,244,0.2);
+            --transition-base: all 0.25s ease-in-out;
+        }
+
+        /* ========== TEMAS PASTEL ========== */
+        body.theme-rosa { --renaven-azul-fuerte: #fbc4d5; --renaven-azul-cielo: #fce4ec; --renaven-blanco: #fef9f0; --renaven-gris-fondo: #fdf6f8; --renaven-borde: #fbc4d5; }
+        body.theme-rosa .sidebar { background: #fdd0b5; border-right-color: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link.active { background: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link:hover { background: #fce4ec; }
+        body.theme-rosa .card-header { background: #fbc4d5 !important; border-bottom-color: #fdd0b5 !important; }
+        body.theme-rosa .card { border-color: #fbc4d5 !important; }
+        body.theme-rosa .btn-primary-custom { background: #fbc4d5 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-rosa .btn-primary-custom:hover:not(:disabled) { background: #fdd0b5 !important; }
+        body.theme-rosa .btn-secondary { background: #fdd0b5 !important; border-color: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .btn-secondary:hover { background: #fbc4d5 !important; }
+        body.theme-rosa .saldo-bs { background: linear-gradient(135deg, #fce4ec, #fbc4d5) !important; }
+        body.theme-rosa .saldo-usd { background: linear-gradient(135deg, #fce4ec, #fbc4d5) !important; }
+        body.theme-rosa .alert-info { background: #fce4ec !important; border-color: #fbc4d5 !important; border-left-color: #fdd0b5 !important; }
+        body.theme-rosa .alert-success { background: #fce4ec !important; border-color: #fbc4d5 !important; border-left-color: #28a745 !important; }
+        body.theme-rosa .alert-warning { background: #fdd0b5 !important; border-color: #fbc4d5 !important; border-left-color: #FFD700 !important; }
+        body.theme-rosa .sidebar-logo { border-color: #fbc4d5 !important; }
+        body.theme-rosa .logo-circle { border-color: #fbc4d5 !important; }
+        body.theme-rosa .form-control:focus { border-color: #fbc4d5; box-shadow: 0 0 0 0.2rem rgba(251,196,213,0.4); }
+
+        body.theme-celeste { --renaven-azul-fuerte: #b5d8eb; --renaven-azul-cielo: #d6ecf5; --renaven-blanco: #f9fdff; --renaven-gris-fondo: #f4faff; --renaven-borde: #b5d8eb; }
+        body.theme-celeste .sidebar { background: #a8d0e6; border-right-color: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link.active { background: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link:hover { background: #d6ecf5; }
+        body.theme-celeste .card-header { background: #b5d8eb !important; border-bottom-color: #a8d0e6 !important; }
+        body.theme-celeste .card { border-color: #b5d8eb !important; }
+        body.theme-celeste .btn-primary-custom { background: #b5d8eb !important; border-color: #a8d0e6 !important; color: #000 !important; }
+        body.theme-celeste .btn-primary-custom:hover:not(:disabled) { background: #a8d0e6 !important; }
+        body.theme-celeste .btn-secondary { background: #a8d0e6 !important; border-color: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .btn-secondary:hover { background: #b5d8eb !important; }
+        body.theme-celeste .saldo-bs { background: linear-gradient(135deg, #d6ecf5, #b5d8eb) !important; }
+        body.theme-celeste .saldo-usd { background: linear-gradient(135deg, #d6ecf5, #b5d8eb) !important; }
+        body.theme-celeste .alert-info { background: #d6ecf5 !important; border-color: #b5d8eb !important; border-left-color: #a8d0e6 !important; }
+        body.theme-celeste .alert-success { background: #d6ecf5 !important; border-color: #b5d8eb !important; border-left-color: #28a745 !important; }
+        body.theme-celeste .alert-warning { background: #a8d0e6 !important; border-color: #b5d8eb !important; border-left-color: #FFD700 !important; }
+        body.theme-celeste .sidebar-logo { border-color: #b5d8eb !important; }
+        body.theme-celeste .logo-circle { border-color: #b5d8eb !important; }
+        body.theme-celeste .form-control:focus { border-color: #b5d8eb; box-shadow: 0 0 0 0.2rem rgba(181,216,235,0.4); }
+
+        body.theme-menta { --renaven-azul-fuerte: #b5e6c3; --renaven-azul-cielo: #d8f0e0; --renaven-blanco: #f6fcf8; --renaven-gris-fondo: #f2faf5; --renaven-borde: #b5e6c3; }
+        body.theme-menta .sidebar { background: #a8dbb8; border-right-color: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link.active { background: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link:hover { background: #d8f0e0; }
+        body.theme-menta .card-header { background: #b5e6c3 !important; border-bottom-color: #a8dbb8 !important; }
+        body.theme-menta .card { border-color: #b5e6c3 !important; }
+        body.theme-menta .btn-primary-custom { background: #b5e6c3 !important; border-color: #a8dbb8 !important; color: #000 !important; }
+        body.theme-menta .btn-primary-custom:hover:not(:disabled) { background: #a8dbb8 !important; }
+        body.theme-menta .btn-secondary { background: #a8dbb8 !important; border-color: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .btn-secondary:hover { background: #b5e6c3 !important; }
+        body.theme-menta .saldo-bs { background: linear-gradient(135deg, #d8f0e0, #b5e6c3) !important; }
+        body.theme-menta .saldo-usd { background: linear-gradient(135deg, #d8f0e0, #b5e6c3) !important; }
+        body.theme-menta .alert-info { background: #d8f0e0 !important; border-color: #b5e6c3 !important; border-left-color: #a8dbb8 !important; }
+        body.theme-menta .alert-success { background: #d8f0e0 !important; border-color: #b5e6c3 !important; border-left-color: #28a745 !important; }
+        body.theme-menta .alert-warning { background: #a8dbb8 !important; border-color: #b5e6c3 !important; border-left-color: #FFD700 !important; }
+        body.theme-menta .sidebar-logo { border-color: #b5e6c3 !important; }
+        body.theme-menta .logo-circle { border-color: #b5e6c3 !important; }
+        body.theme-menta .form-control:focus { border-color: #b5e6c3; box-shadow: 0 0 0 0.2rem rgba(181,230,195,0.4); }
+
+        body.theme-amarillo { --renaven-azul-fuerte: #f9e7b2; --renaven-azul-cielo: #fdf3d5; --renaven-blanco: #fffef9; --renaven-gris-fondo: #fefcf5; --renaven-borde: #f9e7b2; }
+        body.theme-amarillo .sidebar { background: #f5dc9a; border-right-color: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link.active { background: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link:hover { background: #fdf3d5; }
+        body.theme-amarillo .card-header { background: #f9e7b2 !important; border-bottom-color: #f5dc9a !important; }
+        body.theme-amarillo .card { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .btn-primary-custom { background: #f9e7b2 !important; border-color: #f5dc9a !important; color: #000 !important; }
+        body.theme-amarillo .btn-primary-custom:hover:not(:disabled) { background: #f5dc9a !important; }
+        body.theme-amarillo .btn-secondary { background: #f5dc9a !important; border-color: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .btn-secondary:hover { background: #f9e7b2 !important; }
+        body.theme-amarillo .saldo-bs { background: linear-gradient(135deg, #fdf3d5, #f9e7b2) !important; }
+        body.theme-amarillo .saldo-usd { background: linear-gradient(135deg, #fdf3d5, #f9e7b2) !important; }
+        body.theme-amarillo .alert-info { background: #fdf3d5 !important; border-color: #f9e7b2 !important; border-left-color: #f5dc9a !important; }
+        body.theme-amarillo .alert-success { background: #fdf3d5 !important; border-color: #f9e7b2 !important; border-left-color: #28a745 !important; }
+        body.theme-amarillo .alert-warning { background: #f5dc9a !important; border-color: #f9e7b2 !important; border-left-color: #FFD700 !important; }
+        body.theme-amarillo .sidebar-logo { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .logo-circle { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .form-control:focus { border-color: #f9e7b2; box-shadow: 0 0 0 0.2rem rgba(249,231,178,0.4); }
+
+        body.theme-lila { --renaven-azul-fuerte: #d4c4f0; --renaven-azul-cielo: #e8defa; --renaven-blanco: #fcfaff; --renaven-gris-fondo: #f8f5fe; --renaven-borde: #d4c4f0; }
+        body.theme-lila .sidebar { background: #c9b7e8; border-right-color: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link.active { background: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link:hover { background: #e8defa; }
+        body.theme-lila .card-header { background: #d4c4f0 !important; border-bottom-color: #c9b7e8 !important; }
+        body.theme-lila .card { border-color: #d4c4f0 !important; }
+        body.theme-lila .btn-primary-custom { background: #d4c4f0 !important; border-color: #c9b7e8 !important; color: #000 !important; }
+        body.theme-lila .btn-primary-custom:hover:not(:disabled) { background: #c9b7e8 !important; }
+        body.theme-lila .btn-secondary { background: #c9b7e8 !important; border-color: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .btn-secondary:hover { background: #d4c4f0 !important; }
+        body.theme-lila .saldo-bs { background: linear-gradient(135deg, #e8defa, #d4c4f0) !important; }
+        body.theme-lila .saldo-usd { background: linear-gradient(135deg, #e8defa, #d4c4f0) !important; }
+        body.theme-lila .alert-info { background: #e8defa !important; border-color: #d4c4f0 !important; border-left-color: #c9b7e8 !important; }
+        body.theme-lila .alert-success { background: #e8defa !important; border-color: #d4c4f0 !important; border-left-color: #28a745 !important; }
+        body.theme-lila .alert-warning { background: #c9b7e8 !important; border-color: #d4c4f0 !important; border-left-color: #FFD700 !important; }
+        body.theme-lila .sidebar-logo { border-color: #d4c4f0 !important; }
+        body.theme-lila .logo-circle { border-color: #d4c4f0 !important; }
+        body.theme-lila .form-control:focus { border-color: #d4c4f0; box-shadow: 0 0 0 0.2rem rgba(212,196,240,0.4); }
+
+        body.theme-durazno { --renaven-azul-fuerte: #fdd0b5; --renaven-azul-cielo: #fee5d0; --renaven-blanco: #fffcf9; --renaven-gris-fondo: #fef8f3; --renaven-borde: #fdd0b5; }
+        body.theme-durazno .sidebar { background: #f5c2a4; border-right-color: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link.active { background: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link:hover { background: #fee5d0; }
+        body.theme-durazno .card-header { background: #fdd0b5 !important; border-bottom-color: #f5c2a4 !important; }
+        body.theme-durazno .card { border-color: #fdd0b5 !important; }
+        body.theme-durazno .btn-primary-custom { background: #fdd0b5 !important; border-color: #f5c2a4 !important; color: #000 !important; }
+        body.theme-durazno .btn-primary-custom:hover:not(:disabled) { background: #f5c2a4 !important; }
+        body.theme-durazno .btn-secondary { background: #f5c2a4 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .btn-secondary:hover { background: #fdd0b5 !important; }
+        body.theme-durazno .saldo-bs { background: linear-gradient(135deg, #fee5d0, #fdd0b5) !important; }
+        body.theme-durazno .saldo-usd { background: linear-gradient(135deg, #fee5d0, #fdd0b5) !important; }
+        body.theme-durazno .alert-info { background: #fee5d0 !important; border-color: #fdd0b5 !important; border-left-color: #f5c2a4 !important; }
+        body.theme-durazno .alert-success { background: #fee5d0 !important; border-color: #fdd0b5 !important; border-left-color: #28a745 !important; }
+        body.theme-durazno .alert-warning { background: #f5c2a4 !important; border-color: #fdd0b5 !important; border-left-color: #FFD700 !important; }
+        body.theme-durazno .sidebar-logo { border-color: #fdd0b5 !important; }
+        body.theme-durazno .logo-circle { border-color: #fdd0b5 !important; }
+        body.theme-durazno .form-control:focus { border-color: #fdd0b5; box-shadow: 0 0 0 0.2rem rgba(253,208,181,0.4); }
+
+        /* ========== TODAS LAS LETRAS EN NEGRITA (excepto iconos) ========== */
+        *:not([class*="fa-"]) { font-weight: bold !important; }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] { font-weight: 400 !important; }
+        .fas, .fa-solid { font-weight: 900 !important; }
+
+        /* ========== FONDO Y CUERPO ========== */
+        body {
+            background: var(--renaven-gris-fondo);
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            color: var(--renaven-texto);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body.bg-black-solid { background: #000000 !important; }
+        body.bg-white-solid { background: #FFFFFF !important; }
+
+        /* ========== NAVEGACIÓN POR TECLADO ========== */
+        *:focus {
+            outline: 3px solid #FFD700 !important;
+            outline-offset: 2px !important;
+        }
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--renaven-azul-fuerte);
+            color: #000;
+            padding: 8px 16px;
+            z-index: 1000;
+            text-decoration: none;
+            border-radius: 0 0 8px 0;
+            font-weight: bold;
+        }
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* ===== FORZAR TEXTOS A NEGRO ===== */
+        body, body * {
+            color: var(--renaven-texto) !important;
+        }
+        ::placeholder, input::placeholder, textarea::placeholder {
+            color: #9ca3af !important;
+            opacity: 1;
+        }
+
+        /* ========== SIDEBAR ========== */
+        .sidebar {
+            min-height: 100vh;
+            background: var(--renaven-azul-fuerte);
+            border-right: 2px solid var(--renaven-azul-cielo);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .sidebar .nav-link {
+            margin: 4px 0;
+            border-radius: 50px;
+            padding: 8px 15px;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+            color: #000 !important;
+        }
+        .sidebar .nav-link i {
+            color: #000 !important;
+        }
+        .sidebar .nav-link:hover {
+            background: var(--renaven-azul-cielo);
+            transform: translateX(5px);
+            color: #000 !important;
+        }
+        .sidebar .nav-link:hover i {
+            color: #000 !important;
+        }
+        .sidebar .nav-link.active {
+            background: var(--renaven-azul-cielo);
+            border: 1px solid var(--renaven-borde);
+            color: #000 !important;
+        }
+        .sidebar .nav-link.active i {
+            color: #000 !important;
+        }
+        .sidebar h6, .sidebar small {
+            color: #000 !important;
+        }
+
+        .sidebar-logo {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 3px solid var(--renaven-azul-cielo);
+            background: var(--renaven-blanco);
+            margin-bottom: 10px;
+            transition: border-color 0.3s;
+        }
+        .sidebar-logo:hover {
+            transform: scale(1.05);
+        }
+
+        /* ========== CARDS ========== */
+        .card {
+            border-radius: 20px;
+            border: 2px solid var(--renaven-borde);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            background: var(--renaven-blanco);
+            transition: border-color 0.3s, background 0.3s;
+        }
+        .card-header {
+            background: var(--renaven-azul-cielo);
+            border-bottom: 2px solid var(--renaven-borde);
+            border-radius: 18px 18px 0 0 !important;
+            padding: 20px;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .btn-primary-custom {
+            background: var(--renaven-azul-fuerte);
+            border: 2px solid var(--renaven-borde);
+            padding: 12px;
+            border-radius: 50px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+            color: #000 !important;
+        }
+        .btn-primary-custom:hover:not(:disabled) {
+            background: var(--renaven-azul-cielo);
+            transform: translateY(-2px);
+            color: #000 !important;
+        }
+        .btn-primary-custom:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            border: 2px solid var(--renaven-borde);
+            border-radius: 50px;
+            padding: 12px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+            color: #000 !important;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            color: #000 !important;
+        }
+        .form-control {
+            border-radius: 25px;
+            border: 2px solid var(--renaven-borde);
+            padding: 12px 18px;
+            font-size: 1.2rem;
+            text-align: center;
+            background: var(--renaven-blanco);
+            color: #000 !important;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .form-control:focus {
+            border-color: var(--renaven-azul-fuerte);
+            box-shadow: 0 0 0 0.2rem rgba(132,182,244,0.25);
+        }
+        .form-control:disabled {
+            background: var(--renaven-gris-claro);
+            opacity: 0.7;
+        }
+        .logo-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid var(--renaven-borde);
+            object-fit: cover;
+            transition: transform 0.3s ease, border-color 0.3s;
+            background: var(--renaven-blanco);
+        }
+        .logo-circle:hover {
+            transform: scale(1.05);
+        }
+        .alert {
+            border-radius: 15px;
+            border: 2px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .alert-info {
+            background: var(--renaven-azul-cielo);
+            border-left: 5px solid var(--renaven-azul-fuerte);
+        }
+        .alert-warning {
+            background: #fef3c7;
+            border-left: 5px solid var(--renaven-oro);
+        }
+        .alert-success {
+            background: #d4edda;
+            border-left: 5px solid var(--renaven-verde);
+        }
+
+        .form-label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #000 !important;
+        }
+        .form-label i {
+            color: var(--renaven-azul-fuerte);
+            margin-right: 8px;
+        }
+        .text-muted {
+            opacity: 0.7;
+            color: #000 !important;
+        }
+
+        h3, h6, small {
+            color: var(--renaven-texto) !important;
+        }
+
+        /* ========== TARJETAS DE SALDO ========== */
+        .saldo-card {
+            border-radius: 16px;
+            padding: 12px 16px;
+            color: #000 !important;
+            transition: transform 0.25s, box-shadow 0.25s;
+            cursor: default;
+            margin-bottom: 12px;
+            border: 1px solid var(--renaven-borde);
+        }
+        .saldo-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px -8px rgba(0,0,0,0.2);
+        }
+        .saldo-card .saldo-label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            font-weight: 500;
+            color: #000 !important;
+        }
+        .saldo-card .saldo-monto {
+            font-size: 1.6rem;
+            font-weight: 800;
+            line-height: 1.2;
+            color: #000 !important;
+        }
+        .saldo-card .saldo-sub {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            color: #000 !important;
+        }
+        .saldo-bs {
+            background: linear-gradient(135deg, var(--renaven-azul-cielo), var(--renaven-azul-fuerte));
+            transition: background 0.3s;
+        }
+        .saldo-usd {
+            background: linear-gradient(135deg, var(--renaven-azul-cielo), var(--renaven-azul-fuerte));
+            transition: background 0.3s;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+                margin-bottom: 1rem;
+            }
+            .saldo-card .saldo-monto {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== SKIP LINK ========== -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <div class="container-fluid p-0" id="main-content" role="main">
+        <div class="row g-0">
+            <!-- Sidebar -->
+            <div class="col-md-2 p-0 sidebar no-print">
+                <div class="text-center py-4">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/60x60?text=R'">
+                    <h6 class="mt-1">RENAVEN</h6>
+                    <small>{{ session.get('role', 'Usuario') }}</small>
+                </div>
+                <nav class="nav flex-column px-3" aria-label="Menú principal">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a>
+                    <a class="nav-link" href="{{ url_for('facturacion') }}"><i class="fas fa-shopping-cart me-2"></i> Facturación</a>
+                    <a class="nav-link" href="{{ url_for('inventory') }}"><i class="fas fa-boxes me-2"></i> Inventario</a>
+                    <a class="nav-link" href="{{ url_for('cash_closure') }}"><i class="fas fa-cash-register me-2"></i> Cierre de Caja</a>
+                    <a class="nav-link active" href="{{ url_for('opening_balance') }}"><i class="fas fa-money-bill-wave me-2"></i> Apertura de Caja</a>
+                    <a class="nav-link" href="{{ url_for('historial_caja') }}"><i class="fas fa-wallet me-2"></i> Historial Caja</a>
+                    <a class="nav-link" href="{{ url_for('historial_devoluciones') }}"><i class="fas fa-undo-alt me-2"></i> Devoluciones</a>
+                    <a class="nav-link" href="{{ url_for('historial_facturacion') }}"><i class="fas fa-file-invoice me-2"></i> Historial Facturación</a>
+                    <hr>
+                    <a class="nav-link" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i> Salir</a>
+                </nav>
+            </div>
+
+            <!-- Contenido principal -->
+            <div class="col-md-10 p-3">
+                <div class="container py-4">
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <!-- ========== SALDO EN TIEMPO REAL ========== -->
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-6">
+                                    <div class="saldo-card saldo-bs">
+                                        <div class="saldo-label"><i class="fas fa-cash-stack me-1"></i> Saldo Actual (Bs.)</div>
+                                        <div class="saldo-monto" id="saldoBsDisplay">Bs. {{ saldo_bs|default(0)|format_bs }}</div>
+                                        <div class="saldo-sub">Actualizado en tiempo real</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="saldo-card saldo-usd">
+                                        <div class="saldo-label"><i class="fas fa-currency-dollar me-1"></i> Saldo Actual (USD)</div>
+                                        <div class="saldo-monto" id="saldoUsdDisplay">${{ saldo_usd|default(0)|format_usd_venezuela }}</div>
+                                        <div class="saldo-sub">Actualizado en tiempo real</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header text-center">
+                                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="logo-circle mb-2" onerror="this.src='https://via.placeholder.com/60x60?text=R'">
+                                    <h1 class="h3 mb-0"><i class="fas fa-cash-register"></i> Apertura de Caja</h1>
+                                    <small>RENAVEN OAKMONT, C.A.</small>
+                                </div>
+                                <div class="card-body p-4">
+                                    <div class="alert alert-info text-center" role="alert">
+                                        <i class="fas fa-info-circle"></i> Fondo de caja actual:
+                                        <strong>Bs. {{ current_balance|default(0)|format_bs }}</strong>
+                                    </div>
+
+                                    {% if current_balance|default(0) == 0 %}
+                                    <div class="alert alert-success text-center" role="alert">
+                                        <i class="fas fa-check-circle"></i>
+                                        <strong>✅ ¡Caja cerrada!</strong><br>
+                                        El fondo está en CERO. Puede iniciar un nuevo turno.
+                                    </div>
+                                    {% endif %}
+
+                                    {% if current_balance|default(0) > 0 %}
+                                    <div class="alert alert-warning text-center" role="alert">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        <strong>⚠️ ¡Caja activa!</strong><br>
+                                        El fondo actual es de Bs. {{ current_balance|default(0)|format_bs }}.<br>
+                                        Debe <a href="{{ url_for('cash_closure') }}" style="color: var(--renaven-azul-fuerte) !important; text-decoration: underline;">CERRAR CAJA</a> antes de iniciar un nuevo turno.
+                                    </div>
+                                    {% endif %}
+
+                                    <form method="POST" aria-label="Formulario de apertura de caja">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                                        <div class="mb-3">
+                                            <label for="monto" class="form-label"><i class="fas fa-money-bill"></i> Monto de Apertura (Bs.)</label>
+                                            <input type="number" step="0.01" id="monto" name="monto" class="form-control"
+                                                   placeholder="0.00" required autofocus
+                                                   {% if current_balance|default(0) > 0 %}disabled{% endif %}>
+                                            <small class="text-muted">Ingrese el monto inicial en efectivo en caja</small>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="supervisor_password" class="form-label"><i class="fas fa-lock"></i> Contraseña de Supervisor/Dueño</label>
+                                            <input type="password" id="supervisor_password" name="supervisor_password" class="form-control" required
+                                                   {% if current_balance|default(0) > 0 %}disabled{% endif %}>
+                                            <small>Solo autorizado para apertura de caja</small>
+                                        </div>
+
+                                        <button type="submit" class="btn btn-primary-custom mt-3"
+                                                {% if current_balance|default(0) > 0 %}disabled{% endif %}>
+                                            <i class="fas fa-check-circle"></i> Abrir Caja
+                                        </button>
+
+                                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary w-100 mt-2">
+                                            <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                                        </a>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <div class="card mt-3">
+                                <div class="card-body text-center">
+                                    <small>
+                                        <i class="fas fa-clock"></i> <span id="fechaActual"></span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== ACCESIBILIDAD GLOBAL (SIN BOTÓN) ==========
+        // Se ejecuta ANTES del DOMContentLoaded para evitar parpadeo
+        (function() {
+            var savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                document.documentElement.classList.add(savedTheme);
+            }
+            var savedBg = localStorage.getItem('backgroundMode');
+            if (savedBg === 'black') document.documentElement.classList.add('bg-black-solid');
+            if (savedBg === 'white') document.documentElement.classList.add('bg-white-solid');
+            var savedFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            document.documentElement.style.fontSize = (13 * savedFontSize / 100) + 'px';
+        })();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // ========== FUNCIONES DE ACCESIBILIDAD ==========
+            function applyTheme(themeClass) {
+                document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                document.documentElement.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                if (themeClass) {
+                    document.body.classList.add(themeClass);
+                    document.documentElement.classList.add(themeClass);
+                }
+            }
+
+            function applyBackground(mode) {
+                document.body.classList.remove('bg-black-solid', 'bg-white-solid');
+                if (mode === 'black') document.body.classList.add('bg-black-solid');
+                if (mode === 'white') document.body.classList.add('bg-white-solid');
+            }
+
+            // ---- Cargar tema y fondo guardado ----
+            var savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) applyTheme(savedTheme);
+
+            var savedBg = localStorage.getItem('backgroundMode');
+            if (savedBg) applyBackground(savedBg);
+
+            // ---- Tamaño de fuente ----
+            var currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            function applyFontSize() {
+                document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                document.documentElement.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+            applyFontSize();
+
+            // ========== SALDO EN TIEMPO REAL ==========
+            let saldoBs = parseFloat('{{ saldo_bs|default(0) }}');
+            let saldoUsd = parseFloat('{{ saldo_usd|default(0) }}');
+
+            function formatNumberVenezuela(numero, decimals = 2) {
+                if (isNaN(numero) || numero === null || numero === '') return '0,00';
+                numero = Math.round(numero * 100) / 100;
+                let partes = numero.toFixed(decimals).split('.');
+                let entero = parseInt(partes[0]);
+                let decimal = partes[1];
+                let enteroFormateado = entero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                return `${enteroFormateado},${decimal}`;
+            }
+
+            function formatNumberUSD(numero, decimals = 2) {
+                if (isNaN(numero) || numero === null || numero === '') return '0.00';
+                numero = Math.round(numero * 100) / 100;
+                let partes = numero.toFixed(decimals).split('.');
+                let entero = parseInt(partes[0]);
+                let decimal = partes[1];
+                let enteroFormateado = entero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                return `${enteroFormateado}.${decimal}`;
+            }
+
+            function actualizarSaldo() {
+                let saldoBsDisplay = document.getElementById('saldoBsDisplay');
+                let saldoUsdDisplay = document.getElementById('saldoUsdDisplay');
+                if (saldoBsDisplay) saldoBsDisplay.innerHTML = 'Bs. ' + formatNumberVenezuela(saldoBs);
+                if (saldoUsdDisplay) saldoUsdDisplay.innerHTML = '$' + formatNumberUSD(saldoUsd);
+            }
+
+            async function fetchSaldoActual() {
+                try {
+                    var response = await fetch('/api/saldo_actual', {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    var data = await response.json();
+                    if (data.success) {
+                        saldoBs = parseFloat(data.saldo_bs) || 0;
+                        saldoUsd = parseFloat(data.saldo_usd) || 0;
+                        actualizarSaldo();
+                        return true;
+                    }
+                    return false;
+                } catch (error) {
+                    console.error('❌ Error obteniendo saldo:', error.message);
+                    return false;
+                }
+            }
+
+            actualizarSaldo();
+            fetchSaldoActual();
+            setInterval(fetchSaldoActual, 30000);
+        });
+
+        // ========== FECHA ACTUAL EN VIVO ==========
+        function mostrarFechaActual() {
+            let fecha = new Date();
+            let dia = String(fecha.getDate()).padStart(2, '0');
+            let mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            let anio = fecha.getFullYear();
+            let horas = String(fecha.getHours()).padStart(2, '0');
+            let minutos = String(fecha.getMinutes()).padStart(2, '0');
+            let segundos = String(fecha.getSeconds()).padStart(2, '0');
+            let fechaFormateada = dia + '/' + mes + '/' + anio + ' ' + horas + ':' + minutos + ':' + segundos;
+            let fechaElemento = document.getElementById('fechaActual');
+            if (fechaElemento) {
+                fechaElemento.innerText = fechaFormateada;
+            }
+        }
+        mostrarFechaActual();
+        setInterval(mostrarFechaActual, 1000);
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

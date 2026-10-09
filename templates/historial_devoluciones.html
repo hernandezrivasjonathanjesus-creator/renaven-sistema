@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Historial de Devoluciones - RENAVEN</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ========== PALETA PREDETERMINADA (ORIGINAL LOGIN) ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-gris-claro: #e2e8f0;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+            --renaven-verde: #28a745;
+            --renaven-oro: #FFD700;
+            --renaven-rojo: #dc2626;
+            --renaven-rojo-claro: #fee2e2;
+            --shadow-color: rgba(132,182,244,0.2);
+            --transition-base: all 0.25s ease-in-out;
+        }
+
+        /* ========== TEMAS PASTEL INDIVIDUALES (SIN ALTO CONTRASTE) ========== */
+        /* 1. Rosa pastel */
+        body.theme-rosa {
+            --renaven-azul-fuerte: #fbc4d5;
+            --renaven-azul-cielo: #fce4ec;
+            --renaven-blanco: #fef9f0;
+            --renaven-gris-fondo: #fdf6f8;
+            --renaven-borde: #fbc4d5;
+        }
+        body.theme-rosa .sidebar { background: #fdd0b5; border-right-color: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link.active { background: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link:hover { background: #fce4ec; }
+        body.theme-rosa .summary-card { background: #fce4ec; border-color: #fbc4d5; }
+        body.theme-rosa .summary-card.devoluciones { border-left-color: #fbc4d5; }
+        body.theme-rosa .summary-card.usd { border-left-color: #fdd0b5; }
+        body.theme-rosa .summary-card.bs { border-left-color: #fbc4d5; }
+        body.theme-rosa .filtros { background: #fce4ec; border-color: #fbc4d5; }
+        body.theme-rosa .table-custom { background: #fce4ec; border-color: #fbc4d5; }
+        body.theme-rosa .table-custom th { background: #fbc4d5; border-color: #fdd0b5; }
+        body.theme-rosa .badge-devolucion { background: #fdd0b5; border-color: #fbc4d5; color: #000 !important; }
+        body.theme-rosa .btn-ver { background: #fce4ec; border-color: #fbc4d5; color: #000 !important; }
+        body.theme-rosa .btn-ver:hover { background: #fbc4d5; }
+        body.theme-rosa .btn-imprimir { background: #fdd0b5; border-color: #fbc4d5; color: #000 !important; }
+        body.theme-rosa .btn-imprimir:hover { background: #fbc4d5; }
+        body.theme-rosa .btn-buscar { background: #fbc4d5; border-color: #fdd0b5; color: #000 !important; }
+        body.theme-rosa .btn-buscar:hover { background: #fdd0b5; }
+        body.theme-rosa .btn-limpiar { background: #fce4ec; border-color: #fbc4d5; color: #000 !important; }
+        body.theme-rosa .btn-limpiar:hover { background: #fdd0b5; }
+        body.theme-rosa .modal-productos { background: #fce4ec; border-color: #fbc4d5; }
+        body.theme-rosa .modal-header-custom { background: #fbc4d5; border-color: #fdd0b5; }
+        body.theme-rosa .form-control:focus { border-color: #fbc4d5; box-shadow: 0 0 0 0.2rem rgba(251,196,213,0.4); }
+        body.theme-rosa .sidebar-logo { border-color: #fbc4d5; }
+
+        /* 2. Celeste pastel */
+        body.theme-celeste {
+            --renaven-azul-fuerte: #b5d8eb;
+            --renaven-azul-cielo: #d6ecf5;
+            --renaven-blanco: #f9fdff;
+            --renaven-gris-fondo: #f4faff;
+            --renaven-borde: #b5d8eb;
+        }
+        body.theme-celeste .sidebar { background: #a8d0e6; border-right-color: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link.active { background: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link:hover { background: #d6ecf5; }
+        body.theme-celeste .summary-card { background: #d6ecf5; border-color: #b5d8eb; }
+        body.theme-celeste .summary-card.devoluciones { border-left-color: #b5d8eb; }
+        body.theme-celeste .summary-card.usd { border-left-color: #a8d0e6; }
+        body.theme-celeste .summary-card.bs { border-left-color: #b5d8eb; }
+        body.theme-celeste .filtros { background: #d6ecf5; border-color: #b5d8eb; }
+        body.theme-celeste .table-custom { background: #d6ecf5; border-color: #b5d8eb; }
+        body.theme-celeste .table-custom th { background: #b5d8eb; border-color: #a8d0e6; }
+        body.theme-celeste .badge-devolucion { background: #a8d0e6; border-color: #b5d8eb; color: #000 !important; }
+        body.theme-celeste .btn-ver { background: #d6ecf5; border-color: #b5d8eb; color: #000 !important; }
+        body.theme-celeste .btn-ver:hover { background: #b5d8eb; }
+        body.theme-celeste .btn-imprimir { background: #a8d0e6; border-color: #b5d8eb; color: #000 !important; }
+        body.theme-celeste .btn-imprimir:hover { background: #b5d8eb; }
+        body.theme-celeste .btn-buscar { background: #b5d8eb; border-color: #a8d0e6; color: #000 !important; }
+        body.theme-celeste .btn-buscar:hover { background: #a8d0e6; }
+        body.theme-celeste .btn-limpiar { background: #d6ecf5; border-color: #b5d8eb; color: #000 !important; }
+        body.theme-celeste .btn-limpiar:hover { background: #a8d0e6; }
+        body.theme-celeste .modal-productos { background: #d6ecf5; border-color: #b5d8eb; }
+        body.theme-celeste .modal-header-custom { background: #b5d8eb; border-color: #a8d0e6; }
+        body.theme-celeste .form-control:focus { border-color: #b5d8eb; box-shadow: 0 0 0 0.2rem rgba(181,216,235,0.4); }
+        body.theme-celeste .sidebar-logo { border-color: #b5d8eb; }
+
+        /* 3. Menta pastel */
+        body.theme-menta {
+            --renaven-azul-fuerte: #b5e6c3;
+            --renaven-azul-cielo: #d8f0e0;
+            --renaven-blanco: #f6fcf8;
+            --renaven-gris-fondo: #f2faf5;
+            --renaven-borde: #b5e6c3;
+        }
+        body.theme-menta .sidebar { background: #a8dbb8; border-right-color: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link.active { background: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link:hover { background: #d8f0e0; }
+        body.theme-menta .summary-card { background: #d8f0e0; border-color: #b5e6c3; }
+        body.theme-menta .summary-card.devoluciones { border-left-color: #b5e6c3; }
+        body.theme-menta .summary-card.usd { border-left-color: #a8dbb8; }
+        body.theme-menta .summary-card.bs { border-left-color: #b5e6c3; }
+        body.theme-menta .filtros { background: #d8f0e0; border-color: #b5e6c3; }
+        body.theme-menta .table-custom { background: #d8f0e0; border-color: #b5e6c3; }
+        body.theme-menta .table-custom th { background: #b5e6c3; border-color: #a8dbb8; }
+        body.theme-menta .badge-devolucion { background: #a8dbb8; border-color: #b5e6c3; color: #000 !important; }
+        body.theme-menta .btn-ver { background: #d8f0e0; border-color: #b5e6c3; color: #000 !important; }
+        body.theme-menta .btn-ver:hover { background: #b5e6c3; }
+        body.theme-menta .btn-imprimir { background: #a8dbb8; border-color: #b5e6c3; color: #000 !important; }
+        body.theme-menta .btn-imprimir:hover { background: #b5e6c3; }
+        body.theme-menta .btn-buscar { background: #b5e6c3; border-color: #a8dbb8; color: #000 !important; }
+        body.theme-menta .btn-buscar:hover { background: #a8dbb8; }
+        body.theme-menta .btn-limpiar { background: #d8f0e0; border-color: #b5e6c3; color: #000 !important; }
+        body.theme-menta .btn-limpiar:hover { background: #a8dbb8; }
+        body.theme-menta .modal-productos { background: #d8f0e0; border-color: #b5e6c3; }
+        body.theme-menta .modal-header-custom { background: #b5e6c3; border-color: #a8dbb8; }
+        body.theme-menta .form-control:focus { border-color: #b5e6c3; box-shadow: 0 0 0 0.2rem rgba(181,230,195,0.4); }
+        body.theme-menta .sidebar-logo { border-color: #b5e6c3; }
+
+        /* 4. Amarillo pastel */
+        body.theme-amarillo {
+            --renaven-azul-fuerte: #f9e7b2;
+            --renaven-azul-cielo: #fdf3d5;
+            --renaven-blanco: #fffef9;
+            --renaven-gris-fondo: #fefcf5;
+            --renaven-borde: #f9e7b2;
+        }
+        body.theme-amarillo .sidebar { background: #f5dc9a; border-right-color: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link.active { background: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link:hover { background: #fdf3d5; }
+        body.theme-amarillo .summary-card { background: #fdf3d5; border-color: #f9e7b2; }
+        body.theme-amarillo .summary-card.devoluciones { border-left-color: #f9e7b2; }
+        body.theme-amarillo .summary-card.usd { border-left-color: #f5dc9a; }
+        body.theme-amarillo .summary-card.bs { border-left-color: #f9e7b2; }
+        body.theme-amarillo .filtros { background: #fdf3d5; border-color: #f9e7b2; }
+        body.theme-amarillo .table-custom { background: #fdf3d5; border-color: #f9e7b2; }
+        body.theme-amarillo .table-custom th { background: #f9e7b2; border-color: #f5dc9a; }
+        body.theme-amarillo .badge-devolucion { background: #f5dc9a; border-color: #f9e7b2; color: #000 !important; }
+        body.theme-amarillo .btn-ver { background: #fdf3d5; border-color: #f9e7b2; color: #000 !important; }
+        body.theme-amarillo .btn-ver:hover { background: #f9e7b2; }
+        body.theme-amarillo .btn-imprimir { background: #f5dc9a; border-color: #f9e7b2; color: #000 !important; }
+        body.theme-amarillo .btn-imprimir:hover { background: #f9e7b2; }
+        body.theme-amarillo .btn-buscar { background: #f9e7b2; border-color: #f5dc9a; color: #000 !important; }
+        body.theme-amarillo .btn-buscar:hover { background: #f5dc9a; }
+        body.theme-amarillo .btn-limpiar { background: #fdf3d5; border-color: #f9e7b2; color: #000 !important; }
+        body.theme-amarillo .btn-limpiar:hover { background: #f5dc9a; }
+        body.theme-amarillo .modal-productos { background: #fdf3d5; border-color: #f9e7b2; }
+        body.theme-amarillo .modal-header-custom { background: #f9e7b2; border-color: #f5dc9a; }
+        body.theme-amarillo .form-control:focus { border-color: #f9e7b2; box-shadow: 0 0 0 0.2rem rgba(249,231,178,0.4); }
+        body.theme-amarillo .sidebar-logo { border-color: #f9e7b2; }
+
+        /* 5. Lila pastel */
+        body.theme-lila {
+            --renaven-azul-fuerte: #d4c4f0;
+            --renaven-azul-cielo: #e8defa;
+            --renaven-blanco: #fcfaff;
+            --renaven-gris-fondo: #f8f5fe;
+            --renaven-borde: #d4c4f0;
+        }
+        body.theme-lila .sidebar { background: #c9b7e8; border-right-color: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link.active { background: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link:hover { background: #e8defa; }
+        body.theme-lila .summary-card { background: #e8defa; border-color: #d4c4f0; }
+        body.theme-lila .summary-card.devoluciones { border-left-color: #d4c4f0; }
+        body.theme-lila .summary-card.usd { border-left-color: #c9b7e8; }
+        body.theme-lila .summary-card.bs { border-left-color: #d4c4f0; }
+        body.theme-lila .filtros { background: #e8defa; border-color: #d4c4f0; }
+        body.theme-lila .table-custom { background: #e8defa; border-color: #d4c4f0; }
+        body.theme-lila .table-custom th { background: #d4c4f0; border-color: #c9b7e8; }
+        body.theme-lila .badge-devolucion { background: #c9b7e8; border-color: #d4c4f0; color: #000 !important; }
+        body.theme-lila .btn-ver { background: #e8defa; border-color: #d4c4f0; color: #000 !important; }
+        body.theme-lila .btn-ver:hover { background: #d4c4f0; }
+        body.theme-lila .btn-imprimir { background: #c9b7e8; border-color: #d4c4f0; color: #000 !important; }
+        body.theme-lila .btn-imprimir:hover { background: #d4c4f0; }
+        body.theme-lila .btn-buscar { background: #d4c4f0; border-color: #c9b7e8; color: #000 !important; }
+        body.theme-lila .btn-buscar:hover { background: #c9b7e8; }
+        body.theme-lila .btn-limpiar { background: #e8defa; border-color: #d4c4f0; color: #000 !important; }
+        body.theme-lila .btn-limpiar:hover { background: #c9b7e8; }
+        body.theme-lila .modal-productos { background: #e8defa; border-color: #d4c4f0; }
+        body.theme-lila .modal-header-custom { background: #d4c4f0; border-color: #c9b7e8; }
+        body.theme-lila .form-control:focus { border-color: #d4c4f0; box-shadow: 0 0 0 0.2rem rgba(212,196,240,0.4); }
+        body.theme-lila .sidebar-logo { border-color: #d4c4f0; }
+
+        /* 6. Durazno pastel */
+        body.theme-durazno {
+            --renaven-azul-fuerte: #fdd0b5;
+            --renaven-azul-cielo: #fee5d0;
+            --renaven-blanco: #fffcf9;
+            --renaven-gris-fondo: #fef8f3;
+            --renaven-borde: #fdd0b5;
+        }
+        body.theme-durazno .sidebar { background: #f5c2a4; border-right-color: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link.active { background: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link:hover { background: #fee5d0; }
+        body.theme-durazno .summary-card { background: #fee5d0; border-color: #fdd0b5; }
+        body.theme-durazno .summary-card.devoluciones { border-left-color: #fdd0b5; }
+        body.theme-durazno .summary-card.usd { border-left-color: #f5c2a4; }
+        body.theme-durazno .summary-card.bs { border-left-color: #fdd0b5; }
+        body.theme-durazno .filtros { background: #fee5d0; border-color: #fdd0b5; }
+        body.theme-durazno .table-custom { background: #fee5d0; border-color: #fdd0b5; }
+        body.theme-durazno .table-custom th { background: #fdd0b5; border-color: #f5c2a4; }
+        body.theme-durazno .badge-devolucion { background: #f5c2a4; border-color: #fdd0b5; color: #000 !important; }
+        body.theme-durazno .btn-ver { background: #fee5d0; border-color: #fdd0b5; color: #000 !important; }
+        body.theme-durazno .btn-ver:hover { background: #fdd0b5; }
+        body.theme-durazno .btn-imprimir { background: #f5c2a4; border-color: #fdd0b5; color: #000 !important; }
+        body.theme-durazno .btn-imprimir:hover { background: #fdd0b5; }
+        body.theme-durazno .btn-buscar { background: #fdd0b5; border-color: #f5c2a4; color: #000 !important; }
+        body.theme-durazno .btn-buscar:hover { background: #f5c2a4; }
+        body.theme-durazno .btn-limpiar { background: #fee5d0; border-color: #fdd0b5; color: #000 !important; }
+        body.theme-durazno .btn-limpiar:hover { background: #f5c2a4; }
+        body.theme-durazno .modal-productos { background: #fee5d0; border-color: #fdd0b5; }
+        body.theme-durazno .modal-header-custom { background: #fdd0b5; border-color: #f5c2a4; }
+        body.theme-durazno .form-control:focus { border-color: #fdd0b5; box-shadow: 0 0 0 0.2rem rgba(253,208,181,0.4); }
+        body.theme-durazno .sidebar-logo { border-color: #fdd0b5; }
+
+        /* ========== TODAS LAS LETRAS EN NEGRITA (excepto iconos) ========== */
+        *:not([class*="fa-"]) {
+            font-weight: bold !important;
+        }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+            font-weight: 400 !important;
+        }
+        .fas, .fa-solid {
+            font-weight: 900 !important;
+        }
+
+        /* ===== FORZAR TODOS LOS TEXTOS A NEGRO ===== */
+        body, body * {
+            color: var(--renaven-texto) !important;
+        }
+
+        /* Excepción para placeholders */
+        ::placeholder, input::placeholder, textarea::placeholder {
+            color: #9ca3af !important;
+            opacity: 1;
+        }
+
+        body {
+            background: var(--renaven-gris-fondo);
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            color: var(--renaven-texto);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* ========== NAVEGACIÓN POR TECLADO ========== */
+        *:focus {
+            outline: 3px solid #FFD700 !important;
+            outline-offset: 2px !important;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--renaven-azul-fuerte);
+            color: #000;
+            padding: 8px 16px;
+            z-index: 1000;
+            text-decoration: none;
+            border-radius: 0 0 8px 0;
+            font-weight: bold;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* ========== SIDEBAR ========== */
+        .sidebar {
+            min-height: 100vh;
+            background: var(--renaven-azul-fuerte);
+            border-right: 2px solid var(--renaven-azul-cielo);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .sidebar .nav-link {
+            margin: 4px 0;
+            border-radius: 50px;
+            padding: 8px 15px;
+            transition: all 0.3s;
+            color: #000 !important;
+        }
+
+        .sidebar .nav-link i {
+            color: #000 !important;
+        }
+
+        .sidebar .nav-link:hover {
+            background: var(--renaven-azul-cielo);
+            transform: translateX(5px);
+            color: #000 !important;
+        }
+
+        .sidebar .nav-link:hover i {
+            color: #000 !important;
+        }
+
+        .sidebar .nav-link.active {
+            background: var(--renaven-azul-cielo);
+            border: 1px solid var(--renaven-borde);
+            color: #000 !important;
+        }
+
+        .sidebar .nav-link.active i {
+            color: #000 !important;
+        }
+
+        .sidebar h6, .sidebar small {
+            color: #000 !important;
+        }
+
+        .sidebar-logo {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 3px solid var(--renaven-azul-cielo);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, border-color 0.3s;
+            background: var(--renaven-blanco);
+        }
+
+        .sidebar-logo:hover {
+            transform: scale(1.05);
+        }
+
+        /* ========== TARJETAS DE RESUMEN ========== */
+        .summary-card {
+            background: var(--renaven-blanco);
+            border: 2px solid var(--renaven-borde);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.3s ease, background 0.3s, border-color 0.3s;
+            margin-bottom: 15px;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .summary-card.devoluciones {
+            border-left: 5px solid var(--renaven-rojo);
+        }
+
+        .summary-card.usd {
+            border-left: 5px solid var(--renaven-verde);
+        }
+
+        .summary-card.bs {
+            border-left: 5px solid var(--renaven-azul-cielo);
+        }
+
+        .summary-card h3 {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 10px 0 0;
+        }
+
+        .summary-card p {
+            margin: 0;
+            font-size: 0.85rem;
+        }
+
+        /* ========== TABLA ========== */
+        .table-custom {
+            background: var(--renaven-blanco);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .table-custom th {
+            background: var(--renaven-azul-cielo);
+            border-bottom: 2px solid var(--renaven-borde);
+            padding: 12px;
+            font-weight: bold;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .table-custom td {
+            border-bottom: 1px solid var(--renaven-borde);
+            vertical-align: middle;
+            padding: 12px;
+            transition: border-color 0.3s;
+        }
+
+        .table-custom tr:hover {
+            background: var(--renaven-gris-fondo);
+        }
+
+        /* ========== BADGES ========== */
+        .badge-devolucion {
+            background: var(--renaven-rojo);
+            padding: 5px 10px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: inline-block;
+            border: 1px solid var(--renaven-borde);
+            color: #000 !important;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        /* ========== BOTONES ========== */
+        .btn-ver {
+            background: var(--renaven-azul-cielo);
+            border: 2px solid var(--renaven-borde);
+            border-radius: 50px;
+            padding: 5px 12px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            display: inline-block;
+            transition: all 0.3s;
+            color: #000 !important;
+        }
+
+        .btn-ver:hover {
+            background: var(--renaven-azul-fuerte);
+            transform: translateY(-2px);
+            color: #000 !important;
+        }
+
+        .btn-imprimir {
+            background: var(--renaven-verde);
+            border: 2px solid var(--renaven-borde);
+            border-radius: 50px;
+            padding: 5px 12px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            display: inline-block;
+            transition: all 0.3s;
+            color: #000 !important;
+        }
+
+        .btn-imprimir:hover {
+            background: #1e7e34;
+            transform: translateY(-2px);
+            color: #000 !important;
+        }
+
+        /* ========== FILTROS ========== */
+        .filtros {
+            background: var(--renaven-blanco);
+            border: 2px solid var(--renaven-borde);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .filtros label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.85rem;
+            color: #000 !important;
+        }
+
+        .form-control, .form-select {
+            border-radius: 50px !important;
+            border: 2px solid var(--renaven-borde) !important;
+            padding: 8px 15px !important;
+            background: var(--renaven-blanco);
+            color: #000 !important;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--renaven-azul-fuerte);
+            box-shadow: 0 0 0 0.2rem rgba(132,182,244,0.25);
+            outline: none;
+        }
+
+        .btn-buscar {
+            background: var(--renaven-azul-fuerte);
+            border: 2px solid var(--renaven-borde);
+            border-radius: 50px;
+            padding: 8px 20px;
+            font-weight: bold;
+            transition: all 0.3s;
+            color: #000 !important;
+        }
+
+        .btn-buscar:hover {
+            background: var(--renaven-azul-cielo);
+            transform: translateY(-2px);
+            color: #000 !important;
+        }
+
+        .btn-limpiar {
+            background: var(--renaven-gris-claro);
+            border: 2px solid var(--renaven-borde);
+            border-radius: 50px;
+            padding: 8px 20px;
+            font-weight: bold;
+            transition: all 0.3s;
+            color: #000 !important;
+        }
+
+        .btn-limpiar:hover {
+            background: #cbd5e1;
+            transform: translateY(-2px);
+            color: #000 !important;
+        }
+
+        /* ========== MODAL ========== */
+        .modal-productos {
+            background: var(--renaven-blanco);
+            border-radius: 12px;
+            border: 2px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .modal-header-custom {
+            background: var(--renaven-azul-cielo);
+            border-bottom: 2px solid var(--renaven-borde);
+            padding: 15px;
+            border-radius: 10px 10px 0 0;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .modal-header-custom .modal-title {
+            font-weight: bold;
+        }
+
+        .btn-close {
+            background-color: white;
+            border-radius: 50%;
+            opacity: 0.8;
+        }
+
+        .fila-producto {
+            border-bottom: 1px solid var(--renaven-borde);
+            padding: 10px 0;
+        }
+
+        .fila-producto:last-child {
+            border-bottom: none;
+        }
+
+        .texto-monto {
+            font-weight: bold;
+        }
+
+        .sin-resultados {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .modal-footer .btn-secondary {
+            background: var(--renaven-gris-claro);
+            border: 2px solid var(--renaven-borde);
+            border-radius: 50px;
+            color: #000 !important;
+        }
+
+        hr {
+            border-color: var(--renaven-borde);
+        }
+
+        h2 {
+            font-weight: bold;
+        }
+
+        .text-muted {
+            opacity: 0.7;
+            color: #000 !important;
+        }
+
+        /* CORRECCIÓN: tabla dentro del modal */
+        .modal-body .table-bordered,
+        .modal-body .table-bordered td,
+        .modal-body .table-bordered th {
+            border: 1px solid var(--renaven-borde) !important;
+        }
+
+        .modal-body .table-bordered thead tr {
+            background: var(--renaven-azul-cielo);
+        }
+
+        @media (max-width: 768px) {
+            .summary-card h3 {
+                font-size: 1.2rem;
+            }
+            .table-custom th, .table-custom td {
+                font-size: 11px;
+                padding: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== SKIP LINK PARA TECLADO ========== -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <div class="container-fluid p-0" id="main-content" role="main">
+        <div class="row g-0">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar p-2 no-print">
+                <div class="text-center mb-3">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN - Sistema de Facturación" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/60x60?text=R'">
+                    <h6 class="mt-1">RENAVEN</h6>
+                    <small>{{ session.get('role', 'Usuario') }}</small>
+                </div>
+                <nav class="nav flex-column" aria-label="Menú principal">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}" aria-label="Ir al Dashboard"><i class="fas fa-tachometer-alt me-2" aria-hidden="true"></i> Dashboard</a>
+                    <a class="nav-link" href="{{ url_for('facturacion') }}" aria-label="Ir a Facturación"><i class="fas fa-shopping-cart me-2" aria-hidden="true"></i> Facturación</a>
+                    <a class="nav-link" href="{{ url_for('inventory') }}" aria-label="Ir a Inventario"><i class="fas fa-boxes me-2" aria-hidden="true"></i> Inventario</a>
+                    <a class="nav-link" href="{{ url_for('cash_closure') }}" aria-label="Ir a Cierre de Caja"><i class="fas fa-cash-register me-2" aria-hidden="true"></i> Cierre de Caja</a>
+                    <a class="nav-link" href="{{ url_for('opening_balance') }}" aria-label="Ir a Apertura de Caja"><i class="fas fa-money-bill-wave me-2" aria-hidden="true"></i> Apertura de Caja</a>
+                    <a class="nav-link active" href="{{ url_for('historial_devoluciones') }}" aria-label="Ver Historial de Devoluciones"><i class="fas fa-undo-alt me-2" aria-hidden="true"></i> Devoluciones</a>
+                    <a class="nav-link" href="{{ url_for('historial_facturacion') }}" aria-label="Ver Historial de Facturación"><i class="fas fa-file-invoice me-2" aria-hidden="true"></i> Historial Facturación</a>
+                    <hr>
+                    <a class="nav-link" href="{{ url_for('logout') }}" aria-label="Cerrar Sesión"><i class="fas fa-sign-out-alt me-2" aria-hidden="true"></i> Salir</a>
+                </nav>
+            </div>
+            
+            <!-- Contenido principal -->
+            <div class="col-md-10 p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+                    <h1 class="fs-2"><i class="fas fa-undo-alt" aria-hidden="true"></i> Historial de Devoluciones</h1>
+                    <div class="no-print">
+                        <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                        <strong id="fechaActual"></strong>
+                    </div>
+                </div>
+                
+                <!-- Tarjetas de resumen -->
+                <div class="row mb-3">
+                    <div class="col-md-4 col-sm-6 mb-2">
+                        <div class="summary-card devoluciones">
+                            <i class="fas fa-undo-alt fa-2x" aria-hidden="true"></i>
+                            <p>TOTAL DEVOLUCIONES</p>
+                            <h3 id="totalDevoluciones" aria-live="polite">0</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-6 mb-2">
+                        <div class="summary-card usd">
+                            <i class="fas fa-dollar-sign fa-2x" aria-hidden="true"></i>
+                            <p>TOTAL DEVUELTO USD</p>
+                            <h3 id="totalUSD" aria-live="polite">$0.00</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-6 mb-2">
+                        <div class="summary-card bs">
+                            <i class="fas fa-money-bill fa-2x" aria-hidden="true"></i>
+                            <p>TOTAL DEVUELTO Bs</p>
+                            <h3 id="totalBS" aria-live="polite">Bs. 0,00</h3>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Filtros -->
+                <div class="filtros no-print">
+                    <div class="row align-items-end">
+                        <div class="col-md-4 mb-2">
+                            <label for="searchInput"><i class="fas fa-search" aria-hidden="true"></i> Buscar:</label>
+                            <input type="text" id="searchInput" class="form-control" placeholder="N° devolución, factura o cliente..." aria-label="Buscar devoluciones">
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label for="fechaDesde"><i class="fas fa-calendar-alt" aria-hidden="true"></i> Desde:</label>
+                            <input type="date" id="fechaDesde" class="form-control" aria-label="Fecha desde">
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label for="fechaHasta"><i class="fas fa-calendar-alt" aria-hidden="true"></i> Hasta:</label>
+                            <input type="date" id="fechaHasta" class="form-control" aria-label="Fecha hasta">
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label>&nbsp;</label>
+                            <div class="d-flex gap-2">
+                                <button class="btn-buscar w-100" onclick="filtrarTabla()" aria-label="Filtrar devoluciones">
+                                    <i class="fas fa-filter" aria-hidden="true"></i> Filtrar
+                                </button>
+                                <button class="btn-limpiar" onclick="limpiarFiltros()" aria-label="Limpiar filtros">
+                                    <i class="fas fa-eraser" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabla de devoluciones -->
+                <div class="table-responsive">
+                    <table class="table table-custom" aria-label="Tabla de devoluciones">
+                        <thead>
+                            <tr>
+                                <th scope="col">N° Devolución</th>
+                                <th scope="col">Factura Original</th>
+                                <th scope="col">Fecha</th>
+                                <th scope="col">Cliente</th>
+                                <th scope="col">Productos</th>
+                                <th scope="col">Total USD</th>
+                                <th scope="col">Total Bs</th>
+                                <th scope="col">Usuario</th>
+                                <th scope="col" class="no-print">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaDevoluciones">
+                            {% if returns and returns|length > 0 %}
+                                {% for ret in returns %}
+                                <tr data-fecha="{{ ret.return_date[:10] if ret.return_date else '' }}" 
+                                    data-cliente="{{ ret.client_name or '' }}" 
+                                    data-factura="{{ ret.original_invoice }}" 
+                                    data-numero="{{ ret.return_number }}">
+                                    <td class="text-center"><span class="badge-devolucion" aria-label="Número de devolución: {{ "{:04d}".format(ret.return_number|int) }}">#{{ "{:04d}".format(ret.return_number|int) }}</span></td>
+                                    <td class="text-center"><strong>N° {{ "{:04d}".format(ret.original_invoice|int) }}</strong></td>
+                                    <td>
+                                        {{ ret.return_date[:10] if ret.return_date else '-' }}<br>
+                                        <small>{{ ret.return_date[11:16] if ret.return_date and ret.return_date|length > 10 else '' }}</small>
+                                    </td>
+                                    <td>
+                                        <strong>{{ ret.client_name or 'N/A' }}</strong><br>
+                                        <small>C.I: {{ ret.client_id or 'N/A' }}</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn-ver" onclick="verProductosDevolucion('{{ ret.return_number }}')" aria-label="Ver productos de la devolución N° {{ "{:04d}".format(ret.return_number|int) }}">
+                                            <i class="fas fa-boxes" aria-hidden="true"></i> {{ ret.items_list|length }} producto(s)
+                                        </button>
+                                    </td>
+                                    <td class="text-end texto-monto" aria-label="Total en dólares: ${{ "%.2f"|format(ret.total_usd|float) }}">$ {{ "%.2f"|format(ret.total_usd|float) }}</td>
+                                    <td class="text-end texto-monto" aria-label="Total en bolívares: Bs. {{ "%.2f"|format(ret.total_bs|float) }}">Bs. {{ "%.2f"|format(ret.total_bs|float) }}</td>
+                                    <td><small>{{ ret.user_name or '-' }}</small></td>
+                                    <td class="text-center no-print">
+                                        <a href="{{ url_for('imprimir_devolucion', return_number=ret.return_number) }}" target="_blank" class="btn-imprimir" title="Imprimir comprobante" aria-label="Imprimir comprobante de devolución N° {{ "{:04d}".format(ret.return_number|int) }}">
+                                            <i class="fas fa-print" aria-hidden="true"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr id="sinRegistros">
+                                    <td colspan="9" class="sin-resultados">
+                                        <i class="fas fa-inbox fa-3x" aria-hidden="true"></i>
+                                        <p class="mt-2">No hay devoluciones registradas</p>
+                                        <small>Las devoluciones aparecerán aquí después de procesarlas</small>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para ver productos devueltos -->
+    <div class="modal fade" id="modalProductos" tabindex="-1" data-bs-backdrop="static" aria-labelledby="modalProductosTitle" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content modal-productos">
+                <div class="modal-header-custom">
+                    <h5 class="modal-title" id="modalProductosTitle"><i class="fas fa-boxes" aria-hidden="true"></i> Detalle de Productos Devueltos</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body" style="padding: 20px;" id="detalleProductos">
+                    <div class="text-center">
+                        <i class="fas fa-spinner fa-spin fa-2x" aria-hidden="true"></i>
+                        <p>Cargando...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Cerrar ventana">
+                        <i class="fas fa-times" aria-hidden="true"></i> Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ========== CARGA DE TEMA GUARDADO Y CONFIGURACIÓN DE FUENTE ==========
+        document.addEventListener('DOMContentLoaded', function () {
+            // ---- Temas pastel ----
+            function applyTheme(themeClass) {
+                document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                if (themeClass) {
+                    document.body.classList.add(themeClass);
+                }
+                localStorage.setItem('selectedTheme', themeClass || '');
+            }
+
+            const savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            }
+
+            // ---- Fondo de pantalla ----
+            const savedBg = localStorage.getItem('backgroundMode');
+            if (savedBg === 'black') {
+                document.body.style.background = '#000000';
+            } else if (savedBg === 'white') {
+                document.body.style.background = '#FFFFFF';
+            } else {
+                document.body.style.background = 'var(--renaven-gris-fondo)';
+            }
+
+            // ---- Tamaño de fuente (base 13px) ----
+            let currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            function applyFontSize() {
+                document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+            applyFontSize();
+        });
+
+        // ========================================================================
+        // FUNCIONALIDAD DE LA PÁGINA (SIN CAMBIOS EN LA LÓGICA)
+        // ========================================================================
+
+        let returnsData = [];
+        try {
+            const rawData = JSON.parse('{{ (returns | tojson | safe) if returns else "[]" }}');
+            if (rawData && Array.isArray(rawData)) {
+                returnsData = rawData;
+            } else {
+                returnsData = [];
+            }
+        } catch(e) {
+            console.error('Error al cargar datos de devoluciones:', e);
+            returnsData = [];
+        }
+
+        function mostrarFechaActual() {
+            let fecha = new Date();
+            let dia = String(fecha.getDate()).padStart(2, '0');
+            let mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            let anio = fecha.getFullYear();
+            let horas = String(fecha.getHours()).padStart(2, '0');
+            let minutos = String(fecha.getMinutes()).padStart(2, '0');
+            let fechaFormateada = dia + '/' + mes + '/' + anio + ' ' + horas + ':' + minutos;
+            let fechaElemento = document.getElementById('fechaActual');
+            if (fechaElemento) {
+                fechaElemento.innerText = fechaFormateada;
+            }
+        }
+
+        function formatNumberVenezuela(numero) {
+            if (numero === undefined || numero === null || isNaN(numero)) return '0,00';
+            let partes = numero.toFixed(2).split('.');
+            let entero = parseInt(partes[0]);
+            let decimal = partes[1];
+            let enteroFormateado = entero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            return enteroFormateado + ',' + decimal;
+        }
+
+        function formatNumberUSD(numero) {
+            if (numero === undefined || numero === null || isNaN(numero)) return '0.00';
+            let partes = numero.toFixed(2).split('.');
+            let entero = parseInt(partes[0]);
+            let decimal = partes[1];
+            let enteroFormateado = entero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            return enteroFormateado + '.' + decimal;
+        }
+
+        function actualizarTotales() {
+            let filas = document.querySelectorAll('#tablaDevoluciones tr[data-fecha]');
+            let totalDevoluciones = filas.length;
+            let totalUSD = 0;
+            let totalBS = 0;
+
+            filas.forEach(fila => {
+                let usdCell = fila.cells[5];
+                let bsCell = fila.cells[6];
+                if (usdCell) {
+                    let usdText = usdCell.innerText.replace('$', '').trim();
+                    let usdValue = parseFloat(usdText);
+                    if (!isNaN(usdValue)) totalUSD += usdValue;
+                }
+                if (bsCell) {
+                    let bsText = bsCell.innerText.replace('Bs.', '').trim();
+                    let bsValue = parseFloat(bsText);
+                    if (!isNaN(bsValue)) totalBS += bsValue;
+                }
+            });
+
+            let totalDevolucionesElem = document.getElementById('totalDevoluciones');
+            let totalUSDElem = document.getElementById('totalUSD');
+            let totalBSElem = document.getElementById('totalBS');
+
+            if (totalDevolucionesElem) totalDevolucionesElem.innerText = totalDevoluciones;
+            if (totalUSDElem) totalUSDElem.innerHTML = '$' + formatNumberUSD(totalUSD);
+            if (totalBSElem) totalBSElem.innerHTML = 'Bs. ' + formatNumberVenezuela(totalBS);
+        }
+
+        function filtrarTabla() {
+            let searchInput = document.getElementById('searchInput');
+            let fechaDesdeInput = document.getElementById('fechaDesde');
+            let fechaHastaInput = document.getElementById('fechaHasta');
+
+            let search = searchInput ? searchInput.value.toLowerCase() : '';
+            let fechaDesde = fechaDesdeInput ? fechaDesdeInput.value : '';
+            let fechaHasta = fechaHastaInput ? fechaHastaInput.value : '';
+
+            let filas = document.querySelectorAll('#tablaDevoluciones tr[data-fecha]');
+            let visibles = 0;
+
+            filas.forEach(fila => {
+                let fecha = fila.getAttribute('data-fecha') || '';
+                let cliente = (fila.getAttribute('data-cliente') || '').toLowerCase();
+                let factura = (fila.getAttribute('data-factura') || '').toString();
+                let numero = (fila.getAttribute('data-numero') || '').toString();
+
+                let coincideSearch = search === '' ||
+                    cliente.includes(search) ||
+                    factura.includes(search) ||
+                    numero.includes(search);
+
+                let coincideFecha = true;
+                if (fechaDesde && fecha) {
+                    coincideFecha = coincideFecha && fecha >= fechaDesde;
+                }
+                if (fechaHasta && fecha) {
+                    coincideFecha = coincideFecha && fecha <= fechaHasta;
+                }
+
+                if (coincideSearch && coincideFecha) {
+                    fila.style.display = '';
+                    visibles++;
+                } else {
+                    fila.style.display = 'none';
+                }
+            });
+
+            let tbody = document.getElementById('tablaDevoluciones');
+            let mensajeNoResultados = document.getElementById('mensajeNoResultados');
+
+            if (visibles === 0 && filas.length > 0) {
+                if (!mensajeNoResultados && tbody) {
+                    let tr = document.createElement('tr');
+                    tr.id = 'mensajeNoResultados';
+                    tr.innerHTML = '<td colspan="9" class="sin-resultados"><i class="fas fa-search fa-3x" aria-hidden="true"></i><p class="mt-2">No se encontraron devoluciones con los filtros aplicados</p></td>';
+                    tbody.appendChild(tr);
+                }
+            } else if (mensajeNoResultados) {
+                mensajeNoResultados.remove();
+            }
+
+            actualizarTotales();
+        }
+
+        function limpiarFiltros() {
+            let searchInput = document.getElementById('searchInput');
+            let fechaDesdeInput = document.getElementById('fechaDesde');
+            let fechaHastaInput = document.getElementById('fechaHasta');
+
+            if (searchInput) searchInput.value = '';
+            if (fechaDesdeInput) fechaDesdeInput.value = '';
+            if (fechaHastaInput) fechaHastaInput.value = '';
+            filtrarTabla();
+        }
+
+        function verProductosDevolucion(returnNumber) {
+            let devoluciones = Array.isArray(returnsData) ? returnsData : [];
+            let devolucion = null;
+
+            for (let i = 0; i < devoluciones.length; i++) {
+                if (devoluciones[i].return_number == returnNumber) {
+                    devolucion = devoluciones[i];
+                    break;
+                }
+            }
+
+            let detalleProductos = document.getElementById('detalleProductos');
+
+            if (devolucion && devolucion.items_list && devolucion.items_list.length > 0) {
+                let html = '<div class="mb-3">' +
+                    '<strong><i class="fas fa-receipt" aria-hidden="true"></i> Devolución N° ' + String(returnNumber).padStart(4, '0') + '</strong><br>' +
+                    '<small>Factura original: N° ' + String(devolucion.original_invoice).padStart(4, '0') + '</small>' +
+                    '</div>' +
+                    '<div class="table-responsive">' +
+                    '<table class="table table-bordered" style="border: 1px solid #000000;" aria-label="Tabla de productos devueltos">' +
+                    '<thead>' +
+                    '<tr style="background: var(--renaven-azul-cielo); border: 1px solid #000000;">' +
+                    '<th scope="col">Producto</th>' +
+                    '<th scope="col" class="text-center">Cantidad</th>' +
+                    '<th scope="col" class="text-end">Precio Unitario</th>' +
+                    '<th scope="col" class="text-end">Subtotal</th>' +
+                    '</tr>' +
+                    '</thead>' +
+                    '<tbody>';
+
+                for (let i = 0; i < devolucion.items_list.length; i++) {
+                    let item = devolucion.items_list[i];
+                    let subtotal = item.price * item.quantity;
+                    html += '<tr style="border: 1px solid #000000;">' +
+                        '<td><strong>' + item.name + '</strong></td>' +
+                        '<td class="text-center">' + item.quantity + ' ' + (item.sale_type === 'weight' ? 'Kg' : '') + '</td>' +
+                        '<td class="text-end">$' + item.price.toFixed(2) + '</td>' +
+                        '<td class="text-end">$' + subtotal.toFixed(2) + '</td>' +
+                        '</tr>';
+                }
+
+                html += '</tbody>' +
+                    '<tfoot>' +
+                    '<tr style="background: var(--renaven-azul-cielo); border: 1px solid #000000;">' +
+                    '<td colspan="3" class="text-end"><strong>TOTAL DEVUELTO:</strong></td>' +
+                    '<td class="text-end"><strong>$' + devolucion.total_usd.toFixed(2) + ' USD</strong></td>' +
+                    '</tr>' +
+                    '<tr style="background: var(--renaven-azul-cielo); border: 1px solid #000000;">' +
+                    '<td colspan="3" class="text-end"><strong>TOTAL DEVUELTO Bs:</strong></td>' +
+                    '<td class="text-end"><strong>Bs. ' + formatNumberVenezuela(devolucion.total_bs) + '</strong></td>' +
+                    '</tr>' +
+                    '</tfoot>' +
+                    '</table>' +
+                    '</div>' +
+                    '<div class="mt-3" style="padding: 10px; background: var(--renaven-rojo-claro); border-radius: 8px; border: 1px solid var(--renaven-borde);">' +
+                    '<strong><i class="fas fa-comment" aria-hidden="true"></i> Motivo:</strong><br>' +
+                    (devolucion.reason || 'No especificado') +
+                    '</div>' +
+                    '<div class="mt-2 text-muted small">' +
+                    '<i class="fas fa-user" aria-hidden="true"></i> Procesado por: ' + (devolucion.user_name || 'Desconocido') + ' | ' +
+                    '<i class="fas fa-calendar" aria-hidden="true"></i> Fecha: ' + (devolucion.return_date || '-') +
+                    '</div>';
+
+                if (detalleProductos) detalleProductos.innerHTML = html;
+                new bootstrap.Modal(document.getElementById('modalProductos')).show();
+            } else {
+                if (detalleProductos) {
+                    detalleProductos.innerHTML = '<div class="text-center p-4">' +
+                        '<i class="fas fa-exclamation-triangle fa-3x" aria-hidden="true"></i>' +
+                        '<p class="mt-2">No se pudieron cargar los detalles de la devolución</p>' +
+                        '</div>';
+                }
+                new bootstrap.Modal(document.getElementById('modalProductos')).show();
+            }
+        }
+
+        // Event listeners
+        let searchInputElem = document.getElementById('searchInput');
+        if (searchInputElem) {
+            searchInputElem.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') filtrarTabla();
+            });
+        }
+
+        let fechaDesdeElem = document.getElementById('fechaDesde');
+        if (fechaDesdeElem) fechaDesdeElem.addEventListener('change', filtrarTabla);
+
+        let fechaHastaElem = document.getElementById('fechaHasta');
+        if (fechaHastaElem) fechaHastaElem.addEventListener('change', filtrarTabla);
+
+        // Inicializar
+        mostrarFechaActual();
+        actualizarTotales();
+    </script>
+</body>
+</html>

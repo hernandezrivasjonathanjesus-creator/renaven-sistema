@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Historial de Facturación - RENAVEN</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ========== PALETA PREDETERMINADA (ORIGINAL LOGIN) ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-gris-claro: #e2e8f0;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+            --renaven-verde: #28a745;
+            --renaven-oro: #FFD700;
+            --shadow-color: rgba(132,182,244,0.2);
+            --transition-base: all 0.25s ease-in-out;
+        }
+
+        /* ========== TEMAS PASTEL INDIVIDUALES (SIN ALTO CONTRASTE) ========== */
+        /* 1. Rosa pastel */
+        body.theme-rosa {
+            --renaven-azul-fuerte: #fbc4d5;
+            --renaven-azul-cielo: #fce4ec;
+            --renaven-blanco: #fef9f0;
+            --renaven-gris-fondo: #fdf6f8;
+            --renaven-borde: #fbc4d5;
+        }
+        body.theme-rosa .sidebar { background: #fdd0b5; border-right-color: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link.active { background: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link:hover { background: #fce4ec; }
+        body.theme-rosa .summary-card { background: #fce4ec; border-color: #fbc4d5; }
+        body.theme-rosa .filtros { background: #fce4ec; border-color: #fbc4d5; }
+        body.theme-rosa .table-custom { background: #fce4ec; border-color: #fbc4d5; }
+        body.theme-rosa .table-custom th { background: #fbc4d5; border-color: #fdd0b5; }
+        body.theme-rosa .badge-venta { background: #fbc4d5; border-color: #fdd0b5; }
+        body.theme-rosa .badge-metodo { background: #fce4ec; border-color: #fbc4d5; }
+        body.theme-rosa .btn-buscar { background: #fbc4d5; border-color: #fdd0b5; color: #000 !important; }
+        body.theme-rosa .btn-buscar:hover { background: #fdd0b5; }
+        body.theme-rosa .btn-limpiar { background: #fce4ec; border-color: #fbc4d5; color: #000 !important; }
+        body.theme-rosa .btn-limpiar:hover { background: #fdd0b5; }
+        body.theme-rosa .btn-ver { background: #fce4ec; border-color: #fbc4d5; color: #000 !important; }
+        body.theme-rosa .btn-ver:hover { background: #fbc4d5; }
+        body.theme-rosa .btn-imprimir { background: #fce4ec; border-color: #fbc4d5; color: #000 !important; }
+        body.theme-rosa .btn-imprimir:hover { background: #fbc4d5; }
+        body.theme-rosa .form-control:focus { border-color: #fbc4d5; box-shadow: 0 0 0 0.2rem rgba(251,196,213,0.4); }
+        body.theme-rosa .sidebar-logo { border-color: #fbc4d5; }
+
+        /* 2. Celeste pastel */
+        body.theme-celeste {
+            --renaven-azul-fuerte: #b5d8eb;
+            --renaven-azul-cielo: #d6ecf5;
+            --renaven-blanco: #f9fdff;
+            --renaven-gris-fondo: #f4faff;
+            --renaven-borde: #b5d8eb;
+        }
+        body.theme-celeste .sidebar { background: #a8d0e6; border-right-color: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link.active { background: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link:hover { background: #d6ecf5; }
+        body.theme-celeste .summary-card { background: #d6ecf5; border-color: #b5d8eb; }
+        body.theme-celeste .filtros { background: #d6ecf5; border-color: #b5d8eb; }
+        body.theme-celeste .table-custom { background: #d6ecf5; border-color: #b5d8eb; }
+        body.theme-celeste .table-custom th { background: #b5d8eb; border-color: #a8d0e6; }
+        body.theme-celeste .badge-venta { background: #b5d8eb; border-color: #a8d0e6; }
+        body.theme-celeste .badge-metodo { background: #d6ecf5; border-color: #b5d8eb; }
+        body.theme-celeste .btn-buscar { background: #b5d8eb; border-color: #a8d0e6; color: #000 !important; }
+        body.theme-celeste .btn-buscar:hover { background: #a8d0e6; }
+        body.theme-celeste .btn-limpiar { background: #d6ecf5; border-color: #b5d8eb; color: #000 !important; }
+        body.theme-celeste .btn-limpiar:hover { background: #a8d0e6; }
+        body.theme-celeste .btn-ver { background: #d6ecf5; border-color: #b5d8eb; color: #000 !important; }
+        body.theme-celeste .btn-ver:hover { background: #b5d8eb; }
+        body.theme-celeste .btn-imprimir { background: #d6ecf5; border-color: #b5d8eb; color: #000 !important; }
+        body.theme-celeste .btn-imprimir:hover { background: #b5d8eb; }
+        body.theme-celeste .form-control:focus { border-color: #b5d8eb; box-shadow: 0 0 0 0.2rem rgba(181,216,235,0.4); }
+        body.theme-celeste .sidebar-logo { border-color: #b5d8eb; }
+
+        /* 3. Menta pastel */
+        body.theme-menta {
+            --renaven-azul-fuerte: #b5e6c3;
+            --renaven-azul-cielo: #d8f0e0;
+            --renaven-blanco: #f6fcf8;
+            --renaven-gris-fondo: #f2faf5;
+            --renaven-borde: #b5e6c3;
+        }
+        body.theme-menta .sidebar { background: #a8dbb8; border-right-color: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link.active { background: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link:hover { background: #d8f0e0; }
+        body.theme-menta .summary-card { background: #d8f0e0; border-color: #b5e6c3; }
+        body.theme-menta .filtros { background: #d8f0e0; border-color: #b5e6c3; }
+        body.theme-menta .table-custom { background: #d8f0e0; border-color: #b5e6c3; }
+        body.theme-menta .table-custom th { background: #b5e6c3; border-color: #a8dbb8; }
+        body.theme-menta .badge-venta { background: #b5e6c3; border-color: #a8dbb8; }
+        body.theme-menta .badge-metodo { background: #d8f0e0; border-color: #b5e6c3; }
+        body.theme-menta .btn-buscar { background: #b5e6c3; border-color: #a8dbb8; color: #000 !important; }
+        body.theme-menta .btn-buscar:hover { background: #a8dbb8; }
+        body.theme-menta .btn-limpiar { background: #d8f0e0; border-color: #b5e6c3; color: #000 !important; }
+        body.theme-menta .btn-limpiar:hover { background: #a8dbb8; }
+        body.theme-menta .btn-ver { background: #d8f0e0; border-color: #b5e6c3; color: #000 !important; }
+        body.theme-menta .btn-ver:hover { background: #b5e6c3; }
+        body.theme-menta .btn-imprimir { background: #d8f0e0; border-color: #b5e6c3; color: #000 !important; }
+        body.theme-menta .btn-imprimir:hover { background: #b5e6c3; }
+        body.theme-menta .form-control:focus { border-color: #b5e6c3; box-shadow: 0 0 0 0.2rem rgba(181,230,195,0.4); }
+        body.theme-menta .sidebar-logo { border-color: #b5e6c3; }
+
+        /* 4. Amarillo pastel */
+        body.theme-amarillo {
+            --renaven-azul-fuerte: #f9e7b2;
+            --renaven-azul-cielo: #fdf3d5;
+            --renaven-blanco: #fffef9;
+            --renaven-gris-fondo: #fefcf5;
+            --renaven-borde: #f9e7b2;
+        }
+        body.theme-amarillo .sidebar { background: #f5dc9a; border-right-color: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link.active { background: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link:hover { background: #fdf3d5; }
+        body.theme-amarillo .summary-card { background: #fdf3d5; border-color: #f9e7b2; }
+        body.theme-amarillo .filtros { background: #fdf3d5; border-color: #f9e7b2; }
+        body.theme-amarillo .table-custom { background: #fdf3d5; border-color: #f9e7b2; }
+        body.theme-amarillo .table-custom th { background: #f9e7b2; border-color: #f5dc9a; }
+        body.theme-amarillo .badge-venta { background: #f9e7b2; border-color: #f5dc9a; }
+        body.theme-amarillo .badge-metodo { background: #fdf3d5; border-color: #f9e7b2; }
+        body.theme-amarillo .btn-buscar { background: #f9e7b2; border-color: #f5dc9a; color: #000 !important; }
+        body.theme-amarillo .btn-buscar:hover { background: #f5dc9a; }
+        body.theme-amarillo .btn-limpiar { background: #fdf3d5; border-color: #f9e7b2; color: #000 !important; }
+        body.theme-amarillo .btn-limpiar:hover { background: #f5dc9a; }
+        body.theme-amarillo .btn-ver { background: #fdf3d5; border-color: #f9e7b2; color: #000 !important; }
+        body.theme-amarillo .btn-ver:hover { background: #f9e7b2; }
+        body.theme-amarillo .btn-imprimir { background: #fdf3d5; border-color: #f9e7b2; color: #000 !important; }
+        body.theme-amarillo .btn-imprimir:hover { background: #f9e7b2; }
+        body.theme-amarillo .form-control:focus { border-color: #f9e7b2; box-shadow: 0 0 0 0.2rem rgba(249,231,178,0.4); }
+        body.theme-amarillo .sidebar-logo { border-color: #f9e7b2; }
+
+        /* 5. Lila pastel */
+        body.theme-lila {
+            --renaven-azul-fuerte: #d4c4f0;
+            --renaven-azul-cielo: #e8defa;
+            --renaven-blanco: #fcfaff;
+            --renaven-gris-fondo: #f8f5fe;
+            --renaven-borde: #d4c4f0;
+        }
+        body.theme-lila .sidebar { background: #c9b7e8; border-right-color: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link.active { background: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link:hover { background: #e8defa; }
+        body.theme-lila .summary-card { background: #e8defa; border-color: #d4c4f0; }
+        body.theme-lila .filtros { background: #e8defa; border-color: #d4c4f0; }
+        body.theme-lila .table-custom { background: #e8defa; border-color: #d4c4f0; }
+        body.theme-lila .table-custom th { background: #d4c4f0; border-color: #c9b7e8; }
+        body.theme-lila .badge-venta { background: #d4c4f0; border-color: #c9b7e8; }
+        body.theme-lila .badge-metodo { background: #e8defa; border-color: #d4c4f0; }
+        body.theme-lila .btn-buscar { background: #d4c4f0; border-color: #c9b7e8; color: #000 !important; }
+        body.theme-lila .btn-buscar:hover { background: #c9b7e8; }
+        body.theme-lila .btn-limpiar { background: #e8defa; border-color: #d4c4f0; color: #000 !important; }
+        body.theme-lila .btn-limpiar:hover { background: #c9b7e8; }
+        body.theme-lila .btn-ver { background: #e8defa; border-color: #d4c4f0; color: #000 !important; }
+        body.theme-lila .btn-ver:hover { background: #d4c4f0; }
+        body.theme-lila .btn-imprimir { background: #e8defa; border-color: #d4c4f0; color: #000 !important; }
+        body.theme-lila .btn-imprimir:hover { background: #d4c4f0; }
+        body.theme-lila .form-control:focus { border-color: #d4c4f0; box-shadow: 0 0 0 0.2rem rgba(212,196,240,0.4); }
+        body.theme-lila .sidebar-logo { border-color: #d4c4f0; }
+
+        /* 6. Durazno pastel */
+        body.theme-durazno {
+            --renaven-azul-fuerte: #fdd0b5;
+            --renaven-azul-cielo: #fee5d0;
+            --renaven-blanco: #fffcf9;
+            --renaven-gris-fondo: #fef8f3;
+            --renaven-borde: #fdd0b5;
+        }
+        body.theme-durazno .sidebar { background: #f5c2a4; border-right-color: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link.active { background: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link:hover { background: #fee5d0; }
+        body.theme-durazno .summary-card { background: #fee5d0; border-color: #fdd0b5; }
+        body.theme-durazno .filtros { background: #fee5d0; border-color: #fdd0b5; }
+        body.theme-durazno .table-custom { background: #fee5d0; border-color: #fdd0b5; }
+        body.theme-durazno .table-custom th { background: #fdd0b5; border-color: #f5c2a4; }
+        body.theme-durazno .badge-venta { background: #fdd0b5; border-color: #f5c2a4; }
+        body.theme-durazno .badge-metodo { background: #fee5d0; border-color: #fdd0b5; }
+        body.theme-durazno .btn-buscar { background: #fdd0b5; border-color: #f5c2a4; color: #000 !important; }
+        body.theme-durazno .btn-buscar:hover { background: #f5c2a4; }
+        body.theme-durazno .btn-limpiar { background: #fee5d0; border-color: #fdd0b5; color: #000 !important; }
+        body.theme-durazno .btn-limpiar:hover { background: #f5c2a4; }
+        body.theme-durazno .btn-ver { background: #fee5d0; border-color: #fdd0b5; color: #000 !important; }
+        body.theme-durazno .btn-ver:hover { background: #fdd0b5; }
+        body.theme-durazno .btn-imprimir { background: #fee5d0; border-color: #fdd0b5; color: #000 !important; }
+        body.theme-durazno .btn-imprimir:hover { background: #fdd0b5; }
+        body.theme-durazno .form-control:focus { border-color: #fdd0b5; box-shadow: 0 0 0 0.2rem rgba(253,208,181,0.4); }
+        body.theme-durazno .sidebar-logo { border-color: #fdd0b5; }
+
+        /* ========== TODAS LAS LETRAS EN NEGRITA (excepto iconos) ========== */
+        *:not([class*="fa-"]) {
+            font-weight: bold !important;
+        }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+            font-weight: 400 !important;
+        }
+        .fas, .fa-solid {
+            font-weight: 900 !important;
+        }
+
+        /* ========== ESTILOS BASE ========== */
+        body {
+            background: var(--renaven-gris-fondo);
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            color: var(--renaven-texto);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* TODAS LAS LETRAS NEGRAS */
+        body,
+        body * {
+            color: var(--renaven-texto) !important;
+        }
+
+        /* Excepción para placeholders */
+        ::placeholder,
+        input::placeholder,
+        textarea::placeholder {
+            color: #9ca3af !important;
+            opacity: 1;
+        }
+
+        /* ========== NAVEGACIÓN POR TECLADO ========== */
+        *:focus {
+            outline: 3px solid #FFD700 !important;
+            outline-offset: 2px !important;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--renaven-azul-fuerte);
+            color: #000;
+            padding: 8px 16px;
+            z-index: 1000;
+            text-decoration: none;
+            border-radius: 0 0 8px 0;
+            font-weight: bold;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* ========== SIDEBAR ========== */
+        .sidebar {
+            min-height: 100vh;
+            background: var(--renaven-azul-fuerte);
+            border-right: 2px solid var(--renaven-azul-cielo);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .sidebar .nav-link {
+            margin: 4px 0;
+            border-radius: 50px;
+            padding: 8px 15px;
+            transition: all 0.3s;
+            color: #000 !important;
+        }
+
+        .sidebar .nav-link i {
+            color: #000 !important;
+        }
+
+        .sidebar .nav-link:hover {
+            background: var(--renaven-azul-cielo);
+            transform: translateX(5px);
+            color: #000 !important;
+        }
+
+        .sidebar .nav-link:hover i {
+            color: #000 !important;
+        }
+
+        .sidebar .nav-link.active {
+            background: var(--renaven-azul-cielo);
+            border: 1px solid var(--renaven-borde);
+            color: #000 !important;
+        }
+
+        .sidebar .nav-link.active i {
+            color: #000 !important;
+        }
+
+        .sidebar h6,
+        .sidebar small {
+            color: #000 !important;
+        }
+
+        .sidebar-logo {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 3px solid var(--renaven-azul-cielo);
+            background: var(--renaven-blanco);
+            transition: border-color 0.3s;
+        }
+
+        /* ========== TARJETAS DE RESUMEN ========== */
+        .summary-card {
+            background: var(--renaven-blanco);
+            border: 2px solid var(--renaven-borde);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease, background 0.3s, border-color 0.3s;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .summary-card h3 {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 10px 0 0;
+        }
+
+        /* ========== FILTROS ========== */
+        .filtros {
+            background: var(--renaven-blanco);
+            border: 2px solid var(--renaven-borde);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: 50px !important;
+            border: 2px solid var(--renaven-borde) !important;
+            padding: 8px 15px !important;
+            background: var(--renaven-blanco);
+            color: #000 !important;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--renaven-azul-fuerte);
+            box-shadow: 0 0 0 0.2rem rgba(132,182,244,0.25);
+            outline: none;
+        }
+
+        .btn-buscar {
+            background: var(--renaven-azul-fuerte);
+            border: 2px solid var(--renaven-borde);
+            border-radius: 50px;
+            padding: 8px 20px;
+            font-weight: bold;
+            transition: all 0.3s;
+            color: #000 !important;
+        }
+
+        .btn-buscar:hover {
+            background: var(--renaven-azul-cielo);
+            transform: translateY(-2px);
+            color: #000 !important;
+        }
+
+        .btn-limpiar {
+            background: var(--renaven-gris-claro);
+            border: 2px solid var(--renaven-borde);
+            border-radius: 50px;
+            padding: 8px 20px;
+            font-weight: bold;
+            transition: all 0.3s;
+            color: #000 !important;
+        }
+
+        .btn-limpiar:hover {
+            background: #cbd5e1;
+            transform: translateY(-2px);
+            color: #000 !important;
+        }
+
+        /* ========== TABLA ========== */
+        .table-custom {
+            background: var(--renaven-blanco);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .table-custom th {
+            background: var(--renaven-azul-cielo);
+            border-bottom: 2px solid var(--renaven-borde);
+            padding: 12px;
+            font-weight: bold;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .table-custom td {
+            border-bottom: 1px solid var(--renaven-borde);
+            vertical-align: middle;
+            padding: 12px;
+            transition: border-color 0.3s;
+        }
+
+        .table-custom tr:hover {
+            background: var(--renaven-gris-fondo);
+        }
+
+        .badge-venta {
+            background: var(--renaven-azul-cielo);
+            padding: 5px 10px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: inline-block;
+            border: 1px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .badge-metodo {
+            background: var(--renaven-azul-cielo);
+            padding: 5px 10px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            display: inline-block;
+            border: 1px solid var(--renaven-borde);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .btn-ver,
+        .btn-imprimir {
+            border: 2px solid var(--renaven-borde);
+            border-radius: 50px;
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            display: inline-block;
+            transition: all 0.3s;
+            text-decoration: none;
+            cursor: pointer;
+            background: var(--renaven-azul-cielo);
+            margin: 2px;
+            color: #000 !important;
+        }
+
+        .btn-ver:hover,
+        .btn-imprimir:hover {
+            background: var(--renaven-azul-fuerte);
+            transform: translateY(-2px);
+            color: #000 !important;
+        }
+
+        .sin-resultados {
+            text-align: center;
+            padding: 40px;
+        }
+
+        @media print {
+
+            .sidebar,
+            .no-print,
+            .filtros,
+            .btn-buscar,
+            .btn-limpiar,
+            .btn-ver,
+            .btn-imprimir,
+            .summary-card,
+            .skip-link {
+                display: none !important;
+            }
+
+            .col-md-10 {
+                width: 100% !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .summary-card h3 {
+                font-size: 1.2rem;
+            }
+
+            .table-custom th,
+            .table-custom td {
+                font-size: 11px;
+                padding: 6px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ========== SKIP LINK ========== -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <div class="container-fluid p-0" id="main-content" role="main">
+        <div class="row g-0">
+            <!-- SIDEBAR -->
+            <div class="col-md-2 sidebar p-2 no-print">
+                <div class="text-center mb-3">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}"
+                        alt="Logo RENAVEN - Sistema de Facturación" class="sidebar-logo"
+                        onerror="this.src='https://via.placeholder.com/60x60?text=R'">
+                    <h6 class="mt-1">RENAVEN</h6>
+                    <small>{{ session.get('role', 'Usuario') }}</small>
+                </div>
+                <nav class="nav flex-column" aria-label="Menú principal">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}" aria-label="Ir al Dashboard"><i
+                            class="fas fa-tachometer-alt me-2" aria-hidden="true"></i> Dashboard</a>
+                    <a class="nav-link" href="{{ url_for('facturacion') }}" aria-label="Ir a Facturación"><i
+                            class="fas fa-shopping-cart me-2" aria-hidden="true"></i> Facturación</a>
+                    <a class="nav-link" href="{{ url_for('inventory') }}" aria-label="Ir a Inventario"><i
+                            class="fas fa-boxes me-2" aria-hidden="true"></i> Inventario</a>
+                    <a class="nav-link" href="{{ url_for('cash_closure') }}" aria-label="Ir a Cierre de Caja"><i
+                            class="fas fa-cash-register me-2" aria-hidden="true"></i> Cierre de Caja</a>
+                    <a class="nav-link" href="{{ url_for('opening_balance') }}" aria-label="Ir a Apertura de Caja"><i
+                            class="fas fa-money-bill-wave me-2" aria-hidden="true"></i> Apertura de Caja</a>
+                    <a class="nav-link" href="{{ url_for('historial_devoluciones') }}"
+                        aria-label="Ver Historial de Devoluciones"><i class="fas fa-undo-alt me-2"
+                            aria-hidden="true"></i> Devoluciones</a>
+                    <a class="nav-link active" href="{{ url_for('historial_facturacion') }}"
+                        aria-label="Ver Historial de Facturación"><i class="fas fa-file-invoice me-2"
+                            aria-hidden="true"></i> Historial Facturación</a>
+                    <hr>
+                    <a class="nav-link" href="{{ url_for('logout') }}" aria-label="Cerrar Sesión"><i
+                            class="fas fa-sign-out-alt me-2" aria-hidden="true"></i> Salir</a>
+                </nav>
+            </div>
+
+            <!-- CONTENIDO PRINCIPAL -->
+            <div class="col-md-10 p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+                    <h1 class="fs-2"><i class="fas fa-file-invoice" aria-hidden="true"></i> Historial de Facturación
+                    </h1>
+                    <div class="no-print">
+                        <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                        <strong id="fechaActual" aria-live="polite"></strong>
+                    </div>
+                </div>
+
+                <!-- TARJETAS DE RESUMEN -->
+                <div class="row mb-3">
+                    <div class="col-md-4 col-sm-6 mb-2">
+                        <div class="summary-card">
+                            <i class="fas fa-receipt fa-2x" aria-hidden="true"></i>
+                            <p>TOTAL FACTURAS</p>
+                            <h3 id="totalFacturas" aria-live="polite">0</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-6 mb-2">
+                        <div class="summary-card">
+                            <i class="fas fa-dollar-sign fa-2x" aria-hidden="true"></i>
+                            <p>TOTAL VENDIDO USD</p>
+                            <h3 id="totalUSD" aria-live="polite">$0.00</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-6 mb-2">
+                        <div class="summary-card">
+                            <i class="fas fa-money-bill fa-2x" aria-hidden="true"></i>
+                            <p>TOTAL VENDIDO Bs</p>
+                            <h3 id="totalBS" aria-live="polite">Bs. 0,00</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FILTROS -->
+                <div class="filtros no-print">
+                    <div class="row align-items-end">
+                        <div class="col-md-3 mb-2">
+                            <label for="searchInput"><i class="fas fa-search" aria-hidden="true"></i> Buscar:</label>
+                            <input type="text" id="searchInput" class="form-control" placeholder="Factura, cliente..."
+                                aria-label="Buscar facturas">
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label for="fechaDesde"><i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                                Desde:</label>
+                            <input type="date" id="fechaDesde" class="form-control" aria-label="Fecha desde">
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label for="fechaHasta"><i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                                Hasta:</label>
+                            <input type="date" id="fechaHasta" class="form-control" aria-label="Fecha hasta">
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label>&nbsp;</label>
+                            <div class="d-flex gap-2">
+                                <button class="btn-buscar w-100" onclick="filtrarTabla()"
+                                    aria-label="Filtrar facturas por criterios">
+                                    <i class="fas fa-filter" aria-hidden="true"></i> Filtrar
+                                </button>
+                                <button class="btn-limpiar" onclick="limpiarFiltros()"
+                                    aria-label="Limpiar todos los filtros">
+                                    <i class="fas fa-eraser" aria-hidden="true"></i> Limpiar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TABLA DE FACTURAS -->
+                <div class="table-responsive">
+                    <table class="table table-custom" aria-label="Tabla de facturas">
+                        <thead>
+                            <tr>
+                                <th scope="col">N° Factura</th>
+                                <th scope="col">Fecha</th>
+                                <th scope="col">Cliente</th>
+                                <th scope="col">Subtotal</th>
+                                <th scope="col">IVA</th>
+                                <th scope="col">Total USD</th>
+                                <th scope="col">Total Bs</th>
+                                <th scope="col">Método de Pago</th>
+                                <th scope="col" class="no-print">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaFacturas">
+                            <!-- Las filas se generarán con JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ========== CARGA DE TEMA GUARDADO Y CONFIGURACIÓN DE FUENTE ==========
+        document.addEventListener('DOMContentLoaded', function () {
+            // ---- Temas pastel ----
+            function applyTheme(themeClass) {
+                document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                if (themeClass) {
+                    document.body.classList.add(themeClass);
+                }
+                localStorage.setItem('selectedTheme', themeClass || '');
+            }
+
+            const savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            }
+
+            // ---- Fondo de pantalla ----
+            const savedBg = localStorage.getItem('backgroundMode');
+            if (savedBg === 'black') {
+                document.body.style.background = '#000000';
+            } else if (savedBg === 'white') {
+                document.body.style.background = '#FFFFFF';
+            } else {
+                document.body.style.background = 'var(--renaven-gris-fondo)';
+            }
+
+            // ---- Tamaño de fuente (base 13px) ----
+            let currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            function applyFontSize() {
+                document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+            applyFontSize();
+        });
+
+        // ========================================================================
+        // FUNCIONALIDAD DE LA PÁGINA (SIN CAMBIOS EN LA LÓGICA)
+        // ========================================================================
+
+        let salesData = [];
+
+        function imprimirFactura(numero) {
+            window.open('/imprimir_factura/' + numero, '_blank');
+        }
+
+        async function cargarFacturas() {
+            try {
+                const response = await fetch('/api/facturas');
+                const data = await response.json();
+                if (Array.isArray(data) && !data.error) {
+                    salesData = data;
+                    console.log('Facturas cargadas:', salesData.length);
+                    renderizarTabla();
+                    actualizarTotales();
+                } else {
+                    console.error('Error:', data.error);
+                    mostrarMensajeVacio();
+                }
+            } catch (error) {
+                console.error('Error al cargar facturas:', error);
+                mostrarMensajeVacio();
+            }
+        }
+
+        function renderizarTabla() {
+            const tbody = document.getElementById('tablaFacturas');
+            if (!tbody) return;
+
+            if (!salesData || salesData.length === 0) {
+                mostrarMensajeVacio();
+                return;
+            }
+
+            let html = '';
+            for (const sale of salesData) {
+                const fecha = sale.date ? sale.date.slice(0, 10) : '-';
+                const hora = sale.date && sale.date.length > 10 ? sale.date.slice(11, 16) : '';
+                const invoiceNum = String(sale.invoice_number).padStart(4, '0');
+
+                const subtotal = Number(sale.subtotal) || 0;
+                const tax = Number(sale.tax) || 0;
+                const total_usd = Number(sale.total_usd) || 0;
+                const total_bs = Number(sale.total_bs) || 0;
+                const clientName = sale.client_name || 'Cliente General';
+                const clientId = sale.client_id || 'N/A';
+                const paymentMethod = sale.payment_method || 'Efectivo USD';
+
+                html += `
+                    <tr data-fecha="${fecha}" data-cliente="${clientName}" data-factura="${sale.invoice_number}">
+                        <td class="text-center"><span class="badge-venta" aria-label="Factura número ${invoiceNum}">N° ${invoiceNum}</span></td>
+                        <td class="text-center">
+                            ${fecha}<br>
+                            <small>${hora}</small>
+                        </td>
+                        <td class="text-start">
+                            <strong>${clientName}</strong><br>
+                            <small>C.I: ${clientId}</small>
+                        </td>
+                        <td class="text-end" aria-label="Subtotal: $${formatNumberUSD(subtotal)}">$ ${formatNumberUSD(subtotal)}</td>
+                        <td class="text-end" aria-label="IVA: $${formatNumberUSD(tax)}">$ ${formatNumberUSD(tax)}</td>
+                        <td class="text-end" aria-label="Total en dólares: $${formatNumberUSD(total_usd)}">$ ${formatNumberUSD(total_usd)}</td>
+                        <td class="text-end" aria-label="Total en bolívares: Bs. ${formatNumberVenezuela(total_bs)}">Bs. ${formatNumberVenezuela(total_bs)}</td>
+                        <td class="text-center">
+                            <span class="badge-metodo" aria-label="Método de pago: ${paymentMethod}">${paymentMethod}</span>
+                        </td>
+                        <td class="text-center no-print">
+                            <button class="btn-ver" onclick="verDetalleFactura(${sale.invoice_number})" aria-label="Ver detalle de factura N° ${invoiceNum}">
+                                <i class="fas fa-eye" aria-hidden="true"></i> Ver
+                            </button>
+                            <button class="btn-imprimir" onclick="imprimirFactura(${sale.invoice_number})" aria-label="Imprimir factura N° ${invoiceNum}">
+                                <i class="fas fa-print" aria-hidden="true"></i> Imprimir
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
+            tbody.innerHTML = html;
+        }
+
+        function mostrarMensajeVacio() {
+            const tbody = document.getElementById('tablaFacturas');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr id="sinRegistros">
+                        <td colspan="9" class="sin-resultados">
+                            <i class="fas fa-inbox fa-3x" aria-hidden="true"></i>
+                            <p class="mt-2">No hay facturas registradas</p>
+                            <small>Las facturas aparecerán aquí después de realizar ventas</small>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function formatNumberVenezuela(numero) {
+            if (isNaN(numero) || numero === null || numero === undefined) return '0,00';
+            let partes = Number(numero).toFixed(2).split('.');
+            let entero = parseInt(partes[0]);
+            let decimal = partes[1];
+            let enteroFormateado = entero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            return `${enteroFormateado},${decimal}`;
+        }
+
+        function formatNumberUSD(numero) {
+            if (isNaN(numero) || numero === null || numero === undefined) return '0.00';
+            let partes = Number(numero).toFixed(2).split('.');
+            let entero = parseInt(partes[0]);
+            let decimal = partes[1];
+            let enteroFormateado = entero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            return `${enteroFormateado}.${decimal}`;
+        }
+
+        function actualizarTotales() {
+            let totalFacturas = salesData.length;
+            let totalUSD = 0;
+            let totalBS = 0;
+
+            for (const sale of salesData) {
+                totalUSD += Number(sale.total_usd) || 0;
+                totalBS += Number(sale.total_bs) || 0;
+            }
+
+            document.getElementById('totalFacturas').innerText = totalFacturas;
+            document.getElementById('totalUSD').innerHTML = `$${formatNumberUSD(totalUSD)}`;
+            document.getElementById('totalBS').innerHTML = `Bs. ${formatNumberVenezuela(totalBS)}`;
+        }
+
+        function filtrarTabla() {
+            let search = document.getElementById('searchInput').value.toLowerCase();
+            let fechaDesde = document.getElementById('fechaDesde').value;
+            let fechaHasta = document.getElementById('fechaHasta').value;
+
+            let filas = document.querySelectorAll('#tablaFacturas tr[data-fecha]');
+            let visibles = 0;
+
+            filas.forEach(fila => {
+                let fecha = fila.getAttribute('data-fecha') || '';
+                let cliente = (fila.getAttribute('data-cliente') || '').toLowerCase();
+                let factura = (fila.getAttribute('data-factura') || '').toString();
+
+                let coincideSearch = search === '' || cliente.includes(search) || factura.includes(search);
+                let coincideFecha = true;
+                if (fechaDesde && fecha) coincideFecha = coincideFecha && fecha >= fechaDesde;
+                if (fechaHasta && fecha) coincideFecha = coincideFecha && fecha <= fechaHasta;
+
+                if (coincideSearch && coincideFecha) {
+                    fila.style.display = '';
+                    visibles++;
+                } else {
+                    fila.style.display = 'none';
+                }
+            });
+
+            let mensajeNoResultados = document.getElementById('mensajeNoResultados');
+            if (visibles === 0 && filas.length > 0 && !mensajeNoResultados) {
+                let tbody = document.getElementById('tablaFacturas');
+                let tr = document.createElement('tr');
+                tr.id = 'mensajeNoResultados';
+                tr.innerHTML = '<td colspan="9" class="sin-resultados"><i class="fas fa-search fa-3x" aria-hidden="true"></i><p class="mt-2">No se encontraron facturas con los filtros aplicados</p></td>';
+                tbody.appendChild(tr);
+            } else if (mensajeNoResultados && visibles > 0) {
+                mensajeNoResultados.remove();
+            }
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('fechaDesde').value = '';
+            document.getElementById('fechaHasta').value = '';
+            filtrarTabla();
+        }
+
+        function verDetalleFactura(invoiceNumber) {
+            let factura = salesData.find(s => s.invoice_number == invoiceNumber);
+            if (factura) {
+                let productosLista = '';
+                if (factura.items_list && factura.items_list.length > 0) {
+                    productosLista = factura.items_list.map(item =>
+                        `- ${item.name}: ${item.quantity} x $${item.price} = $${(item.quantity * item.price).toFixed(2)}`
+                    ).join('\n');
+                } else {
+                    productosLista = 'No hay productos detallados';
+                }
+                alert(`📄 FACTURA N° ${invoiceNumber}\n━━━━━━━━━━━━━━━━━━━━\n📅 Fecha: ${factura.date?.slice(0, 10) || 'N/A'}\n👤 Cliente: ${factura.client_name}\n🆔 C.I: ${factura.client_id || 'N/A'}\n━━━━━━━━━━━━━━━━━━━━\n📦 PRODUCTOS:\n${productosLista}\n━━━━━━━━━━━━━━━━━━━━\n💰 Subtotal: $${factura.subtotal}\n🧾 IVA (16%): $${factura.tax}\n💵 TOTAL USD: $${factura.total_usd}\n💴 TOTAL Bs: Bs. ${factura.total_bs}\n💳 Pago: ${factura.payment_method}`);
+            } else {
+                alert('❌ No se pudo cargar el detalle de la factura');
+            }
+        }
+
+        function mostrarFechaActual() {
+            let fecha = new Date();
+            let dia = String(fecha.getDate()).padStart(2, '0');
+            let mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            let anio = fecha.getFullYear();
+            let horas = String(fecha.getHours()).padStart(2, '0');
+            let minutos = String(fecha.getMinutes()).padStart(2, '0');
+            document.getElementById('fechaActual').innerText = `${dia}/${mes}/${anio} ${horas}:${minutos}`;
+        }
+
+        // Event listeners
+        document.getElementById('searchInput')?.addEventListener('keyup', function (e) {
+            if (e.key === 'Enter') filtrarTabla();
+        });
+        document.getElementById('fechaDesde')?.addEventListener('change', filtrarTabla);
+        document.getElementById('fechaHasta')?.addEventListener('change', filtrarTabla);
+
+        // Inicializar
+        mostrarFechaActual();
+        cargarFacturas();
+    </script>
+</body>
+
+</html>

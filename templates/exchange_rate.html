@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Tasa de Cambio - RENAVEN</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ========== PALETA PREDETERMINADA (ORIGINAL LOGIN) ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-gris-claro: #e2e8f0;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+            --shadow-color: rgba(132,182,244,0.2);
+            --transition-base: all 0.25s ease-in-out;
+        }
+
+        /* ========== TEMAS PASTEL INDIVIDUALES (SIN ALTO CONTRASTE) ========== */
+        /* 1. Rosa pastel */
+        body.theme-rosa {
+            --renaven-azul-fuerte: #fbc4d5;
+            --renaven-azul-cielo: #fce4ec;
+            --renaven-blanco: #fef9f0;
+            --renaven-gris-fondo: #fdf6f8;
+            --renaven-borde: #fbc4d5;
+        }
+        body.theme-rosa .sidebar { background: #fdd0b5; border-right-color: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link.active { background: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link:hover { background: #fce4ec; }
+        body.theme-rosa .card-header { background: #fbc4d5 !important; border-bottom-color: #fdd0b5 !important; }
+        body.theme-rosa .card-header.bg-info { background: #fce4ec !important; border-bottom-color: #fbc4d5 !important; }
+        body.theme-rosa .card { border-color: #fbc4d5 !important; }
+        body.theme-rosa .btn-primary { background: #fbc4d5 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-rosa .btn-primary:hover { background: #fdd0b5 !important; }
+        body.theme-rosa .badge-change { background: #fce4ec !important; border-color: #fbc4d5 !important; color: #000 !important; }
+        body.theme-rosa .table-dark { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+        body.theme-rosa .table-dark th { border-color: #fbc4d5 !important; }
+        body.theme-rosa .form-control:focus { border-color: #fbc4d5; box-shadow: 0 0 0 0.2rem rgba(251,196,213,0.4); }
+        body.theme-rosa .alert { border-color: #fbc4d5 !important; }
+        body.theme-rosa .sidebar-logo { border-color: #fbc4d5 !important; }
+        body.theme-rosa .logo-circle { border-color: #fbc4d5 !important; }
+
+        /* 2. Celeste pastel */
+        body.theme-celeste {
+            --renaven-azul-fuerte: #b5d8eb;
+            --renaven-azul-cielo: #d6ecf5;
+            --renaven-blanco: #f9fdff;
+            --renaven-gris-fondo: #f4faff;
+            --renaven-borde: #b5d8eb;
+        }
+        body.theme-celeste .sidebar { background: #a8d0e6; border-right-color: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link.active { background: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link:hover { background: #d6ecf5; }
+        body.theme-celeste .card-header { background: #b5d8eb !important; border-bottom-color: #a8d0e6 !important; }
+        body.theme-celeste .card-header.bg-info { background: #d6ecf5 !important; border-bottom-color: #b5d8eb !important; }
+        body.theme-celeste .card { border-color: #b5d8eb !important; }
+        body.theme-celeste .btn-primary { background: #b5d8eb !important; border-color: #a8d0e6 !important; color: #000 !important; }
+        body.theme-celeste .btn-primary:hover { background: #a8d0e6 !important; }
+        body.theme-celeste .badge-change { background: #d6ecf5 !important; border-color: #b5d8eb !important; color: #000 !important; }
+        body.theme-celeste .table-dark { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+        body.theme-celeste .table-dark th { border-color: #b5d8eb !important; }
+        body.theme-celeste .form-control:focus { border-color: #b5d8eb; box-shadow: 0 0 0 0.2rem rgba(181,216,235,0.4); }
+        body.theme-celeste .alert { border-color: #b5d8eb !important; }
+        body.theme-celeste .sidebar-logo { border-color: #b5d8eb !important; }
+        body.theme-celeste .logo-circle { border-color: #b5d8eb !important; }
+
+        /* 3. Menta pastel */
+        body.theme-menta {
+            --renaven-azul-fuerte: #b5e6c3;
+            --renaven-azul-cielo: #d8f0e0;
+            --renaven-blanco: #f6fcf8;
+            --renaven-gris-fondo: #f2faf5;
+            --renaven-borde: #b5e6c3;
+        }
+        body.theme-menta .sidebar { background: #a8dbb8; border-right-color: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link.active { background: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link:hover { background: #d8f0e0; }
+        body.theme-menta .card-header { background: #b5e6c3 !important; border-bottom-color: #a8dbb8 !important; }
+        body.theme-menta .card-header.bg-info { background: #d8f0e0 !important; border-bottom-color: #b5e6c3 !important; }
+        body.theme-menta .card { border-color: #b5e6c3 !important; }
+        body.theme-menta .btn-primary { background: #b5e6c3 !important; border-color: #a8dbb8 !important; color: #000 !important; }
+        body.theme-menta .btn-primary:hover { background: #a8dbb8 !important; }
+        body.theme-menta .badge-change { background: #d8f0e0 !important; border-color: #b5e6c3 !important; color: #000 !important; }
+        body.theme-menta .table-dark { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+        body.theme-menta .table-dark th { border-color: #b5e6c3 !important; }
+        body.theme-menta .form-control:focus { border-color: #b5e6c3; box-shadow: 0 0 0 0.2rem rgba(181,230,195,0.4); }
+        body.theme-menta .alert { border-color: #b5e6c3 !important; }
+        body.theme-menta .sidebar-logo { border-color: #b5e6c3 !important; }
+        body.theme-menta .logo-circle { border-color: #b5e6c3 !important; }
+
+        /* 4. Amarillo pastel */
+        body.theme-amarillo {
+            --renaven-azul-fuerte: #f9e7b2;
+            --renaven-azul-cielo: #fdf3d5;
+            --renaven-blanco: #fffef9;
+            --renaven-gris-fondo: #fefcf5;
+            --renaven-borde: #f9e7b2;
+        }
+        body.theme-amarillo .sidebar { background: #f5dc9a; border-right-color: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link.active { background: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link:hover { background: #fdf3d5; }
+        body.theme-amarillo .card-header { background: #f9e7b2 !important; border-bottom-color: #f5dc9a !important; }
+        body.theme-amarillo .card-header.bg-info { background: #fdf3d5 !important; border-bottom-color: #f9e7b2 !important; }
+        body.theme-amarillo .card { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .btn-primary { background: #f9e7b2 !important; border-color: #f5dc9a !important; color: #000 !important; }
+        body.theme-amarillo .btn-primary:hover { background: #f5dc9a !important; }
+        body.theme-amarillo .badge-change { background: #fdf3d5 !important; border-color: #f9e7b2 !important; color: #000 !important; }
+        body.theme-amarillo .table-dark { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+        body.theme-amarillo .table-dark th { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .form-control:focus { border-color: #f9e7b2; box-shadow: 0 0 0 0.2rem rgba(249,231,178,0.4); }
+        body.theme-amarillo .alert { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .sidebar-logo { border-color: #f9e7b2 !important; }
+        body.theme-amarillo .logo-circle { border-color: #f9e7b2 !important; }
+
+        /* 5. Lila pastel */
+        body.theme-lila {
+            --renaven-azul-fuerte: #d4c4f0;
+            --renaven-azul-cielo: #e8defa;
+            --renaven-blanco: #fcfaff;
+            --renaven-gris-fondo: #f8f5fe;
+            --renaven-borde: #d4c4f0;
+        }
+        body.theme-lila .sidebar { background: #c9b7e8; border-right-color: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link.active { background: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link:hover { background: #e8defa; }
+        body.theme-lila .card-header { background: #d4c4f0 !important; border-bottom-color: #c9b7e8 !important; }
+        body.theme-lila .card-header.bg-info { background: #e8defa !important; border-bottom-color: #d4c4f0 !important; }
+        body.theme-lila .card { border-color: #d4c4f0 !important; }
+        body.theme-lila .btn-primary { background: #d4c4f0 !important; border-color: #c9b7e8 !important; color: #000 !important; }
+        body.theme-lila .btn-primary:hover { background: #c9b7e8 !important; }
+        body.theme-lila .badge-change { background: #e8defa !important; border-color: #d4c4f0 !important; color: #000 !important; }
+        body.theme-lila .table-dark { background: #e8defa !important; border-color: #d4c4f0 !important; }
+        body.theme-lila .table-dark th { border-color: #d4c4f0 !important; }
+        body.theme-lila .form-control:focus { border-color: #d4c4f0; box-shadow: 0 0 0 0.2rem rgba(212,196,240,0.4); }
+        body.theme-lila .alert { border-color: #d4c4f0 !important; }
+        body.theme-lila .sidebar-logo { border-color: #d4c4f0 !important; }
+        body.theme-lila .logo-circle { border-color: #d4c4f0 !important; }
+
+        /* 6. Durazno pastel */
+        body.theme-durazno {
+            --renaven-azul-fuerte: #fdd0b5;
+            --renaven-azul-cielo: #fee5d0;
+            --renaven-blanco: #fffcf9;
+            --renaven-gris-fondo: #fef8f3;
+            --renaven-borde: #fdd0b5;
+        }
+        body.theme-durazno .sidebar { background: #f5c2a4; border-right-color: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link.active { background: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link:hover { background: #fee5d0; }
+        body.theme-durazno .card-header { background: #fdd0b5 !important; border-bottom-color: #f5c2a4 !important; }
+        body.theme-durazno .card-header.bg-info { background: #fee5d0 !important; border-bottom-color: #fdd0b5 !important; }
+        body.theme-durazno .card { border-color: #fdd0b5 !important; }
+        body.theme-durazno .btn-primary { background: #fdd0b5 !important; border-color: #f5c2a4 !important; color: #000 !important; }
+        body.theme-durazno .btn-primary:hover { background: #f5c2a4 !important; }
+        body.theme-durazno .badge-change { background: #fee5d0 !important; border-color: #fdd0b5 !important; color: #000 !important; }
+        body.theme-durazno .table-dark { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+        body.theme-durazno .table-dark th { border-color: #fdd0b5 !important; }
+        body.theme-durazno .form-control:focus { border-color: #fdd0b5; box-shadow: 0 0 0 0.2rem rgba(253,208,181,0.4); }
+        body.theme-durazno .alert { border-color: #fdd0b5 !important; }
+        body.theme-durazno .sidebar-logo { border-color: #fdd0b5 !important; }
+        body.theme-durazno .logo-circle { border-color: #fdd0b5 !important; }
+
+        /* ========== TODAS LAS LETRAS EN NEGRITA (excepto iconos) ========== */
+        *:not([class*="fa-"]) {
+            font-weight: bold !important;
+        }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+            font-weight: 400 !important;
+        }
+        .fas, .fa-solid {
+            font-weight: 900 !important;
+        }
+
+        /* ========== FONDO Y CUERPO ========== */
+        body {
+            background: var(--renaven-gris-fondo);
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            color: var(--renaven-texto);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* ========== NAVEGACIÓN POR TECLADO ========== */
+        *:focus {
+            outline: 3px solid #FFD700 !important;
+            outline-offset: 2px !important;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--renaven-azul-fuerte);
+            color: #000;
+            padding: 8px 16px;
+            z-index: 1000;
+            text-decoration: none;
+            border-radius: 0 0 8px 0;
+            font-weight: bold;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* ===== FORZAR TODOS LOS TEXTOS A NEGRO ===== */
+        body, p, span, div, h1, h2, h3, h4, h5, h6,
+        .sidebar .nav-link, .sidebar h5, .sidebar small,
+        .card, .card-body, .card-header, .form-control,
+        label, .text-muted, .alert, ul li, .small,
+        .table, .table td, .table th, .btn, .badge-change,
+        .logo-circle, .sidebar-logo, .title-with-logo {
+            color: var(--renaven-texto) !important;
+        }
+
+        ::placeholder, input::placeholder, textarea::placeholder {
+            color: #9ca3af !important;
+            opacity: 1;
+        }
+
+        /* ========== LOGO CIRCULAR ========== */
+        .logo-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--renaven-borde);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease, border-color 0.3s;
+            background: var(--renaven-blanco);
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .logo-circle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background: var(--renaven-azul-fuerte);
+            border-right: 2px solid var(--renaven-azul-cielo);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .sidebar .nav-link {
+            margin: 5px 0;
+            border-radius: 50px;
+            transition: all 0.3s;
+            padding: 10px 15px;
+            color: #000 !important;
+        }
+        .sidebar .nav-link i {
+            color: #000 !important;
+        }
+        .sidebar .nav-link:hover {
+            background: var(--renaven-azul-cielo);
+            transform: translateX(8px);
+            color: #000 !important;
+        }
+        .sidebar .nav-link:hover i {
+            color: #000 !important;
+        }
+        .sidebar .nav-link.active {
+            background: var(--renaven-azul-cielo);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            border: 1px solid var(--renaven-borde);
+            color: #000 !important;
+        }
+        .sidebar .nav-link.active i {
+            color: #000 !important;
+        }
+        .sidebar h5 {
+            color: #000 !important;
+            margin-top: 2px;
+        }
+        .sidebar small {
+            color: #000 !important;
+        }
+
+        .sidebar-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 10px;
+            border: 3px solid var(--renaven-azul-cielo);
+            background: var(--renaven-blanco);
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            transition: border-color 0.3s;
+        }
+
+        .card {
+            border-radius: 20px !important;
+            overflow: hidden;
+            border: 2px solid var(--renaven-borde) !important;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            background: var(--renaven-blanco);
+            transition: border-color 0.3s, background 0.3s;
+        }
+
+        .card-header {
+            background: var(--renaven-azul-cielo) !important;
+            border: none;
+            border-bottom: 2px solid var(--renaven-borde) !important;
+            padding: 15px 20px;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .card-header h4 {
+            margin: 0;
+            font-weight: bold;
+        }
+
+        .card-header i {
+            margin-right: 8px;
+        }
+
+        .card-header.bg-info {
+            background: var(--renaven-azul-cielo) !important;
+        }
+
+        .card-body {
+            background: var(--renaven-blanco);
+            padding: 25px;
+            transition: background 0.3s;
+        }
+
+        .form-control {
+            border-radius: 50px !important;
+            border: 2px solid var(--renaven-borde) !important;
+            padding: 10px 18px;
+            transition: all 0.3s ease;
+            background: var(--renaven-blanco);
+            color: #000 !important;
+        }
+
+        .form-control:focus {
+            border-color: var(--renaven-azul-fuerte);
+            box-shadow: 0 0 0 0.2rem rgba(132,182,244,0.25);
+            outline: none;
+        }
+
+        .form-control::placeholder {
+            opacity: 0.5;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #000 !important;
+        }
+
+        label i {
+            color: var(--renaven-azul-fuerte);
+            margin-right: 8px;
+        }
+
+        .text-muted {
+            opacity: 0.7;
+            color: #000 !important;
+        }
+
+        .btn-primary {
+            background: var(--renaven-azul-fuerte) !important;
+            border: 2px solid var(--renaven-borde) !important;
+            border-radius: 50px !important;
+            padding: 12px !important;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            color: #000 !important;
+        }
+
+        .btn-primary:hover {
+            background: var(--renaven-azul-cielo) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            color: #000 !important;
+        }
+
+        .alert {
+            border-radius: 20px;
+            border: 2px solid var(--renaven-borde) !important;
+            background: var(--renaven-blanco);
+            border-left: 5px solid;
+            transition: border-color 0.3s, background 0.3s;
+        }
+
+        .alert-success {
+            border-left-color: #28a745;
+        }
+
+        .alert-danger {
+            border-left-color: #DC3545;
+        }
+
+        .alert-info {
+            border-left-color: var(--renaven-azul-cielo);
+        }
+
+        .table {
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--renaven-borde);
+            margin-bottom: 0;
+            transition: border-color 0.3s;
+        }
+
+        .table-dark {
+            background: var(--renaven-azul-fuerte) !important;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .table-dark th {
+            background: transparent;
+            padding: 12px;
+            font-weight: 600;
+            border-bottom: 2px solid var(--renaven-borde);
+            color: #000 !important;
+        }
+
+        .table td, .table th {
+            border-color: var(--renaven-borde) !important;
+            vertical-align: middle;
+        }
+
+        .table tbody tr:hover {
+            background-color: var(--renaven-gris-fondo);
+        }
+
+        .badge-change {
+            background: var(--renaven-azul-cielo);
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            border: 1px solid var(--renaven-borde);
+            display: inline-block;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        h2 {
+            font-weight: bold;
+        }
+
+        h2 i {
+            color: var(--renaven-azul-fuerte);
+        }
+
+        hr {
+            border-top: 2px solid var(--renaven-borde);
+            margin-bottom: 25px;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        ul li {
+            margin-bottom: 8px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--renaven-gris-fondo);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--renaven-azul-cielo);
+            border-radius: 10px;
+            border: 1px solid var(--renaven-borde);
+        }
+
+        .title-with-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .table-responsive {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 768px) {
+            .title-with-logo {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== SKIP LINK ========== -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <div class="container-fluid" id="main-content" role="main">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 p-0 sidebar no-print">
+                <div class="text-center py-4">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN - Sistema de Facturación" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/80x80?text=R'">
+                    <h5 class="mt-2">RENAVEN</h5>
+                    <small>{{ session.get('role', 'Usuario') }}</small>
+                </div>
+                <nav class="nav flex-column px-3" aria-label="Menú principal">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}" aria-label="Ir al Dashboard"><i class="fas fa-tachometer-alt me-2" aria-hidden="true"></i> Dashboard</a>
+                    <a class="nav-link" href="{{ url_for('facturacion') }}" aria-label="Ir a Facturación"><i class="fas fa-shopping-cart me-2" aria-hidden="true"></i> Facturación</a>
+                    <a class="nav-link" href="{{ url_for('inventory') }}" aria-label="Ir a Inventario"><i class="fas fa-boxes me-2" aria-hidden="true"></i> Inventario</a>
+                    <a class="nav-link active" href="{{ url_for('exchange_rate') }}" aria-label="Configurar Tasa de Cambio (página actual)"><i class="fas fa-dollar-sign me-2" aria-hidden="true"></i> Tasa de Cambio</a>
+                    <hr>
+                    <a class="nav-link text-danger" href="{{ url_for('logout') }}" aria-label="Cerrar Sesión"><i class="fas fa-sign-out-alt me-2" aria-hidden="true"></i> Salir</a>
+                </nav>
+            </div>
+
+            <div class="col-md-10 p-4">
+                <div class="title-with-logo">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="logo-circle">
+                    <h1 class="fs-2"><i class="fas fa-dollar-sign" aria-hidden="true"></i> Configuración de Tasas</h1>
+                </div>
+                <hr>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}info-circle{% endif %} me-2" aria-hidden="true"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar mensaje"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="h4"><i class="fas fa-chart-line" aria-hidden="true"></i> Configuración Actual</h2>
+                            </div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ url_for('update_exchange_rate') }}" aria-label="Formulario de configuración de tasas">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <div class="mb-3">
+                                        <label for="exchange_rate"><i class="fas fa-exchange-alt" aria-hidden="true"></i> Tasa de Cambio (USD a Bs)</label>
+                                        <input type="number" step="0.01" name="exchange_rate" id="exchange_rate" class="form-control" value="{{ exchange_rate|default(40) }}" required aria-label="Tasa de cambio de dólar a bolívares">
+                                        <small class="text-muted">Valor actual: 1 USD = Bs. {{ exchange_rate|default(40)|format_bs }}</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="discount_percent"><i class="fas fa-percent" aria-hidden="true"></i> Descuento en Divisas (Efectivo USD / Zelle)</label>
+                                        <input type="number" step="0.01" name="discount_percent" id="discount_percent" class="form-control" value="{{ discount_percent|default(5) }}" required aria-label="Porcentaje de descuento para pagos en efectivo USD o Zelle">
+                                        <small class="text-muted">Descuento aplicado automáticamente a pagos en Efectivo USD o Zelle</small>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100" aria-label="Actualizar configuración de tasas">
+                                        <i class="fas fa-save" aria-hidden="true"></i> Actualizar Configuración
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-info">
+                                <h2 class="h4"><i class="fas fa-info-circle" aria-hidden="true"></i> Información Vigente</h2>
+                            </div>
+                            <div class="card-body">
+                                <p><strong><i class="fas fa-dollar-sign" style="color: var(--renaven-azul-fuerte);" aria-hidden="true"></i> Tasa actual:</strong> Bs. {{ exchange_rate|default(40)|format_bs }} por USD</p>
+                                <p><strong><i class="fas fa-percent" style="color: var(--renaven-azul-fuerte);" aria-hidden="true"></i> Descuento en divisa:</strong> {{ discount_percent|default(5)|format_number }}%</p>
+                                <p><strong><i class="fas fa-calculator" aria-hidden="true"></i> Equivalencias:</strong></p>
+                                <ul aria-label="Equivalencias de tasa de cambio">
+                                    <li>1 USD = Bs. {{ exchange_rate|default(40)|format_bs }}</li>
+                                    <li>$10 USD = Bs. {{ (10 * exchange_rate|default(40))|format_bs }}</li>
+                                    <li>$50 USD = Bs. {{ (50 * exchange_rate|default(40))|format_bs }}</li>
+                                    <li>$100 USD = Bs. {{ (100 * exchange_rate|default(40))|format_bs }}</li>
+                                </ul>
+                                <hr>
+                                <p><small class="text-muted"><i class="fas fa-info-circle" aria-hidden="true"></i> El descuento en divisa se aplica automáticamente en facturación cuando el cliente paga en Efectivo USD o Zelle.</small></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de historial de cambios de tasa -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h2 class="h4"><i class="fas fa-history" aria-hidden="true"></i> Historial de Cambios</h2>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if rate_history and rate_history|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped mb-0" aria-label="Historial de cambios de tasa de cambio">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th scope="col"><i class="fas fa-calendar-alt" aria-hidden="true"></i> Fecha y Hora</th>
+                                        <th scope="col"><i class="fas fa-dollar-sign" aria-hidden="true"></i> Tasa Anterior</th>
+                                        <th scope="col"><i class="fas fa-arrow-right" aria-hidden="true"></i> Tasa Nueva</th>
+                                        <th scope="col"><i class="fas fa-percent" aria-hidden="true"></i> Descuento</th>
+                                        <th scope="col"><i class="fas fa-user" aria-hidden="true"></i> Modificado por</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for registro in rate_history %}
+                                    <tr>
+                                        <td><i class="fas fa-clock me-1" aria-hidden="true"></i> {{ registro.fecha }}</td>
+                                        <td>Bs. {{ registro.tasa_anterior|default(0)|format_bs }}</td>
+                                        <td>
+                                            <span class="badge-change" aria-label="Nueva tasa: Bs. {{ registro.tasa_nueva|default(0)|format_bs }}">
+                                                <i class="fas fa-exchange-alt me-1" aria-hidden="true"></i> Bs. {{ registro.tasa_nueva|default(0)|format_bs }}
+                                            </span>
+                                        </td>
+                                        <td>{{ registro.descuento|default(0)|format_number }}%</td>
+                                        <td><i class="fas fa-user-circle me-1" aria-hidden="true"></i> {{ registro.usuario|default('Sistema') }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-line fa-3x mb-2" style="color: #ccc;" aria-hidden="true"></i>
+                            <p class="mb-0">No hay registros de cambios de tasa aún</p>
+                            <small class="text-muted">Los cambios se registrarán automáticamente aquí</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== CARGA DE TEMA GUARDADO Y CONFIGURACIÓN DE FUENTE ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            // ---- Temas pastel ----
+            function applyTheme(themeClass) {
+                document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+                if (themeClass) {
+                    document.body.classList.add(themeClass);
+                }
+                localStorage.setItem('selectedTheme', themeClass || '');
+            }
+
+            const savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            }
+
+            // ---- Tamaño de fuente (base 13px) ----
+            let currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            function applyFontSize() {
+                document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+            applyFontSize();
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
