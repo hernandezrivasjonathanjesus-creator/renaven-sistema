@@ -85,22 +85,19 @@ if sys.platform == 'win32':
 
 # ==================== RUTAS PARA .EXE (PYINSTALLER) ====================
 def resource_path(relative_path):
-    """Ruta válida en desarrollo y dentro del .exe de PyInstaller."""
     try:
-        base = sys._MEIPASS  # carpeta temporal donde PyInstaller extrae los datas
+        base = sys._MEIPASS
     except AttributeError:
         base = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base, relative_path)
 
 if getattr(sys, 'frozen', False):
-    # Estamos dentro del .exe
-    base_dir    = os.path.dirname(sys.executable)   # junto al .exe (persistente)
-    bundle_dir  = sys._MEIPASS                       # dentro del .exe (temporal)
+    base_dir    = os.path.dirname(sys.executable)
+    bundle_dir  = sys._MEIPASS
 else:
     base_dir    = os.path.dirname(os.path.abspath(__file__))
     bundle_dir  = base_dir
 
-# Log en carpeta persistente (junto al .exe en modo frozen)
 log_path_file = os.path.join(base_dir, 'renaven.log')
 json_formatter = JsonFormatter()
 try:
@@ -110,7 +107,6 @@ try:
 except Exception:
     logger_handlers = []
 
-# En modo .exe (console=False), sys.stdout puede ser None
 if sys.stdout is not None:
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(json_formatter)
@@ -123,10 +119,6 @@ logger.setLevel(logging.INFO)
 
 template_folder = resource_path('templates')
 static_folder   = resource_path('static')
-
-# MySQL: motor dentro del bundle, datos persistentes junto al .exe
-MYSQL_DIR      = os.path.join(bundle_dir, 'mysql_server')
-MYSQL_DATA_DIR = os.path.join(base_dir, 'mysql_data')
 
 app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
 app.secret_key = 'renaven-super-secret-key-2024'
@@ -150,7 +142,7 @@ def caja_context():
 # ==================== COMPRESIÓN GZIP ====================
 Compress(app)
 
-# ==================== CONFIGURACIÓN DE MYSQL ====================
+# ==================== CONFIGURACIÓN DE POSTGRESQL ====================
 DB_CONFIG = {
     'host': 'dpg-db44593l550s73agfcjg-a',
     'port': 5432,
@@ -179,16 +171,35 @@ def init_connection_pool():
 
 
 def _mysql_to_pg(query):
-    """Convierte sintaxis MySQL a PostgreSQL."""
+    """Convierte sintaxis MySQL a PostgreSQL (version completa)."""
     query = query.replace('`', '')
+
+    # SHOW TABLES
     if re.match(r'^\s*SHOW\s+TABLES\s*$', query, re.IGNORECASE):
         return "SELECT tablename AS \"Tables_in_db\" FROM pg_tables WHERE schemaname = 'public'"
+
+    # SHOW COLUMNS FROM table LIKE 'col'
     m = re.match(r'^\s*SHOW\s+COLUMNS\s+FROM\s+(\w+)(?:\s+LIKE\s+\'([^\']+)\')?\s*$', query, re.IGNORECASE)
     if m:
-        table = m.group(1); col = m.group(2)
+        table = m.group(1)
+        col = m.group(2)
         if col:
             return "SELECT column_name AS \"Field\" FROM information_schema.columns WHERE table_name = '" + table + "' AND column_name = '" + col + "'"
         return "SELECT column_name AS \"Field\" FROM information_schema.columns WHERE table_name = '" + table + "'"
+
+    # CREATE TABLE: eliminar lineas INDEX, KEY, UNIQUE KEY, FULLTEXT, SPATIAL
+    if re.match(r'^\s*CREATE\s+TABLE', query, re.IGNORECASE):
+        lineas = query.split('\n')
+        nuevas = []
+        for linea in lineas:
+            stripped = linea.strip().rstrip(',')
+            if re.match(r'^(INDEX|KEY|UNIQUE\s+KEY|FULLTEXT|SPATIAL)\s', stripped, re.IGNORECASE):
+                continue
+            nuevas.append(linea)
+        query = '\n'.join(nuevas)
+        query = re.sub(r',(\s*\))', r'\1', query)
+
+    # Tipos MySQL -> PostgreSQL
     query = re.sub(r'\bINT\s+PRIMARY\s+KEY\s+AUTO_INCREMENT\b', 'SERIAL PRIMARY KEY', query, flags=re.IGNORECASE)
     query = re.sub(r'\bAUTO_INCREMENT\b', '', query, flags=re.IGNORECASE)
     query = re.sub(r'\bTINYINT\b', 'SMALLINT', query, flags=re.IGNORECASE)
@@ -196,12 +207,19 @@ def _mysql_to_pg(query):
     query = re.sub(r'\bENGINE\s*=\s*\w+', '', query, flags=re.IGNORECASE)
     query = re.sub(r'\bDEFAULT\s+CHARSET\s*=\s*\w+', '', query, flags=re.IGNORECASE)
     query = re.sub(r'\bCOLLATE\s*=\s*\w+', '', query, flags=re.IGNORECASE)
+    query = re.sub(r'\bON\s+UPDATE\s+CURRENT_TIMESTAMP\b', '', query, flags=re.IGNORECASE)
+    query = re.sub(r'\bDATETIME\b', 'TIMESTAMP', query, flags=re.IGNORECASE)
+
+    # INSERT IGNORE -> ON CONFLICT DO NOTHING
     if re.search(r'\bINSERT\s+IGNORE\b', query, re.IGNORECASE):
         query = re.sub(r'\bINSERT\s+IGNORE\b', 'INSERT', query, flags=re.IGNORECASE)
         if 'ON CONFLICT' not in query.upper():
             query = query.rstrip().rstrip(';') + ' ON CONFLICT DO NOTHING'
+
+    # ON DUPLICATE KEY UPDATE -> ON CONFLICT DO NOTHING
     if re.search(r'ON\s+DUPLICATE\s+KEY\s+UPDATE', query, re.IGNORECASE):
-        query = re.sub(r'ON\s+DUPLICATE\s+KEY\s+UPDATE\s+id\s*=\s*\d+', 'ON CONFLICT (id) DO NOTHING', query, flags=re.IGNORECASE)
+        query = re.sub(r'ON\s+DUPLICATE\s+KEY\s+UPDATE\s+\w+\s*=\s*[\w\d]+', 'ON CONFLICT DO NOTHING', query, flags=re.IGNORECASE)
+
     return query
 
 
@@ -590,7 +608,7 @@ def health_check():
         conn, cursor = get_db()
         cursor.execute("SELECT 1")
         cursor.close()
-        conn.close()
+        connection_pool.putconn(conn)
         db_status = "healthy"
     except Exception as e:
         logger.error(f"Health check DB error: {e}")
@@ -689,9 +707,9 @@ def registrar_movimiento_caja(tipo, monto_bs, monto_usd, concepto, referencia_ti
         except:
             execute_query("""
                 CREATE TABLE IF NOT EXISTS movimientos_caja (
-                    id INT PRIMARY KEY AUTO_INCREMENT,
-                    fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    tipo ENUM('ingreso', 'egreso') NOT NULL,
+                    id SERIAL PRIMARY KEY,
+                    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    tipo VARCHAR(20) NOT NULL,
                     monto_bs DECIMAL(10,2) NOT NULL,
                     monto_usd DECIMAL(10,2) NOT NULL,
                     concepto VARCHAR(255) NOT NULL,
@@ -700,11 +718,8 @@ def registrar_movimiento_caja(tipo, monto_bs, monto_usd, concepto, referencia_ti
                     metodo VARCHAR(50),
                     usuario VARCHAR(100),
                     nota TEXT,
-                    tasa_usd DECIMAL(10,4),
-                    INDEX idx_fecha (fecha),
-                    INDEX idx_tipo (tipo),
-                    INDEX idx_referencia (referencia_tipo, referencia_id)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                    tasa_usd DECIMAL(10,4)
+                )
             """, commit=True)
         query = """INSERT INTO movimientos_caja
                    (tipo, monto_bs, monto_usd, concepto, referencia_tipo, referencia_id,
@@ -730,10 +745,10 @@ def actualizar_saldo_caja(tipo, monto_bs, monto_usd):
                     id INT PRIMARY KEY CHECK (id = 1),
                     saldo_bs DECIMAL(10,2) DEFAULT 0,
                     saldo_usd DECIMAL(10,2) DEFAULT 0,
-                    ultima_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                    ultima_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
             """, commit=True)
-            execute_query("INSERT INTO saldo_caja (id, saldo_bs, saldo_usd) VALUES (1, 0, 0) ON DUPLICATE KEY UPDATE id=1", commit=True)
+            execute_query("INSERT INTO saldo_caja (id, saldo_bs, saldo_usd) VALUES (1, 0, 0) ON CONFLICT DO NOTHING", commit=True)
         query = """
             UPDATE saldo_caja
             SET saldo_bs = saldo_bs + %s,
@@ -755,10 +770,10 @@ def obtener_saldo_actual():
                     id INT PRIMARY KEY CHECK (id = 1),
                     saldo_bs DECIMAL(10,2) DEFAULT 0,
                     saldo_usd DECIMAL(10,2) DEFAULT 0,
-                    ultima_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                    ultima_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
             """, commit=True)
-            execute_query("INSERT INTO saldo_caja (id, saldo_bs, saldo_usd) VALUES (1, 0, 0) ON DUPLICATE KEY UPDATE id=1", commit=True)
+            execute_query("INSERT INTO saldo_caja (id, saldo_bs, saldo_usd) VALUES (1, 0, 0) ON CONFLICT DO NOTHING", commit=True)
             result = execute_query("SELECT saldo_bs, saldo_usd FROM saldo_caja WHERE id = 1", fetch_one=True)
         if not result:
             return {'bs': 0, 'usd': 0}
@@ -780,25 +795,6 @@ def obtener_movimientos_caja(limite=100, tipo=None, desde=None, hasta=None):
         try:
             execute_query("SELECT 1 FROM movimientos_caja LIMIT 1", fetch_one=True)
         except:
-            execute_query("""
-                CREATE TABLE IF NOT EXISTS movimientos_caja (
-                    id INT PRIMARY KEY AUTO_INCREMENT,
-                    fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    tipo ENUM('ingreso', 'egreso') NOT NULL,
-                    monto_bs DECIMAL(10,2) NOT NULL,
-                    monto_usd DECIMAL(10,2) NOT NULL,
-                    concepto VARCHAR(255) NOT NULL,
-                    referencia_tipo VARCHAR(50),
-                    referencia_id INT,
-                    metodo VARCHAR(50),
-                    usuario VARCHAR(100),
-                    nota TEXT,
-                    tasa_usd DECIMAL(10,4),
-                    INDEX idx_fecha (fecha),
-                    INDEX idx_tipo (tipo),
-                    INDEX idx_referencia (referencia_tipo, referencia_id)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-            """, commit=True)
             return []
         query = "SELECT * FROM movimientos_caja"
         params = []
@@ -886,19 +882,18 @@ def force_update_bcv():
         flash('[ERROR] No se pudo actualizar la tasa desde el BCV. Verifique su conexión a internet.', 'danger')
     return redirect(url_for('exchange_rate'))
 
-# ==================== FUNCIÓN PARA VERIFICAR COLUMNAS EN CASH_CLOSURES ====================
+# ==================== VERIFICAR COLUMNAS CASH_CLOSURES ====================
 def verificar_columnas_cash_closures(cursor):
-    """Agrega columnas faltantes a la tabla cash_closures si no existen."""
+    """Agrega columnas faltantes a la tabla cash_closures si no existen (PostgreSQL)."""
     try:
-        cursor.execute("SHOW COLUMNS FROM cash_closures LIKE 'devoluciones_bs'")
+        cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'cash_closures' AND column_name = 'devoluciones_bs'")
         if not cursor.fetchone():
             cursor.execute("ALTER TABLE cash_closures ADD COLUMN devoluciones_bs DECIMAL(10,2) DEFAULT 0")
             logger.info("[DB] Columna devoluciones_bs agregada a cash_closures")
-        cursor.execute("SHOW COLUMNS FROM cash_closures LIKE 'devoluciones_usd'")
+        cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'cash_closures' AND column_name = 'devoluciones_usd'")
         if not cursor.fetchone():
             cursor.execute("ALTER TABLE cash_closures ADD COLUMN devoluciones_usd DECIMAL(10,2) DEFAULT 0")
             logger.info("[DB] Columna devoluciones_usd agregada a cash_closures")
-        cursor.execute("COMMIT")
     except Exception as e:
         logger.warning(f"No se pudieron verificar/agregar columnas en cash_closures: {e}")
 
@@ -910,7 +905,7 @@ def init_db():
         return True
     queries = [
         """CREATE TABLE IF NOT EXISTS users (
-            id INT PRIMARY KEY AUTO_INCREMENT,
+            id SERIAL PRIMARY KEY,
             username VARCHAR(100) UNIQUE NOT NULL,
             email VARCHAR(255),
             password VARCHAR(255) NOT NULL,
@@ -918,13 +913,13 @@ def init_db():
             failed_attempts INT DEFAULT 0,
             locked_until INT DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+        )""",
         """CREATE TABLE IF NOT EXISTS roles (
             name VARCHAR(50) PRIMARY KEY,
             permissions TEXT
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+        )""",
         """CREATE TABLE IF NOT EXISTS products (
-            id INT PRIMARY KEY AUTO_INCREMENT,
+            id SERIAL PRIMARY KEY,
             barcode VARCHAR(100),
             name VARCHAR(255) NOT NULL,
             category VARCHAR(100),
@@ -936,18 +931,14 @@ def init_db():
             stock DECIMAL(10,2) DEFAULT 0,
             arrival_date VARCHAR(50),
             stock_status VARCHAR(20) DEFAULT 'disponible',
-            activo TINYINT DEFAULT 1,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            INDEX idx_name (name),
-            INDEX idx_category (category),
-            INDEX idx_barcode (barcode),
-            INDEX idx_stock (stock)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+            activo SMALLINT DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
         """CREATE TABLE IF NOT EXISTS categories (
             name VARCHAR(100) PRIMARY KEY
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+        )""",
         """CREATE TABLE IF NOT EXISTS sales (
-            id INT PRIMARY KEY AUTO_INCREMENT,
+            id SERIAL PRIMARY KEY,
             invoice_number INT NOT NULL,
             date VARCHAR(50),
             user_id INT,
@@ -972,14 +963,10 @@ def init_db():
             cambio_usd DECIMAL(10,2) DEFAULT 0,
             cambio_bs DECIMAL(10,2) DEFAULT 0,
             notes TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            INDEX idx_date (date),
-            INDEX idx_invoice (invoice_number),
-            INDEX idx_user (user_id),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
         """CREATE TABLE IF NOT EXISTS purchases (
-            id INT PRIMARY KEY AUTO_INCREMENT,
+            id SERIAL PRIMARY KEY,
             supplier_invoice VARCHAR(100),
             supplier_name VARCHAR(255),
             date VARCHAR(50),
@@ -989,9 +976,9 @@ def init_db():
             quantity DECIMAL(10,2),
             unit_cost DECIMAL(10,2),
             total_cost DECIMAL(10,2)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+        )""",
         """CREATE TABLE IF NOT EXISTS cash_closures (
-            id INT PRIMARY KEY AUTO_INCREMENT,
+            id SERIAL PRIMARY KEY,
             closure_date VARCHAR(50),
             user_id INT,
             user_name VARCHAR(100),
@@ -1013,11 +1000,11 @@ def init_db():
             difference DECIMAL(10,2),
             notes TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+        )""",
         """CREATE TABLE IF NOT EXISTS config (
             key_name VARCHAR(100) PRIMARY KEY,
             value TEXT
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+        )""",
         """CREATE TABLE IF NOT EXISTS company (
             id INT PRIMARY KEY CHECK (id = 1),
             name VARCHAR(255),
@@ -1028,41 +1015,36 @@ def init_db():
             parish VARCHAR(100),
             city VARCHAR(100),
             state VARCHAR(100)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+        )""",
         """CREATE TABLE IF NOT EXISTS user_logs (
-            id INT PRIMARY KEY AUTO_INCREMENT,
+            id SERIAL PRIMARY KEY,
             user_id INT,
             username VARCHAR(100),
             action VARCHAR(255),
             details TEXT,
             ip_address VARCHAR(50),
             date VARCHAR(50),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            INDEX idx_date (date),
-            INDEX idx_user (user_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
         """CREATE TABLE IF NOT EXISTS password_resets (
-            id INT PRIMARY KEY AUTO_INCREMENT,
+            id SERIAL PRIMARY KEY,
             user_id INT,
             token VARCHAR(255),
             expires INT,
-            used TINYINT DEFAULT 0,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+            used SMALLINT DEFAULT 0
+        )""",
         """CREATE TABLE IF NOT EXISTS clientes_frecuentes (
-            id INT PRIMARY KEY AUTO_INCREMENT,
+            id SERIAL PRIMARY KEY,
             cedula VARCHAR(50) UNIQUE NOT NULL,
             nombre VARCHAR(255) NOT NULL,
             telefono VARCHAR(50),
             direccion TEXT NOT NULL,
             ultima_compra VARCHAR(50),
             total_compras INT DEFAULT 1,
-            monto_total DECIMAL(10,2) DEFAULT 0,
-            INDEX idx_cedula (cedula),
-            INDEX idx_nombre (nombre)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+            monto_total DECIMAL(10,2) DEFAULT 0
+        )""",
         """CREATE TABLE IF NOT EXISTS deleted_products (
-            id INT PRIMARY KEY AUTO_INCREMENT,
+            id SERIAL PRIMARY KEY,
             original_id INT NOT NULL,
             barcode VARCHAR(100),
             name VARCHAR(255) NOT NULL,
@@ -1075,10 +1057,10 @@ def init_db():
             arrival_date DATE,
             motivo_eliminacion TEXT NOT NULL,
             usuario_elimino VARCHAR(100) NOT NULL,
-            fecha_eliminacion DATETIME DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+            fecha_eliminacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
         """CREATE TABLE IF NOT EXISTS returns (
-            id INT PRIMARY KEY AUTO_INCREMENT,
+            id SERIAL PRIMARY KEY,
             return_number INT UNIQUE NOT NULL,
             original_invoice INT NOT NULL,
             return_date VARCHAR(50),
@@ -1090,33 +1072,30 @@ def init_db():
             total_usd DECIMAL(10,2),
             total_bs DECIMAL(10,2),
             reason TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            INDEX idx_original_invoice (original_invoice),
-            INDEX idx_return_number (return_number),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
         """CREATE TABLE IF NOT EXISTS exchange_rate_history (
-            id INT PRIMARY KEY AUTO_INCREMENT,
+            id SERIAL PRIMARY KEY,
             tasa_anterior DECIMAL(10,2),
             tasa_nueva DECIMAL(10,2),
             descuento INT,
             usuario VARCHAR(100),
             fecha VARCHAR(50),
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+        )""",
         """CREATE TABLE IF NOT EXISTS cash_opening (
-            id INT PRIMARY KEY AUTO_INCREMENT,
+            id SERIAL PRIMARY KEY,
             opening_date VARCHAR(50),
             user_id INT,
             user_name VARCHAR(100),
             opening_balance DECIMAL(10,2),
             notes TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+        )""",
         """CREATE TABLE IF NOT EXISTS movimientos_caja (
-            id INT PRIMARY KEY AUTO_INCREMENT,
-            fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
-            tipo ENUM('ingreso', 'egreso') NOT NULL,
+            id SERIAL PRIMARY KEY,
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            tipo VARCHAR(20) NOT NULL,
             monto_bs DECIMAL(10,2) NOT NULL,
             monto_usd DECIMAL(10,2) NOT NULL,
             concepto VARCHAR(255) NOT NULL,
@@ -1125,19 +1104,16 @@ def init_db():
             metodo VARCHAR(50),
             usuario VARCHAR(100),
             nota TEXT,
-            tasa_usd DECIMAL(10,4),
-            INDEX idx_fecha (fecha),
-            INDEX idx_tipo (tipo),
-            INDEX idx_referencia (referencia_tipo, referencia_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+            tasa_usd DECIMAL(10,4)
+        )""",
         """CREATE TABLE IF NOT EXISTS saldo_caja (
             id INT PRIMARY KEY CHECK (id = 1),
             saldo_bs DECIMAL(10,2) DEFAULT 0,
             saldo_usd DECIMAL(10,2) DEFAULT 0,
-            ultima_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+            ultima_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
         """CREATE TABLE IF NOT EXISTS movimientos_devolucion (
-            id INT PRIMARY KEY AUTO_INCREMENT,
+            id SERIAL PRIMARY KEY,
             devolucion_id INT NOT NULL,
             producto_id INT NOT NULL,
             cantidad DECIMAL(10,2) NOT NULL,
@@ -1147,59 +1123,70 @@ def init_db():
             total_usd DECIMAL(10,2) NOT NULL,
             total_bs DECIMAL(10,2) NOT NULL,
             motivo TEXT NOT NULL,
-            fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (devolucion_id) REFERENCES returns(id) ON DELETE CASCADE,
-            INDEX idx_devolucion (devolucion_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
         """CREATE TABLE IF NOT EXISTS notas_credito (
-            id INT PRIMARY KEY AUTO_INCREMENT,
+            id SERIAL PRIMARY KEY,
             numero VARCHAR(50) UNIQUE NOT NULL,
             cliente_id VARCHAR(50) NOT NULL,
             cliente_nombre VARCHAR(255) NOT NULL,
             monto_total DECIMAL(10,2) NOT NULL,
             monto_usado DECIMAL(10,2) DEFAULT 0,
-            fecha_emision DATETIME DEFAULT CURRENT_TIMESTAMP,
-            fecha_vencimiento DATETIME,
-            activo TINYINT DEFAULT 1,
+            fecha_emision TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            fecha_vencimiento TIMESTAMP,
+            activo SMALLINT DEFAULT 1,
             creado_por VARCHAR(100),
-            notas TEXT,
-            INDEX idx_numero (numero),
-            INDEX idx_cliente (cliente_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""",
+            notas TEXT
+        )""",
     ]
     conn = None
     cursor = None
     try:
         conn, cursor = get_db()
-        cursor.execute("SHOW TABLES")
+        cursor.execute("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
         tables = cursor.fetchall()
         if tables and len(tables) > 0:
             logger.info("Las tablas ya existen, omitiendo creación...")
             _db_initialized = True
             verificar_columnas_cash_closures(cursor)
+            conn.commit()
             return True
         for query in queries:
-            cursor.execute(query)
+            try:
+                cursor.execute(query)
+            except Exception as e:
+                logger.warning(f"Error creando tabla: {e}")
+                conn.rollback()
         conn.commit()
         insert_initial_data(cursor)
         conn.commit()
-        cursor.execute("INSERT IGNORE INTO config (key_name, value) VALUES ('next_return', '1')")
+        cursor.execute("INSERT INTO config (key_name, value) VALUES ('next_return', '1') ON CONFLICT DO NOTHING")
         conn.commit()
-        cursor.execute("INSERT IGNORE INTO saldo_caja (id, saldo_bs, saldo_usd) VALUES (1, 0, 0)")
+        cursor.execute("INSERT INTO saldo_caja (id, saldo_bs, saldo_usd) VALUES (1, 0, 0) ON CONFLICT DO NOTHING")
         conn.commit()
         _db_initialized = True
-        logger.info("Base de datos MySQL inicializada correctamente")
+        logger.info("Base de datos PostgreSQL inicializada correctamente")
         return True
-    except Error as e:
+    except Exception as e:
         logger.error(f"Error al inicializar DB: {e}")
         if conn:
-            conn.rollback()
+            try:
+                conn.rollback()
+            except Exception:
+                pass
         return False
     finally:
         if cursor:
-            cursor.close()
+            try:
+                cursor.close()
+            except Exception:
+                pass
         if conn:
-            conn.close()
+            try:
+                connection_pool.putconn(conn)
+            except Exception:
+                pass
+
 
 def insert_initial_data(cursor):
     cursor.execute("SELECT COUNT(*) as count FROM users")
@@ -1209,7 +1196,7 @@ def insert_initial_data(cursor):
         return
     categorias = ["Herramientas", "Pinturas", "Electricidad", "Fontanería", "Construcción", "Jardinería"]
     for cat in categorias:
-        cursor.execute("INSERT IGNORE INTO categories (name) VALUES (%s)", (cat,))
+        cursor.execute("INSERT INTO categories (name) VALUES (%s) ON CONFLICT DO NOTHING", (cat,))
     admin_perms = '{"inventory":true,"edit_products":true,"buy":true,"sell":true,"users":true,"roles":true,"reports":true,"exchange_rate":true,"cash_closure":true,"view_sales":true}'
     cajero_perms = '{"inventory":true,"edit_products":false,"buy":false,"sell":true,"users":false,"roles":false,"reports":false,"exchange_rate":false,"cash_closure":false,"view_sales":false}'
     almacenista_perms = '{"inventory":true,"edit_products":true,"buy":true,"sell":false,"users":false,"roles":false,"reports":false,"exchange_rate":false,"cash_closure":false,"view_sales":false}'
@@ -1221,7 +1208,7 @@ def insert_initial_data(cursor):
         ('Supervisor', supervisor_perms)
     ]
     for name, perms in roles:
-        cursor.execute("INSERT IGNORE INTO roles (name, permissions) VALUES (%s, %s)", (name, perms))
+        cursor.execute("INSERT INTO roles (name, permissions) VALUES (%s, %s) ON CONFLICT (name) DO NOTHING", (name, perms))
     usuarios = [
         ('dueño', 'admin@renaven.com', bcrypt.hashpw('Admin123!@#Renaven'.encode(), bcrypt.gensalt()).decode(), 'Dueño'),
         ('supervisor', 'supervisor@renaven.com', bcrypt.hashpw('Super2024!@#Seguro'.encode(), bcrypt.gensalt()).decode(), 'Supervisor'),
@@ -1230,9 +1217,9 @@ def insert_initial_data(cursor):
         ('jonathan', 'hernandezrivasjonathanjesus@gmail.com', bcrypt.hashpw('Jonathan$2024Secure!'.encode(), bcrypt.gensalt()).decode(), 'Dueño')
     ]
     for username, email, pwd, role in usuarios:
-        cursor.execute("INSERT IGNORE INTO users (username, email, password, role) VALUES (%s, %s, %s, %s)",
+        cursor.execute("INSERT INTO users (username, email, password, role) VALUES (%s, %s, %s, %s) ON CONFLICT (username) DO NOTHING",
                     (username, email, pwd, role))
-    cursor.execute("INSERT IGNORE INTO company (id, name, rif, address, phone, email, parish, city, state) VALUES (1, %s, %s, %s, %s, %s, %s, %s, %s)",
+    cursor.execute("INSERT INTO company (id, name, rif, address, phone, email, parish, city, state) VALUES (1, %s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (id) DO NOTHING",
                 ('RENAVEN OAKMONT, C.A.', 'J-41323725-3', 'CALLE 1 ANDRES BELLO N°01-06, SECTOR FRANCISCO DE MIRANDA II', '(0412) 123-4567', 'renaven@correo.com', 'PUNTA CARDON', 'PUNTO FIJO', 'FALCON'))
     config_data = [
         ('exchange_rate', '36.50'),
@@ -1242,7 +1229,7 @@ def insert_initial_data(cursor):
         ('opening_balance', '0')
     ]
     for key, value in config_data:
-        cursor.execute("INSERT IGNORE INTO config (key_name, value) VALUES (%s, %s)", (key, value))
+        cursor.execute("INSERT INTO config (key_name, value) VALUES (%s, %s) ON CONFLICT (key_name) DO NOTHING", (key, value))
 
 # ==================== FUNCIONES AUXILIARES ====================
 def log_action(user_id, username, action, details="", ip_address=""):
@@ -1321,137 +1308,6 @@ def limpiar_o_reactivar_productos_agotados():
     except Exception as e:
         logger.error(f"Error en limpiar_o_reactivar_productos_agotados: {e}")
         return 0
-
-# ==================== FUNCIÓN PARA ASEGURAR MYSQL (ADAPTADA PARA .EXE) ====================
-def asegurar_mysql():
-    """Arranca MySQL portable. El motor está en BUNDLE, los datos en BASE_DIR (junto al .exe)."""
-    mysql_dir      = MYSQL_DIR
-    mysql_exe_path = os.path.join(mysql_dir, 'bin', 'mysqld.exe')
-    mysql_install  = os.path.join(mysql_dir, 'bin', 'mysql_install_db.exe')
-    data_dir       = MYSQL_DATA_DIR
-    my_ini_path    = os.path.join(mysql_dir, 'my.ini')
-
-    print("🔍 Verificando motor MySQL portable...")
-    print(f"   Motor : {mysql_dir}")
-    print(f"   Datos : {data_dir}")
-
-    if not os.path.exists(mysql_exe_path):
-        print(f"❌ No se encontró mysqld.exe en: {mysql_exe_path}")
-        return False
-
-    def puerto_ocupado(host='127.0.0.1', port=3306, timeout=1):
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(timeout)
-                return s.connect_ex((host, port)) == 0
-        except Exception:
-            return False
-
-    if puerto_ocupado('127.0.0.1', 3306):
-        print("✅ Puerto 3306 ya está ocupado → MySQL ya está corriendo.")
-        return True
-
-    # ---- Preparar datadir persistente ----
-    if not os.path.exists(data_dir):
-        plantilla = os.path.join(mysql_dir, 'data')
-        if os.path.exists(plantilla):
-            print(f"📁 Copiando datadir inicial a {data_dir} ...")
-            try:
-                shutil.copytree(plantilla, data_dir)
-            except Exception as e:
-                print(f"❌ Error copiando datadir: {e}")
-                return False
-        else:
-            os.makedirs(data_dir, exist_ok=True)
-            print("🛠️  Inicializando base de datos (primera ejecución)...")
-            try:
-                startupinfo = subprocess.STARTUPINFO()
-                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                env = os.environ.copy()
-                env['MYSQLD_PARENT_PID'] = '1'
-
-                if os.path.exists(mysql_install):
-                    resultado = subprocess.run(
-                        [mysql_install, f'--basedir={mysql_dir}', f'--datadir={data_dir}'],
-                        shell=False, capture_output=True, text=True,
-                        startupinfo=startupinfo, cwd=os.path.join(mysql_dir, 'bin'),
-                        env=env, timeout=120
-                    )
-                else:
-                    resultado = subprocess.run(
-                        [mysql_exe_path, '--initialize-insecure',
-                         f'--basedir={mysql_dir}', f'--datadir={data_dir}'],
-                        shell=False, capture_output=True, text=True,
-                        startupinfo=startupinfo, cwd=mysql_dir,
-                        env=env, timeout=120
-                    )
-                if resultado.returncode != 0:
-                    print(f"⚠️ Código: {resultado.returncode}")
-                    if resultado.stdout: print(resultado.stdout[:500])
-                    if resultado.stderr: print(resultado.stderr[:500])
-                    if not os.listdir(data_dir):
-                        print("❌ Datadir vacío, abortando.")
-                        return False
-            except Exception as e:
-                print(f"❌ Error al inicializar: {e}")
-                return False
-
-    # ---- my.ini dinámico ----
-    if not os.path.exists(my_ini_path):
-        try:
-            basedir_unix = mysql_dir.replace('\\', '/')
-            datadir_unix = data_dir.replace('\\', '/')
-            with open(my_ini_path, 'w', encoding='utf-8') as f:
-                f.write(f"""[mysqld]
-port=3306
-basedir={basedir_unix}
-datadir={datadir_unix}
-character-set-server=utf8mb4
-collation-server=utf8mb4_unicode_ci
-default-storage-engine=InnoDB
-skip-name-resolve
-max_allowed_packet=64M
-sql_mode=NO_ENGINE_SUBSTITUTION
-
-[client]
-port=3306
-default-character-set=utf8mb4
-""")
-        except Exception as e:
-            print(f"❌ No se pudo crear my.ini: {e}")
-            return False
-
-    # ---- Arrancar mysqld silenciosamente ----
-    print("🚀 Iniciando servidor MySQL Portable...")
-    try:
-        startupinfo = subprocess.STARTUPINFO()
-        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-
-        DETACHED_PROCESS        = 0x00000008
-        CREATE_NEW_PROCESS_GROUP = 0x00000200
-        CREATE_NO_WINDOW         = 0x08000000
-
-        proceso = subprocess.Popen(
-            [mysql_exe_path, f'--defaults-file={my_ini_path}', f'--datadir={data_dir}'],
-            startupinfo=startupinfo,
-            cwd=mysql_dir,
-            creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            stdin=subprocess.DEVNULL,
-            close_fds=True
-        )
-        print(f"   PID del proceso MySQL: {proceso.pid}")
-        for intento in range(40):
-            time.sleep(0.5)
-            if puerto_ocupado('127.0.0.1', 3306):
-                print(f"✅ MySQL Portable en funcionamiento ({(intento+1)*0.5:.1f}s).")
-                return True
-        print("⚠️  MySQL no respondió en 20 segundos.")
-        return False
-    except Exception as e:
-        print(f"❌ Error al ejecutar mysqld.exe: {e}")
-        return False
 
 # ==================== RUTAS DE AUTENTICACIÓN ====================
 @app.route('/')
@@ -1589,7 +1445,7 @@ def reset_password(token):
         flash(f'[ERROR] Error: {str(e)}', 'danger')
     return render_template('reset_password.html', token=token)
 
-# ==================== FUNCIÓN AUXILIAR: PRODUCTO MÁS VENDIDO DEL MES ====================
+# ==================== PRODUCTO MÁS VENDIDO DEL MES ====================
 def obtener_producto_mas_vendido_mes(month, year):
     try:
         start = f"{year}-{month:02d}-01"
@@ -1597,17 +1453,13 @@ def obtener_producto_mas_vendido_mes(month, year):
             end = f"{year+1}-01-01"
         else:
             end = f"{year}-{month+1:02d}-01"
-
         ventas = execute_query("""
             SELECT items FROM sales
             WHERE date >= %s AND date < %s AND invoice_number > 0
         """, (start, end), fetch_all=True)
-
         if not ventas:
             return None, 0, 0.0
-
         productos_acumulados = defaultdict(lambda: {'cantidad': 0.0, 'ingresos': 0.0})
-
         for venta in ventas:
             if not venta.get('items'):
                 continue
@@ -1617,7 +1469,6 @@ def obtener_producto_mas_vendido_mes(month, year):
                 continue
             if not isinstance(items, list):
                 continue
-
             for item in items:
                 nombre = (item.get('name') or '').strip().upper()
                 if not nombre:
@@ -1626,17 +1477,10 @@ def obtener_producto_mas_vendido_mes(month, year):
                 precio = float(item.get('price', 0) or 0)
                 productos_acumulados[nombre]['cantidad'] += cantidad
                 productos_acumulados[nombre]['ingresos'] += cantidad * precio
-
         if not productos_acumulados:
             return None, 0, 0.0
-
         ganador = max(productos_acumulados.items(), key=lambda x: x[1]['cantidad'])
-        nombre_ganador = ganador[0]
-        qty_ganador = ganador[1]['cantidad']
-        ingresos_ganador = ganador[1]['ingresos']
-
-        return nombre_ganador, qty_ganador, ingresos_ganador
-
+        return ganador[0], ganador[1]['cantidad'], ganador[1]['ingresos']
     except Exception as e:
         logger.error(f"Error en obtener_producto_mas_vendido_mes: {e}")
         return None, 0, 0.0
@@ -1677,13 +1521,11 @@ def dashboard():
             if sales_day:
                 total_dia_usd = float(sales_day['total_usd']) if sales_day['total_usd'] else 0
                 total_dia_bs = float(sales_day['total_bs']) if sales_day['total_bs'] else 0
-
         top_product_name = None
         top_product_qty = 0
         top_product_total = 0.0
         if role == 'Dueño':
             top_product_name, top_product_qty, top_product_total = obtener_producto_mas_vendido_mes(month, year)
-
         meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
         current_date = today.strftime('%d/%m/%Y %H:%M:%S')
         return render_template('dashboard.html',
@@ -1708,23 +1550,13 @@ def dashboard():
         logger.error(f"Error en dashboard: {e}")
         flash(f'[ERROR] Error al cargar dashboard: {str(e)}', 'danger')
         return render_template('dashboard.html',
-                              saldo_bs=0,
-                              saldo_usd=0,
-                              company=None,
-                              exchange_rate=40,
-                              discount_percent=5,
-                              opening_balance=0,
-                              total_ventas_mes_usd=0,
-                              total_ventas_mes_bs=0,
-                              total_ventas_dia_usd=0,
-                              total_ventas_dia_bs=0,
-                              mes_actual='',
-                              can_view_sales=False,
-                              datetime=datetime,
+                              saldo_bs=0, saldo_usd=0, company=None, exchange_rate=40,
+                              discount_percent=5, opening_balance=0,
+                              total_ventas_mes_usd=0, total_ventas_mes_bs=0,
+                              total_ventas_dia_usd=0, total_ventas_dia_bs=0,
+                              mes_actual='', can_view_sales=False, datetime=datetime,
                               current_date=datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
-                              top_product_name=None,
-                              top_product_qty=0,
-                              top_product_total=0.0)
+                              top_product_name=None, top_product_qty=0, top_product_total=0.0)
 
 # ==================== API SALDO ACTUAL ====================
 @app.route('/api/saldo_actual')
@@ -1732,17 +1564,10 @@ def dashboard():
 def api_saldo_actual():
     try:
         saldo = obtener_saldo_actual()
-        return jsonify({
-            'success': True,
-            'saldo_bs': saldo['bs'],
-            'saldo_usd': saldo['usd']
-        })
+        return jsonify({'success': True, 'saldo_bs': saldo['bs'], 'saldo_usd': saldo['usd']})
     except Exception as e:
         logger.error(f"Error en api_saldo_actual: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # ==================== FACTURACIÓN ====================
 @app.route('/facturacion')
@@ -1763,12 +1588,9 @@ def facturacion():
         discount_percent = 5.0
         saldo = {'bs': 0, 'usd': 0}
     return render_template('facturacion.html',
-                          categories=categories,
-                          company=company,
-                          exchange_rate=exchange_rate,
-                          discount_percent=discount_percent,
-                          saldo_bs=saldo['bs'],
-                          saldo_usd=saldo['usd'])
+                          categories=categories, company=company,
+                          exchange_rate=exchange_rate, discount_percent=discount_percent,
+                          saldo_bs=saldo['bs'], saldo_usd=saldo['usd'])
 
 def buscar_productos():
     search = request.args.get('search', '')
@@ -1868,7 +1690,6 @@ def buscar_factura_devolucion():
     invoice_num = request.args.get('invoice', '')
     if not invoice_num:
         return jsonify({'error': 'Número de factura requerido'}), 400
-
     try:
         sale = execute_query("""
             SELECT id, invoice_number, date, client_name, client_id,
@@ -1877,15 +1698,12 @@ def buscar_factura_devolucion():
             FROM sales
             WHERE invoice_number = %s AND invoice_number > 0
         """, (invoice_num,), fetch_one=True)
-
         if not sale:
             return jsonify({'error': f'Factura N° {invoice_num} no encontrada'}), 404
-
         subtotal = float(sale.get('subtotal', 0) or 0)
         tax = float(sale.get('tax', 0) or 0)
         discount = float(sale.get('discount', 0) or 0)
         total_usd_guardado = float(sale.get('total_usd', 0) or 0)
-
         if total_usd_guardado > 0:
             total_factura = total_usd_guardado
         else:
@@ -1893,47 +1711,34 @@ def buscar_factura_devolucion():
             total_factura = subtotal - discount + iva_calculado
             if total_factura <= 0:
                 total_factura = subtotal - discount + (subtotal * 0.16)
-
         existing_returns = execute_query("""
             SELECT COUNT(*) as count, COALESCE(SUM(total_usd),0) as total_devuelto
             FROM returns WHERE original_invoice = %s
         """, (invoice_num,), fetch_one=True)
-
         total_devuelto = float(existing_returns.get('total_devuelto', 0) or 0)
         count_returns = int(existing_returns.get('count', 0) or 0)
         disponible = max(0, total_factura - total_devuelto)
-
         items = []
         if sale.get('items'):
             try:
                 items = json.loads(sale['items']) if isinstance(sale['items'], str) else sale['items']
             except:
                 items = []
-
         for item in items:
             item['price'] = float(item.get('price', 0))
             item['quantity'] = float(item.get('quantity', 0))
             item['available_return'] = item['quantity']
-
         return jsonify({
             'sale': {
-                'id': sale['id'],
-                'invoice_number': sale['invoice_number'],
-                'date': sale['date'],
-                'client_name': sale['client_name'],
-                'client_id': sale['client_id'],
-                'total_usd': total_factura,
+                'id': sale['id'], 'invoice_number': sale['invoice_number'],
+                'date': sale['date'], 'client_name': sale['client_name'],
+                'client_id': sale['client_id'], 'total_usd': total_factura,
                 'total_bs': float(sale.get('total_bs', 0) or 0),
-                'subtotal': subtotal,
-                'tax': tax,
-                'discount': discount
+                'subtotal': subtotal, 'tax': tax, 'discount': discount
             },
-            'items': items,
-            'total_devuelto': total_devuelto,
-            'count_returns': count_returns,
-            'disponible': disponible
+            'items': items, 'total_devuelto': total_devuelto,
+            'count_returns': count_returns, 'disponible': disponible
         })
-
     except Exception as e:
         logger.error(f"Error en buscar_factura_devolucion: {e}")
         import traceback
@@ -1946,20 +1751,16 @@ def procesar_devolucion():
     invoice_number = data.get('invoice_number')
     items = data.get('items', [])
     reason = data.get('reason', '')
-
     if not invoice_number or not items:
         return jsonify({'error': 'Datos incompletos'}), 400
-
     try:
         sale = execute_query("SELECT * FROM sales WHERE invoice_number = %s AND invoice_number > 0",
                             (invoice_number,), fetch_one=True)
         if not sale:
             return jsonify({'error': 'Factura no encontrada'}), 404
-
         total_usd_guardado = float(sale.get('total_usd', 0) or 0)
         subtotal = float(sale.get('subtotal', 0) or 0)
         discount = float(sale.get('discount', 0) or 0)
-
         if total_usd_guardado > 0:
             total_factura = total_usd_guardado
         else:
@@ -1967,31 +1768,25 @@ def procesar_devolucion():
             total_factura = subtotal - discount + iva
             if total_factura <= 0:
                 total_factura = subtotal - discount + (subtotal * 0.16)
-
         existing_returns = execute_query("""
             SELECT COALESCE(SUM(total_usd),0) as total_devuelto
             FROM returns WHERE original_invoice = %s
         """, (invoice_number,), fetch_one=True)
         total_devuelto = float(existing_returns.get('total_devuelto', 0) or 0)
         disponible = max(0, total_factura - total_devuelto)
-
         subtotal_devolucion = sum(float(item['price']) * float(item['quantity']) for item in items)
         iva_devolucion = subtotal_devolucion * 0.16
         total_usd_devolucion = subtotal_devolucion + iva_devolucion
-
         if total_usd_devolucion > disponible + 0.01:
             return jsonify({
                 'error': f'El monto a devolver (${total_usd_devolucion:.2f}) excede el disponible (${disponible:.2f})',
-                'disponible': disponible,
-                'subtotal': subtotal_devolucion,
+                'disponible': disponible, 'subtotal': subtotal_devolucion,
                 'total_usd': total_usd_devolucion
             }), 400
-
         rate = get_cached_exchange_rate()
         total_bs_devolucion = total_usd_devolucion * rate
         next_return = obtener_proximo_return_number()
         items_json = json.dumps(items)
-
         execute_query("""
             INSERT INTO returns
             (return_number, original_invoice, return_date, user_id,
@@ -2000,24 +1795,17 @@ def procesar_devolucion():
         """, (next_return, invoice_number, datetime.now().isoformat(), session.get('user_id', 1),
               sale['client_id'], sale['client_name'], items_json,
               subtotal_devolucion, total_usd_devolucion, total_bs_devolucion, reason), commit=True)
-
         devolucion = execute_query("SELECT id FROM returns WHERE return_number = %s",
                                   (next_return,), fetch_one=True)
         devolucion_id = devolucion['id'] if devolucion else None
-
         registrar_movimiento_caja(
-            tipo='egreso',
-            monto_bs=total_bs_devolucion,
-            monto_usd=total_usd_devolucion,
+            tipo='egreso', monto_bs=total_bs_devolucion, monto_usd=total_usd_devolucion,
             concepto=f'Devolución N° {next_return} - Factura N° {invoice_number}',
-            referencia_tipo='devolucion',
-            referencia_id=next_return,
-            metodo='efectivo',
+            referencia_tipo='devolucion', referencia_id=next_return, metodo='efectivo',
             usuario=session.get('username', 'SISTEMA'),
             nota=f"Devolución de factura N° {invoice_number}. Motivo: {reason}",
             tasa=rate
         )
-
         if devolucion_id:
             for item in items:
                 subtotal_item = float(item['price']) * float(item['quantity'])
@@ -2031,7 +1819,6 @@ def procesar_devolucion():
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (devolucion_id, item['id'], item['quantity'], item['price'],
                       subtotal_item, iva_item, total_item_usd, total_item_bs, reason), commit=True)
-
         for item in items:
             product = execute_query("SELECT id, name, stock, activo FROM products WHERE id = %s",
                                    (item['id'],), fetch_one=True)
@@ -2048,7 +1835,6 @@ def procesar_devolucion():
                     new_status = 'DISPONIBLE'
                 execute_query("UPDATE products SET stock = %s, stock_status = %s, activo = 1 WHERE id = %s",
                              (new_stock, new_status, item['id']), commit=True)
-
         fecha_actual = datetime.now().isoformat()
         items_negativos_json = json.dumps([{**item, 'quantity': -float(item['quantity'])} for item in items])
         execute_query("""
@@ -2068,22 +1854,15 @@ def procesar_devolucion():
               json.dumps({"devolucion": True, "return_number": next_return}),
               -total_bs_devolucion, 0, 0, 0, 0, 0, 0, 0,
               f"Devolución de factura N° {invoice_number}"), commit=True)
-
         log_action(session.get('user_id', 1), session.get('username', 'SISTEMA'), 'RETURN',
                    f"Devolución N° {next_return} - Factura N° {invoice_number} - Total: -${total_usd_devolucion:.2f} (incluye IVA)")
-
         saldo = obtener_saldo_actual()
-
         return jsonify({
-            'success': True,
-            'return_number': next_return,
-            'total_usd': total_usd_devolucion,
-            'total_bs': total_bs_devolucion,
-            'saldo_bs': saldo['bs'],
-            'saldo_usd': saldo['usd'],
+            'success': True, 'return_number': next_return,
+            'total_usd': total_usd_devolucion, 'total_bs': total_bs_devolucion,
+            'saldo_bs': saldo['bs'], 'saldo_usd': saldo['usd'],
             'message': f'Devolución N° {next_return} procesada. Se devolvieron ${total_usd_devolucion:.2f} USD (incluye IVA)'
         })
-
     except Exception as e:
         logger.error(f"Error en procesar_devolucion: {e}")
         import traceback
@@ -2098,12 +1877,10 @@ def buscar_nota_credito():
     try:
         ret = execute_query("""
             SELECT return_number, original_invoice, client_name, total_usd, created_at
-            FROM returns
-            WHERE return_number = %s
+            FROM returns WHERE return_number = %s
         """, (nc_number,), fetch_one=True)
         if not ret:
             return jsonify({'error': f'Nota de devolución N° {nc_number} no encontrada'}), 404
-
         usado = execute_query("""
             SELECT COALESCE(SUM(total_usd), 0) as usado
             FROM sales
@@ -2112,15 +1889,10 @@ def buscar_nota_credito():
         usado = float(usado.get('usado', 0) or 0)
         total = float(ret.get('total_usd', 0) or 0)
         disponible = max(0, total - usado)
-
         return jsonify({
-            'success': True,
-            'numero': ret['return_number'],
-            'cliente': ret['client_name'],
-            'cliente_nombre': ret['client_name'],
-            'monto_total': total,
-            'monto_usado': usado,
-            'disponible': disponible,
+            'success': True, 'numero': ret['return_number'],
+            'cliente': ret['client_name'], 'cliente_nombre': ret['client_name'],
+            'monto_total': total, 'monto_usado': usado, 'disponible': disponible,
             'fecha_emision': ret['created_at'].strftime('%Y-%m-%d') if ret.get('created_at') else ''
         })
     except Exception as e:
@@ -2165,29 +1937,22 @@ def imprimir_devolucion(return_number):
             LEFT JOIN users u ON r.user_id = u.id
             WHERE r.return_number = %s
         """, (return_number,), fetch_one=True)
-
         if not devolucion:
             flash('Devolución no encontrada', 'danger')
             return redirect(url_for('historial_devoluciones'))
-
         sale_original = execute_query("""
             SELECT client_phone, client_address
-            FROM sales
-            WHERE invoice_number = %s AND invoice_number > 0
+            FROM sales WHERE invoice_number = %s AND invoice_number > 0
         """, (devolucion['original_invoice'],), fetch_one=True)
-
         items = json.loads(devolucion['items']) if devolucion['items'] else []
-
         tasa_iva = 0.16
         subtotal_usd = 0.0
         for item in items:
             precio = float(item.get('price', 0))
             cantidad = float(item.get('quantity', 0))
             subtotal_usd += precio * cantidad
-
         iva_usd = subtotal_usd * tasa_iva
         total_usd = subtotal_usd + iva_usd
-
         for item in items:
             precio = float(item.get('price', 0))
             cantidad = float(item.get('quantity', 0))
@@ -2197,13 +1962,10 @@ def imprimir_devolucion(return_number):
             if 'sale_type' not in item:
                 product = execute_query("SELECT sale_type FROM products WHERE id = %s", (item.get('id'),), fetch_one=True)
                 item['sale_type'] = product['sale_type'] if product else 'unit'
-
         company = execute_query("SELECT * FROM company WHERE id = 1", fetch_one=True)
         rate = get_cached_exchange_rate()
         total_bs = total_usd * rate
-
         saldo = obtener_saldo_actual()
-
         return render_template('devolucion.html',
                                return_number=devolucion['return_number'],
                                original_invoice=devolucion['original_invoice'],
@@ -2211,18 +1973,12 @@ def imprimir_devolucion(return_number):
                                client_id=devolucion['client_id'],
                                client_phone=sale_original['client_phone'] if sale_original else 'No registrado',
                                client_address=sale_original['client_address'] if sale_original else 'No especificada',
-                               items=items,
-                               subtotal_usd=subtotal_usd,
-                               iva_usd=iva_usd,
-                               total_usd=total_usd,
-                               total_bs=total_bs,
-                               tasa_iva=int(tasa_iva * 100),
-                               reason=devolucion['reason'],
+                               items=items, subtotal_usd=subtotal_usd, iva_usd=iva_usd,
+                               total_usd=total_usd, total_bs=total_bs,
+                               tasa_iva=int(tasa_iva * 100), reason=devolucion['reason'],
                                current_date=datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
-                               company=company,
-                               session=session,
-                               saldo_bs=saldo['bs'],
-                               saldo_usd=saldo['usd'])
+                               company=company, session=session,
+                               saldo_bs=saldo['bs'], saldo_usd=saldo['usd'])
     except Exception as e:
         logger.error(f"Error en imprimir_devolucion: {e}")
         import traceback
@@ -2294,7 +2050,7 @@ def add_category():
     name = request.form['category_name'].strip().capitalize()
     if name:
         try:
-            execute_query("INSERT IGNORE INTO categories (name) VALUES (%s)", (name,), commit=True)
+            execute_query("INSERT INTO categories (name) VALUES (%s) ON CONFLICT DO NOTHING", (name,), commit=True)
             flash(f'[OK] Categoría {name} agregada', 'success')
         except Exception as e:
             logger.error(f"Error en add_category: {e}")
@@ -2384,22 +2140,16 @@ def deleted_products():
         return redirect(url_for('inventory'))
     try:
         available_years = execute_query("""
-            SELECT DISTINCT YEAR(fecha_eliminacion) as año
+            SELECT DISTINCT EXTRACT(YEAR FROM fecha_eliminacion)::int as año
             FROM deleted_products
             ORDER BY año DESC
         """, fetch_all=True)
         selected_year = request.args.get('year', type=int, default=datetime.now().year)
         selected_month = request.args.get('month', type=int, default=None)
-        query = "SELECT * FROM deleted_products"
-        params = []
         if selected_month and selected_month > 0:
-            query += " WHERE YEAR(fecha_eliminacion) = %s AND MONTH(fecha_eliminacion) = %s"
-            params = [selected_year, selected_month]
+            deleted = execute_query("SELECT * FROM deleted_products WHERE EXTRACT(YEAR FROM fecha_eliminacion) = %s AND EXTRACT(MONTH FROM fecha_eliminacion) = %s ORDER BY fecha_eliminacion DESC", (selected_year, selected_month), fetch_all=True)
         else:
-            query += " WHERE YEAR(fecha_eliminacion) = %s"
-            params = [selected_year]
-        query += " ORDER BY fecha_eliminacion DESC"
-        deleted = execute_query(query, tuple(params), fetch_all=True)
+            deleted = execute_query("SELECT * FROM deleted_products WHERE EXTRACT(YEAR FROM fecha_eliminacion) = %s ORDER BY fecha_eliminacion DESC", (selected_year,), fetch_all=True)
         converted_deleted = []
         for item in deleted:
             new_item = dict(item)
@@ -2446,36 +2196,24 @@ def deleted_products():
                 chart_dañados.append(mensual[mes]['dañado'])
         current_date = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         return render_template('deleted_products.html',
-                            deleted=converted_deleted,
-                            available_years=available_years,
-                            selected_year=selected_year,
-                            selected_month=selected_month or '',
-                            meses_nombres=meses_nombres_list,
-                            now=current_date,
-                            current_date=current_date,
-                            chart_months=chart_months,
-                            chart_counts=chart_counts,
-                            chart_agotados=chart_agotados,
-                            chart_discontinuados=chart_discontinuados,
-                            chart_dañados=chart_dañados)
+                            deleted=converted_deleted, available_years=available_years,
+                            selected_year=selected_year, selected_month=selected_month or '',
+                            meses_nombres=meses_nombres_list, now=current_date,
+                            current_date=current_date, chart_months=chart_months,
+                            chart_counts=chart_counts, chart_agotados=chart_agotados,
+                            chart_discontinuados=chart_discontinuados, chart_dañados=chart_dañados)
     except Exception as e:
         logger.error(f"Error en deleted_products: {e}")
         flash(f'Error al cargar productos eliminados: {str(e)}', 'danger')
         current_date = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         return render_template('deleted_products.html',
-                            deleted=[],
-                            available_years=[],
-                            selected_year=datetime.now().year,
-                            selected_month='',
+                            deleted=[], available_years=[],
+                            selected_year=datetime.now().year, selected_month='',
                             meses_nombres=["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
                                             "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
-                            now=current_date,
-                            current_date=current_date,
-                            chart_months=[],
-                            chart_counts=[],
-                            chart_agotados=[],
-                            chart_discontinuados=[],
-                            chart_dañados=[])
+                            now=current_date, current_date=current_date,
+                            chart_months=[], chart_counts=[], chart_agotados=[],
+                            chart_discontinuados=[], chart_dañados=[])
 
 # ==================== CARRITO ====================
 def add_to_cart():
@@ -2506,14 +2244,10 @@ def add_to_cart():
             if quantity == int(quantity):
                 quantity_text = str(int(quantity))
         cart.append({
-            'id': product['id'],
-            'name': product['name'],
-            'price': float(product['price']),
-            'quantity': quantity,
-            'quantity_text': quantity_text,
-            'unit': product['unit'],
-            'sale_type': sale_type,
-            'barcode': product['barcode'] or ''
+            'id': product['id'], 'name': product['name'],
+            'price': float(product['price']), 'quantity': quantity,
+            'quantity_text': quantity_text, 'unit': product['unit'],
+            'sale_type': sale_type, 'barcode': product['barcode'] or ''
         })
         session['cart'] = cart
         return jsonify({'success': True})
@@ -2562,29 +2296,24 @@ def checkout():
     if not cart:
         flash('Carrito vacío', 'warning')
         return redirect(url_for('facturacion'))
-
     client_id = request.form['client_id'].strip()
     client_name = request.form['client_name'].strip().upper()
     client_phone = request.form.get('client_phone', '')
     client_address = request.form['client_address'].strip().upper()
     pagos_json = request.form.get('pagos', '{}')
     pagos = json.loads(pagos_json) if pagos_json else {}
-
     if not client_id or not client_name or not client_address:
         flash('Cédula, nombre y dirección son obligatorios', 'danger')
         return redirect(url_for('facturacion'))
-
     try:
         for item in cart:
             product = execute_query("SELECT stock FROM products WHERE id = %s AND activo = 1", (item['id'],), fetch_one=True)
             if not product or float(product['stock']) < item['quantity']:
                 flash(f'[ERROR] Stock insuficiente para {item["name"]}', 'danger')
                 return redirect(url_for('facturacion'))
-
         subtotal = sum(item['price'] * item['quantity'] for item in cart)
         rate = get_cached_exchange_rate()
         discount_percent = get_cached_discount()
-
         pago_efectivo_bs = parse_venezuela_number(pagos.get('efectivo_bs', 0))
         pago_efectivo_usd = parse_venezuela_number(pagos.get('efectivo_usd', 0))
         pago_zelle = parse_venezuela_number(pagos.get('zelle', 0))
@@ -2593,15 +2322,12 @@ def checkout():
         pago_tarjeta = parse_venezuela_number(pagos.get('tarjeta', 0))
         pago_nota_credito_usd = parse_venezuela_number(pagos.get('nota_credito', 0))
         pago_devolucion_usd = parse_venezuela_number(pagos.get('devolucion', 0))
-
         tiene_descuento = (pago_efectivo_usd > 0 or pago_zelle > 0) and (pago_efectivo_bs == 0 and pago_movil == 0 and pago_transferencia == 0 and pago_tarjeta == 0)
-
         discount = subtotal * (discount_percent / 100) if tiene_descuento else 0
         taxable = subtotal - discount
         tax = taxable * 0.16
         total_usd = taxable + tax
         total_bs = total_usd * rate
-
         total_pagado_usd = (pago_efectivo_usd + pago_zelle +
                            (pago_efectivo_bs / rate) +
                            (pago_movil / rate) +
@@ -2609,10 +2335,8 @@ def checkout():
                            (pago_tarjeta / rate) +
                            pago_nota_credito_usd +
                            pago_devolucion_usd)
-
         cambio_usd = total_pagado_usd - total_usd
         cambio_bs = cambio_usd * rate
-
         metodos_pagos = []
         if pago_efectivo_bs > 0: metodos_pagos.append(f"Efectivo Bs: Bs. {pago_efectivo_bs:,.2f}")
         if pago_efectivo_usd > 0: metodos_pagos.append(f"Efectivo USD: ${pago_efectivo_usd:,.2f}")
@@ -2622,29 +2346,19 @@ def checkout():
         if pago_tarjeta > 0: metodos_pagos.append(f"Tarjeta: Bs. {pago_tarjeta:,.2f}")
         if pago_nota_credito_usd > 0: metodos_pagos.append(f"Nota Crédito: ${pago_nota_credito_usd:,.2f}")
         if pago_devolucion_usd > 0: metodos_pagos.append(f"Devolución: ${pago_devolucion_usd:,.2f}")
-
         payment_method = " | ".join(metodos_pagos) if metodos_pagos else "Múltiples métodos"
         payment_details = json.dumps({
-            'efectivo_bs': pago_efectivo_bs,
-            'efectivo_usd': pago_efectivo_usd,
-            'zelle': pago_zelle,
-            'movil': pago_movil,
-            'transferencia': pago_transferencia,
-            'tarjeta': pago_tarjeta,
-            'nota_credito_usd': pago_nota_credito_usd,
-            'devolucion_usd': pago_devolucion_usd,
-            'cambio_usd': cambio_usd,
-            'cambio_bs': cambio_bs,
-            'tasa': rate
+            'efectivo_bs': pago_efectivo_bs, 'efectivo_usd': pago_efectivo_usd,
+            'zelle': pago_zelle, 'movil': pago_movil,
+            'transferencia': pago_transferencia, 'tarjeta': pago_tarjeta,
+            'nota_credito_usd': pago_nota_credito_usd, 'devolucion_usd': pago_devolucion_usd,
+            'cambio_usd': cambio_usd, 'cambio_bs': cambio_bs, 'tasa': rate
         })
-
         next_inv_result = execute_query("SELECT value FROM config WHERE key_name = 'next_invoice'", fetch_one=True)
         next_inv = int(next_inv_result['value']) if next_inv_result else 1
         execute_query("UPDATE config SET value = %s WHERE key_name = 'next_invoice'", (str(next_inv + 1),), commit=True)
-
         items_json = json.dumps(cart)
         fecha_actual = datetime.now().isoformat()
-
         execute_query("""INSERT INTO sales
                        (invoice_number, date, user_id, client_id, client_name,
                         client_phone, client_address, items, subtotal, discount, tax,
@@ -2658,74 +2372,46 @@ def checkout():
                       total_usd, total_bs, payment_method, payment_details,
                       pago_efectivo_bs, pago_efectivo_usd, pago_zelle, pago_movil,
                       pago_transferencia, pago_tarjeta, cambio_usd, cambio_bs), commit=True)
-
         registrar_movimiento_caja(
-            tipo='ingreso',
-            monto_bs=total_bs,
-            monto_usd=total_usd,
+            tipo='ingreso', monto_bs=total_bs, monto_usd=total_usd,
             concepto=f'Venta N° {next_inv} - {client_name}',
-            referencia_tipo='venta',
-            referencia_id=next_inv,
-            metodo='efectivo',
+            referencia_tipo='venta', referencia_id=next_inv, metodo='efectivo',
             usuario=session.get('username', 'SISTEMA'),
-            nota=f"Venta N° {next_inv} - Cliente: {client_name}",
-            tasa=rate
+            nota=f"Venta N° {next_inv} - Cliente: {client_name}", tasa=rate
         )
-
         for item in cart:
             execute_query("UPDATE products SET stock = stock - %s WHERE id = %s", (item['quantity'], item['id']), commit=True)
-
         eliminados = limpiar_o_reactivar_productos_agotados()
         if eliminados > 0:
             flash(f'[INFO] Se eliminaron {eliminados} productos agotados', 'info')
-
         company = execute_query("SELECT * FROM company WHERE id = 1", fetch_one=True)
-
         existing_client = execute_query("SELECT id FROM clientes_frecuentes WHERE cedula = %s", (client_id,), fetch_one=True)
         if existing_client:
             execute_query("UPDATE clientes_frecuentes SET nombre = %s, telefono = %s, direccion = %s, ultima_compra = %s, total_compras = total_compras + 1, monto_total = monto_total + %s WHERE cedula = %s", (client_name, client_phone, client_address, fecha_actual, total_usd, client_id), commit=True)
         else:
             execute_query("INSERT INTO clientes_frecuentes (cedula, nombre, telefono, direccion, ultima_compra, monto_total) VALUES (%s, %s, %s, %s, %s, %s)", (client_id, client_name, client_phone, client_address, fecha_actual, total_usd), commit=True)
-
         log_action(session['user_id'], session['username'], 'SALE', f"Factura N° {next_inv} - Total: ${total_usd:.2f}")
-
         if cambio_usd > 0.01:
             flash(f'[OK] Factura N° {next_inv:04d} generada. Cambio: ${cambio_usd:.2f} USD (Bs. {cambio_bs:.2f})', 'success')
         else:
             flash(f'[OK] Factura N° {next_inv:04d} generada.', 'success')
-
     except Exception as e:
         logger.error(f"Error en checkout: {e}")
         flash(f'[ERROR] Error al procesar la venta: {str(e)}', 'danger')
         return redirect(url_for('facturacion'))
-
     session.pop('cart', None)
-
     return render_template('invoice.html',
-                          invoice_number=next_inv,
-                          client_id=client_id,
-                          client_name=client_name,
-                          client_phone=client_phone,
-                          client_address=client_address,
-                          cart=cart,
-                          subtotal=subtotal,
-                          discount=discount,
-                          tax=tax,
-                          total_usd=total_usd,
-                          total_bs=total_bs,
-                          current_date=fecha_actual,
-                          company=company,
+                          invoice_number=next_inv, client_id=client_id, client_name=client_name,
+                          client_phone=client_phone, client_address=client_address,
+                          cart=cart, subtotal=subtotal, discount=discount, tax=tax,
+                          total_usd=total_usd, total_bs=total_bs,
+                          current_date=fecha_actual, company=company,
                           pagos={
-                              'efectivo_bs': pago_efectivo_bs,
-                              'efectivo_usd': pago_efectivo_usd,
-                              'zelle': pago_zelle,
-                              'movil': pago_movil,
-                              'transferencia': pago_transferencia,
-                              'tarjeta': pago_tarjeta,
-                              'nota_credito_usd': pago_nota_credito_usd,
-                              'devolucion_usd': pago_devolucion_usd,
-                              'cambio_usd': cambio_usd,
-                              'cambio_bs': cambio_bs
+                              'efectivo_bs': pago_efectivo_bs, 'efectivo_usd': pago_efectivo_usd,
+                              'zelle': pago_zelle, 'movil': pago_movil,
+                              'transferencia': pago_transferencia, 'tarjeta': pago_tarjeta,
+                              'nota_credito_usd': pago_nota_credito_usd, 'devolucion_usd': pago_devolucion_usd,
+                              'cambio_usd': cambio_usd, 'cambio_bs': cambio_bs
                           },
                           rate=rate)
 
@@ -2749,7 +2435,10 @@ def presupuesto():
         rate = 36.50
         company = None
     total_bs = total_usd * rate
-    return render_template('presupuesto.html', client_name=client_name, client_id=client_id, client_phone=client_phone, client_address=client_address, cart=cart, subtotal=subtotal, tax=tax, total_usd=total_usd, total_bs=total_bs, current_date=datetime.now().strftime('%d/%m/%Y %H:%M:%S'), company=company)
+    return render_template('presupuesto.html', client_name=client_name, client_id=client_id,
+                          client_phone=client_phone, client_address=client_address, cart=cart,
+                          subtotal=subtotal, tax=tax, total_usd=total_usd, total_bs=total_bs,
+                          current_date=datetime.now().strftime('%d/%m/%Y %H:%M:%S'), company=company)
 
 @app.route('/presupuesto', methods=['POST'])
 def presupuesto_route():
@@ -2783,14 +2472,9 @@ def opening_balance():
             execute_query("UPDATE config SET value = %s WHERE key_name = 'opening_balance'", (str(monto),), commit=True)
             execute_query("INSERT INTO cash_opening (opening_date, user_id, user_name, opening_balance, notes) VALUES (%s, %s, %s, %s, %s)", (datetime.now().isoformat(), session['user_id'], session['username'], monto, "Apertura de caja"), commit=True)
             registrar_movimiento_caja(
-                tipo='ingreso',
-                monto_bs=monto,
-                monto_usd=0,
-                concepto='Apertura de caja',
-                referencia_tipo='apertura',
-                referencia_id=0,
-                metodo='efectivo',
-                usuario=session.get('username', 'SISTEMA'),
+                tipo='ingreso', monto_bs=monto, monto_usd=0,
+                concepto='Apertura de caja', referencia_tipo='apertura', referencia_id=0,
+                metodo='efectivo', usuario=session.get('username', 'SISTEMA'),
                 nota=f"Apertura de caja con Bs. {monto:.2f}",
                 tasa=get_cached_exchange_rate()
             )
@@ -2817,7 +2501,6 @@ def opening_balance():
     return render_template('opening_balance.html', current_balance=current_balance, company=company,
                           puede_abrir=puede_abrir, datetime=datetime, saldo_bs=saldo['bs'], saldo_usd=saldo['usd'])
 
-# ==================== CIERRE DE CAJA (REDIRECCIÓN A UNIFICADO) ====================
 @app.route('/cash_closure', methods=['GET', 'POST'])
 @login_required
 def cash_closure():
@@ -2836,38 +2519,26 @@ def daily_closure():
     )
     if cierre_hoy:
         cierre_realizado = True
-
     if request.method == 'POST':
         if cierre_realizado:
             flash('[WARN] Ya se realizó el cierre de caja hoy.', 'warning')
             return redirect(url_for('daily_closure'))
-
         password = request.form.get('supervisor_password')
         if not password:
             flash('[ERROR] Se requiere contraseña para cerrar caja', 'danger')
             return redirect(url_for('daily_closure'))
-
         autorizado = execute_query(
-            "SELECT * FROM users WHERE role IN ('Dueño', 'Supervisor')",
-            fetch_one=True
+            "SELECT * FROM users WHERE role IN ('Dueño', 'Supervisor')", fetch_one=True
         )
         if not autorizado or not bcrypt.checkpw(password.encode(), autorizado['password'].encode()):
             flash('Contraseña incorrecta. Solo Dueño o Supervisor pueden cerrar caja', 'danger')
             return redirect(url_for('daily_closure'))
-
         rate = get_cached_exchange_rate()
-        opening_row = execute_query(
-            "SELECT value FROM config WHERE key_name = 'opening_balance'", fetch_one=True
-        )
+        opening_row = execute_query("SELECT value FROM config WHERE key_name = 'opening_balance'", fetch_one=True)
         opening_balance = float(opening_row['value']) if opening_row else 0
-
-        ventas = execute_query(
-            "SELECT * FROM sales WHERE date LIKE %s AND invoice_number > 0",
-            (today_str + '%',), fetch_all=True
-        )
+        ventas = execute_query("SELECT * FROM sales WHERE date LIKE %s AND invoice_number > 0", (today_str + '%',), fetch_all=True)
         total_bs = sum(float(v['total_bs']) for v in ventas) if ventas else 0
         total_usd = sum(float(v['total_usd']) for v in ventas) if ventas else 0
-
         metodos = execute_query("""
             SELECT
                 COALESCE(SUM(pago_efectivo_bs),0) as efectivo_bs,
@@ -2876,41 +2547,28 @@ def daily_closure():
                 COALESCE(SUM(pago_movil),0) as movil,
                 COALESCE(SUM(pago_transferencia),0) as transferencia,
                 COALESCE(SUM(pago_tarjeta),0) as tarjeta
-            FROM sales
-            WHERE date LIKE %s AND invoice_number > 0
+            FROM sales WHERE date LIKE %s AND invoice_number > 0
         """, (today_str + '%',), fetch_one=True) or {}
-
         total_efectivo_bs = float(metodos.get('efectivo_bs', 0))
         total_efectivo_usd = float(metodos.get('efectivo_usd', 0))
         total_zelle = float(metodos.get('zelle', 0))
         total_pago_movil = float(metodos.get('movil', 0))
         total_transferencia = float(metodos.get('transferencia', 0))
         total_tarjeta = float(metodos.get('tarjeta', 0))
-
         devoluciones_bs = float(request.form.get('devoluciones_bs', 0) or 0)
         devoluciones_usd = float(request.form.get('devoluciones_usd', 0) or 0)
         total_devoluciones_bs = devoluciones_bs + (devoluciones_usd * rate)
-
         expected_cash = opening_balance + total_bs - total_devoluciones_bs
-
         entregado_efectivo_bs = float(request.form.get('cash_bs_delivered', 0) or 0)
         entregado_efectivo_usd = float(request.form.get('cash_usd_delivered', 0) or 0)
         entregado_zelle = float(request.form.get('zelle_delivered', 0) or 0)
         entregado_movil = float(request.form.get('pago_movil_delivered', 0) or 0)
         entregado_transferencia = float(request.form.get('transferencia_delivered', 0) or 0)
         entregado_tarjeta = float(request.form.get('tarjeta_delivered', 0) or 0)
-
-        total_entregado = (
-            entregado_efectivo_bs +
-            (entregado_efectivo_usd * rate) +
-            (entregado_zelle * rate) +
-            entregado_movil +
-            entregado_transferencia +
-            entregado_tarjeta
-        )
-
+        total_entregado = (entregado_efectivo_bs + (entregado_efectivo_usd * rate) +
+                          (entregado_zelle * rate) + entregado_movil +
+                          entregado_transferencia + entregado_tarjeta)
         difference = total_entregado - expected_cash
-
         if difference > 0.01:
             resultado = f"SOBRANTE: +{difference:.2f} Bs"
             tipo_flash = 'warning'
@@ -2920,7 +2578,6 @@ def daily_closure():
         else:
             resultado = "CUADRADO PERFECTO"
             tipo_flash = 'success'
-
         notes = request.form.get('notes', '')
         execute_query("""
             INSERT INTO cash_closures
@@ -2928,63 +2585,34 @@ def daily_closure():
              opening_balance, sales_total_bs,
              cash_bs_delivered, cash_usd_delivered, zelle_delivered,
              pago_movil_delivered, transferencia_delivered, tarjeta_delivered,
-             devoluciones_bs, devoluciones_usd,
-             difference, notes)
+             devoluciones_bs, devoluciones_usd, difference, notes)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
-            datetime.now().isoformat(),
-            session['user_id'],
-            session['username'],
-            session['username'],
-            autorizado['username'],
-            opening_balance,
-            total_bs,
-            entregado_efectivo_bs,
-            entregado_efectivo_usd,
-            entregado_zelle,
-            entregado_movil,
-            entregado_transferencia,
-            entregado_tarjeta,
-            devoluciones_bs,
-            devoluciones_usd,
-            difference,
+            datetime.now().isoformat(), session['user_id'], session['username'],
+            session['username'], autorizado['username'], opening_balance, total_bs,
+            entregado_efectivo_bs, entregado_efectivo_usd, entregado_zelle,
+            entregado_movil, entregado_transferencia, entregado_tarjeta,
+            devoluciones_bs, devoluciones_usd, difference,
             f"{resultado}\n{notes}" if notes else resultado
         ), commit=True)
-
         execute_query("UPDATE config SET value = '0' WHERE key_name = 'opening_balance'", commit=True)
         execute_query("UPDATE saldo_caja SET saldo_bs = 0, saldo_usd = 0 WHERE id = 1", commit=True)
-
         saldo = obtener_saldo_actual()
         if saldo['bs'] > 0:
             registrar_movimiento_caja(
-                tipo='egreso',
-                monto_bs=saldo['bs'],
-                monto_usd=saldo['usd'],
-                concepto='Cierre de caja',
-                referencia_tipo='cierre',
-                referencia_id=0,
-                metodo='efectivo',
-                usuario=session.get('username', 'SISTEMA'),
-                nota=f"Cierre de caja - {resultado}",
-                tasa=rate
+                tipo='egreso', monto_bs=saldo['bs'], monto_usd=saldo['usd'],
+                concepto='Cierre de caja', referencia_tipo='cierre', referencia_id=0,
+                metodo='efectivo', usuario=session.get('username', 'SISTEMA'),
+                nota=f"Cierre de caja - {resultado}", tasa=rate
             )
-
         log_action(session['user_id'], session['username'], 'CASH_CLOSURE', f"Resultado: {resultado} - Fondo reiniciado a CERO")
         flash(f'[OK] Cierre de caja completado. {resultado} Fondo de caja reiniciado a CERO (Bs. 0.00).', tipo_flash)
         return redirect(url_for('daily_closure'))
-
     try:
         rate = get_cached_exchange_rate()
-        opening_row = execute_query(
-            "SELECT value FROM config WHERE key_name = 'opening_balance'", fetch_one=True
-        )
+        opening_row = execute_query("SELECT value FROM config WHERE key_name = 'opening_balance'", fetch_one=True)
         opening_balance = float(opening_row['value']) if opening_row else 0
-
-        sales = execute_query(
-            "SELECT * FROM sales WHERE date LIKE %s AND invoice_number > 0 ORDER BY date DESC",
-            (today_str + '%',), fetch_all=True
-        ) or []
-
+        sales = execute_query("SELECT * FROM sales WHERE date LIKE %s AND invoice_number > 0 ORDER BY date DESC", (today_str + '%',), fetch_all=True) or []
         metodos = execute_query("""
             SELECT
                 COALESCE(SUM(pago_efectivo_bs),0) as efectivo_bs,
@@ -2995,10 +2623,8 @@ def daily_closure():
                 COALESCE(SUM(pago_tarjeta),0) as tarjeta,
                 COALESCE(SUM(total_bs),0) as total_bs,
                 COALESCE(SUM(total_usd),0) as total_usd
-            FROM sales
-            WHERE date LIKE %s AND invoice_number > 0
+            FROM sales WHERE date LIKE %s AND invoice_number > 0
         """, (today_str + '%',), fetch_one=True) or {}
-
         total_bs = float(metodos.get('total_bs', 0))
         total_usd = float(metodos.get('total_usd', 0))
         total_efectivo_bs = float(metodos.get('efectivo_bs', 0))
@@ -3007,12 +2633,10 @@ def daily_closure():
         total_pago_movil = float(metodos.get('movil', 0))
         total_transferencia = float(metodos.get('transferencia', 0))
         total_tarjeta = float(metodos.get('tarjeta', 0))
-
         saldo = obtener_saldo_actual()
         company = execute_query("SELECT * FROM company WHERE id = 1", fetch_one=True)
         cashier_name = session.get('username', 'Usuario')
         today = today_str
-
         opening_balance_cero = opening_balance if not cierre_realizado else 0
         total_bs_cero = total_bs if not cierre_realizado else 0
         total_usd_cero = total_usd if not cierre_realizado else 0
@@ -3022,7 +2646,6 @@ def daily_closure():
         total_pago_movil_cero = total_pago_movil if not cierre_realizado else 0
         total_transferencia_cero = total_transferencia if not cierre_realizado else 0
         total_tarjeta_cero = total_tarjeta if not cierre_realizado else 0
-
     except Exception as e:
         logger.error(f"Error en daily_closure GET: {e}")
         flash(f'Error al cargar datos: {e}', 'danger')
@@ -3036,37 +2659,19 @@ def daily_closure():
         saldo = {'bs': 0, 'usd': 0}
         opening_balance_cero = total_bs_cero = total_usd_cero = 0
         total_efectivo_bs_cero = total_efectivo_usd_cero = total_zelle_cero = total_pago_movil_cero = total_transferencia_cero = total_tarjeta_cero = 0
-
     return render_template('daily_closure_unified.html',
-        sales=sales,
-        total_ventas=len(sales),
-        total_usd=total_usd,
-        total_bs=total_bs,
-        total_efectivo_bs=total_efectivo_bs,
-        total_efectivo_usd=total_efectivo_usd,
-        total_zelle=total_zelle,
-        total_pago_movil=total_pago_movil,
-        total_transferencia=total_transferencia,
-        total_tarjeta=total_tarjeta,
-        opening_balance=opening_balance,
-        cierre_realizado=cierre_realizado,
-        cashier_name=cashier_name,
-        rate=rate,
-        saldo_bs=saldo['bs'],
-        saldo_usd=saldo['usd'],
-        company=company,
-        today=today,
-        opening_balance_cero=opening_balance_cero,
-        total_bs_cero=total_bs_cero,
-        total_usd_cero=total_usd_cero,
-        total_efectivo_bs_cero=total_efectivo_bs_cero,
-        total_efectivo_usd_cero=total_efectivo_usd_cero,
-        total_zelle_cero=total_zelle_cero,
-        total_pago_movil_cero=total_pago_movil_cero,
-        total_transferencia_cero=total_transferencia_cero,
-        total_tarjeta_cero=total_tarjeta_cero,
-        now=datetime.now()
-    )
+        sales=sales, total_ventas=len(sales), total_usd=total_usd, total_bs=total_bs,
+        total_efectivo_bs=total_efectivo_bs, total_efectivo_usd=total_efectivo_usd,
+        total_zelle=total_zelle, total_pago_movil=total_pago_movil,
+        total_transferencia=total_transferencia, total_tarjeta=total_tarjeta,
+        opening_balance=opening_balance, cierre_realizado=cierre_realizado,
+        cashier_name=cashier_name, rate=rate, saldo_bs=saldo['bs'], saldo_usd=saldo['usd'],
+        company=company, today=today, opening_balance_cero=opening_balance_cero,
+        total_bs_cero=total_bs_cero, total_usd_cero=total_usd_cero,
+        total_efectivo_bs_cero=total_efectivo_bs_cero, total_efectivo_usd_cero=total_efectivo_usd_cero,
+        total_zelle_cero=total_zelle_cero, total_pago_movil_cero=total_pago_movil_cero,
+        total_transferencia_cero=total_transferencia_cero, total_tarjeta_cero=total_tarjeta_cero,
+        now=datetime.now())
 
 # ==================== VENTAS DEL MES ====================
 @app.route('/ventas_mes')
@@ -3082,12 +2687,10 @@ def ventas_mes():
         else:
             end = f"{year}-{month+1:02d}-01"
         sales = execute_query("""
-            SELECT s.date, s.invoice_number, s.client_name,
-                   s.total_usd, s.total_bs,
+            SELECT s.date, s.invoice_number, s.client_name, s.total_usd, s.total_bs,
                    COALESCE(s.payment_method, 'Efectivo USD') as payment_method,
                    u.username as seller_name
-            FROM sales s
-            LEFT JOIN users u ON s.user_id = u.id
+            FROM sales s LEFT JOIN users u ON s.user_id = u.id
             WHERE s.date >= %s AND s.date < %s AND s.invoice_number > 0
             ORDER BY s.date DESC
         """, (start, end), fetch_all=True)
@@ -3101,15 +2704,8 @@ def ventas_mes():
         total_usd = total_bs = 0
         company = None
     meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
-    return render_template('ventas_mes.html',
-                          sales=sales,
-                          total_usd=total_usd,
-                          total_bs=total_bs,
-                          month=month,
-                          year=year,
-                          meses=meses,
-                          company=company,
-                          total_ventas=len(sales))
+    return render_template('ventas_mes.html', sales=sales, total_usd=total_usd, total_bs=total_bs,
+                          month=month, year=year, meses=meses, company=company, total_ventas=len(sales))
 
 @app.route('/get_cash_fund')
 @login_required
@@ -3161,7 +2757,9 @@ def monthly_profit():
         total_ventas = ganancia = margen = 0
         company = None
     meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
-    return render_template('monthly_profit.html', sales=sales, purchases=purchases, total_ventas=total_ventas, ganancia=ganancia, margen=margen, month=month, year=year, meses=meses, company=company)
+    return render_template('monthly_profit.html', sales=sales, purchases=purchases,
+                          total_ventas=total_ventas, ganancia=ganancia, margen=margen,
+                          month=month, year=year, meses=meses, company=company)
 
 @app.route('/print_inventory')
 @login_required
@@ -3179,7 +2777,8 @@ def print_inventory():
         flash(f'Error: {e}', 'danger')
         products = []
         company = None
-    return render_template('print_inventory.html', products=products, company=company, current_date=datetime.now().strftime('%d/%m/%Y %H:%M:%S'))
+    return render_template('print_inventory.html', products=products, company=company,
+                          current_date=datetime.now().strftime('%d/%m/%Y %H:%M:%S'))
 
 # ==================== HISTORIAL DE FACTURACIÓN ====================
 @app.route('/historial_facturacion')
@@ -3218,34 +2817,26 @@ def historial_facturacion():
 @app.route('/imprimir_factura/<int:invoice_number>')
 @login_required
 def imprimir_factura(invoice_number):
-    logger.info(f"📄 IMPRIMIR FACTURA: N° {invoice_number} - Solicitada por {session.get('username')}")
+    logger.info(f"IMPRIMIR FACTURA: N° {invoice_number} - Solicitada por {session.get('username')}")
     try:
         sale = execute_query("""
             SELECT s.*, u.username as user_name
-            FROM sales s
-            LEFT JOIN users u ON s.user_id = u.id
+            FROM sales s LEFT JOIN users u ON s.user_id = u.id
             WHERE s.invoice_number = %s AND s.invoice_number > 0
         """, (invoice_number,), fetch_one=True)
-
         if not sale:
-            logger.warning(f"⚠️ Factura N° {invoice_number} NO encontrada")
             flash('Factura no encontrada', 'danger')
             return redirect(url_for('historial_facturacion'))
-
-        logger.info(f"✅ Factura N° {invoice_number} encontrada. Renderizando...")
-
         items = json.loads(sale['items']) if sale['items'] else []
         company = execute_query("SELECT * FROM company WHERE id = 1", fetch_one=True)
         rate = get_cached_exchange_rate()
         total_bs = float(sale['total_bs']) if sale.get('total_bs') else (float(sale['total_usd']) * rate)
-
         for item in items:
             product = execute_query("SELECT sale_type, unit FROM products WHERE id = %s", (item['id'],), fetch_one=True)
             item['sale_type'] = product['sale_type'] if product else 'unit'
             item['unit'] = product['unit'] if product and product.get('unit') else 'unidad'
             item['price'] = float(item['price']) if item.get('price') else 0
             item['quantity'] = float(item['quantity']) if item.get('quantity') else 0
-
         pagos = {}
         if sale.get('payment_details'):
             try:
@@ -3267,12 +2858,11 @@ def imprimir_factura(invoice_number):
                 'tasa': rate
             }
         else:
-            pagos.setdefault('nota_credito_usd', float(sale.get('pago_nota_credito_usd', 0)) if 'pago_nota_credito_usd' in sale else 0)
-            pagos.setdefault('devolucion_usd', float(sale.get('pago_devolucion_usd', 0)) if 'pago_devolucion_usd' in sale else 0)
+            pagos.setdefault('nota_credito_usd', 0)
+            pagos.setdefault('devolucion_usd', 0)
             pagos.setdefault('cambio_usd', float(sale.get('cambio_usd', 0)))
             pagos.setdefault('cambio_bs', float(sale.get('cambio_bs', 0)))
             pagos.setdefault('tasa', rate)
-
         return render_template('invoice.html',
                               invoice_number=sale['invoice_number'],
                               client_name=sale['client_name'],
@@ -3284,16 +2874,11 @@ def imprimir_factura(invoice_number):
                               discount=float(sale['discount']) if sale.get('discount') else 0,
                               tax=float(sale['tax']) if sale.get('tax') else 0,
                               total_usd=float(sale['total_usd']) if sale.get('total_usd') else 0,
-                              total_bs=total_bs,
-                              payment_method=sale['payment_method'],
-                              current_date=sale['date'],
-                              company=company,
-                              session=session,
-                              datetime=datetime,
-                              pagos=pagos,
-                              rate=rate)
+                              total_bs=total_bs, payment_method=sale['payment_method'],
+                              current_date=sale['date'], company=company,
+                              session=session, datetime=datetime, pagos=pagos, rate=rate)
     except Exception as e:
-        logger.error(f"❌ ERROR al imprimir factura N° {invoice_number}: {e}")
+        logger.error(f"ERROR al imprimir factura N° {invoice_number}: {e}")
         import traceback
         traceback.print_exc()
         flash(f'Error al cargar factura: {str(e)}', 'danger')
@@ -3335,7 +2920,8 @@ def exchange_rate():
         discount_val = 5.0
         company = None
         rate_history = []
-    return render_template('exchange_rate.html', exchange_rate=exchange_rate_val, discount_percent=discount_val, company=company, rate_history=rate_history)
+    return render_template('exchange_rate.html', exchange_rate=exchange_rate_val,
+                          discount_percent=discount_val, company=company, rate_history=rate_history)
 
 @app.route('/update_exchange_rate', methods=['POST'])
 @login_required
@@ -3527,7 +3113,7 @@ def delete_user(user_id):
         flash(f'Error: {e}', 'danger')
     return redirect(url_for('manage_users'))
 
-# ==================== RUTAS DE DIAGNÓSTICO Y CORRECCIÓN ====================
+# ==================== DIAGNÓSTICO ====================
 @app.route('/corregir_stocks_negativos')
 @login_required
 def corregir_stocks_negativos():
@@ -3578,23 +3164,14 @@ def historial_caja():
             mov['monto_bs'] = float(mov['monto_bs']) if mov['monto_bs'] else 0
             mov['monto_usd'] = float(mov['monto_usd']) if mov['monto_usd'] else 0
             mov['tasa_usd'] = float(mov['tasa_usd']) if mov['tasa_usd'] else 0
-        return render_template('historial_caja.html',
-                              movimientos=movimientos,
-                              returns=movimientos,
-                              saldo_bs=saldo['bs'],
-                              saldo_usd=saldo['usd'],
-                              company=company,
-                              datetime=datetime)
+        return render_template('historial_caja.html', movimientos=movimientos,
+                              returns=movimientos, saldo_bs=saldo['bs'], saldo_usd=saldo['usd'],
+                              company=company, datetime=datetime)
     except Exception as e:
         logger.error(f"Error en historial_caja: {e}")
         flash(f'[ERROR] Error al cargar historial de caja: {str(e)}', 'danger')
-        return render_template('historial_caja.html',
-                              movimientos=[],
-                              returns=[],
-                              saldo_bs=0,
-                              saldo_usd=0,
-                              company=None,
-                              datetime=datetime)
+        return render_template('historial_caja.html', movimientos=[], returns=[],
+                              saldo_bs=0, saldo_usd=0, company=None, datetime=datetime)
 
 @app.route('/debug_ventas')
 @login_required
@@ -3604,44 +3181,24 @@ def debug_ventas():
         return redirect(url_for('dashboard'))
     try:
         ventas = execute_query("""SELECT id, invoice_number, date, client_name, total_usd, total_bs FROM sales WHERE invoice_number > 0 ORDER BY id DESC LIMIT 20""", fetch_all=True)
-        html = """
-        <!DOCTYPE html>
-        <html>
-        <head><meta charset="UTF-8"><title>Diagnóstico de Ventas - RENAVEN</title>
-        <style>
-            body { font-family: Arial, sans-serif; margin: 20px; background: #f8fafc; }
-            h1 { color: #001C47; }
-            table { border-collapse: collapse; width: 100%; background: white; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background: #6BB6EC; color: #000; }
-            .success { background: #d1fae5; color: #065f46; padding: 10px; border-radius: 8px; }
-            .error { background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 8px; }
-            .info { background: #dbeafe; color: #1e40af; padding: 10px; border-radius: 8px; margin-bottom: 20px; }
-        </style>
-        </head>
-        <body>
-            <h1>Diagnóstico de Ventas - RENAVEN</h1>
-        """
-        html += f"""<div class="info"><strong>Configuración:</strong><br>Total de ventas en base de datos (facturas positivas): {len(ventas)}</div>"""
+        html = """<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Diagnóstico - RENAVEN</title>
+        <style>body{font-family:Arial;margin:20px;background:#f8fafc;}h1{color:#001C47;}
+        table{border-collapse:collapse;width:100%;background:white;}th,td{border:1px solid #ddd;padding:8px;text-align:left;}
+        th{background:#6BB6EC;}.error{background:#fee2e2;color:#991b1b;padding:10px;border-radius:8px;}
+        .info{background:#dbeafe;color:#1e40af;padding:10px;border-radius:8px;margin-bottom:20px;}</style>
+        </head><body><h1>Diagnóstico de Ventas - RENAVEN</h1>"""
+        html += f"""<div class="info">Total de facturas: {len(ventas)}</div>"""
         if ventas:
-            html += "<h2>Últimas facturas registradas:</h2>"
             html += "<table><tr><th>ID</th><th>Invoice N°</th><th>Fecha</th><th>Cliente</th><th>Total USD</th><th>Total Bs</th></tr>"
             for venta in ventas:
                 html += f"<tr><td>{venta['id']}</td><td>{venta['invoice_number']}</td><td>{venta['date']}</td><td>{venta['client_name']}</td><td>{venta['total_usd']}</td><td>{venta['total_bs']}</td></tr>"
             html += "</table>"
         else:
-            html += "<div class='error'><strong>No hay facturas registradas en la base de datos!</strong><br>Use el botón de abajo para insertar una factura de prueba.</div>"
-        html += """
-            <br>
-            <div style="margin-top: 20px;">
-                <a href="/historial_facturacion" style="background: #001C47; color: white; padding: 10px 20px; text-decoration: none; border-radius: 50px; margin-right: 10px;">Ir a Historial de Facturación</a>
-                <a href="/insertar_factura_prueba" style="background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 50px; margin-right: 10px;">Insertar Factura de Prueba</a>
-                <a href="/facturacion" style="background: #6BB6EC; color: white; padding: 10px 20px; text-decoration: none; border-radius: 50px; margin-right: 10px;">Ir a Facturación</a>
-                <a href="/dashboard" style="background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 50px;">Volver al Dashboard</a>
-            </div>
-        </body>
-        </html>
-        """
+            html += "<div class='error'>No hay facturas registradas.</div>"
+        html += """<br><div style="margin-top:20px;">
+        <a href="/historial_facturacion" style="background:#001C47;color:white;padding:10px 20px;text-decoration:none;border-radius:50px;margin-right:10px;">Ir a Historial</a>
+        <a href="/dashboard" style="background:#6c757d;color:white;padding:10px 20px;text-decoration:none;border-radius:50px;">Volver al Dashboard</a>
+        </div></body></html>"""
         return html
     except Exception as e:
         logger.error(f"Error en debug_ventas: {e}")
@@ -3655,7 +3212,7 @@ def page_not_found(error):
 @app.errorhandler(500)
 def internal_error(error):
     logger.error(f"Error 500: {error}")
-    flash('[ERROR] Error interno del servidor. Por favor contacte al administrador.', 'danger')
+    flash('[ERROR] Error interno del servidor.', 'danger')
     return redirect(url_for('dashboard'))
 
 @app.errorhandler(403)
@@ -3663,12 +3220,11 @@ def forbidden(error):
     flash('[ERROR] No tiene permiso para acceder a esta página', 'danger')
     return redirect(url_for('dashboard'))
 
-# ==================== SCHEDULER PARA TASA BCV ====================
+# ==================== SCHEDULER BCV ====================
 def scheduled_bcv_update():
     with app.app_context():
         logger.info("[SCHEDULER] Ejecutando actualización programada de tasa BCV...")
         update_bcv_rate()
-        logger.info("[SCHEDULER] Actualización programada de tasa BCV completada")
 
 def start_scheduler():
     def run_scheduled():
@@ -3679,73 +3235,35 @@ def start_scheduler():
     scheduler_thread.start()
     logger.info("[SCHEDULER] Scheduler de tasa BCV iniciado (cada 6 horas)")
 
-    # ==================== INICIALIZACIÓN PARA RENDER (GUNICORN) ====================
+# ==================== INICIALIZACIÓN PARA RENDER (GUNICORN) ====================
 with app.app_context():
     try:
         init_connection_pool()
         init_db()
-        print("✅ Base de datos inicializada al arrancar la app")
+        print("Base de datos inicializada al arrancar la app")
     except Exception as e:
-        print(f"❌ Error al inicializar la base de datos: {e}")
+        print(f"Error al inicializar la base de datos: {e}")
 # ==============================================================================
 
-# ==================== INICIO DE LA APLICACIÓN ====================
+# ==================== INICIO ====================
 if __name__ == '__main__':
     import webbrowser
-
     try:
-        # ========== PASO 1: ARRANCAR MYSQL PORTABLE ==========
-        mysql_server_path = os.path.join(bundle_dir, 'mysql_server', 'bin', 'mysqld.exe')
-        if os.path.exists(mysql_server_path):
-            print("🔍 Detectado MySQL portable en mysql_server/")
-            if not asegurar_mysql():
-                print("❌ No se pudo arrancar MySQL portable.")
-                print("💡 Alternativa: Abre XAMPP manualmente y vuelve a intentar.")
-                sys.exit(1)
-            print("⏳ Esperando 3 segundos adicionales...")
-            time.sleep(3)
-        else:
-            print("ℹ️  No se encontró mysql_server/. Usando MySQL externo (XAMPP).")
-
-        # ========== PASO 2: CREAR DB SI NO EXISTE ==========
-        print("🔌 Verificando base de datos...")
-        ensure_database_exists()
-
-        # ========== PASO 3: INICIALIZAR POOL Y TABLAS ==========
-        print("🔌 Conectando a MySQL...")
+        print("Conectando a PostgreSQL...")
         init_connection_pool()
-        print("✅ Conexión MySQL exitosa")
-
-        print("📊 Inicializando base de datos...")
+        print("Conexion PostgreSQL exitosa")
+        print("Inicializando base de datos...")
         init_db()
-        print("✅ Base de datos lista")
-
+        print("Base de datos lista")
         try:
             update_bcv_rate()
         except Exception as e:
-            print(f"⚠️ No se pudo actualizar tasa BCV: {e}")
+            print(f"No se pudo actualizar tasa BCV: {e}")
         start_scheduler()
-
         print("\n" + "="*60)
-        print("[OK] SISTEMA CON MYSQL PORTÁTIL - VERSIÓN 3.0 COMPLETA")
-        print("Base de datos: renaven_db en modo portable")
+        print("[OK] SISTEMA RENAVEN - POSTGRESQL")
         print("http://127.0.0.1:5000")
         print("="*60)
-        print("USUARIOS CREADOS (CONTRASEÑAS SEGURAS):")
-        print("   dueño      | Admin123!@#Renaven      | Dueño")
-        print("   supervisor | Super2024!@#Seguro      | Supervisor")
-        print("   cajera     | Cajera$2024Segura       | Cajera")
-        print("   almacen    | Almacen*2024Safe        | Almacenista")
-        print("   jonathan   | Jonathan$2024Secure!    | Dueño")
-        print("="*60)
-        print("TASA BCV AUTOMÁTICA EN TIEMPO REAL")
-        print("   Actualización cada 6 horas")
-        print("   Endpoint /api/bcv-rate")
-        print("="*60)
-        print("🌐 ABRIENDO NAVEGADOR EN 2 SEGUNDOS...")
-        print("="*60)
-
-        # ========== PASO 4: ABRIR NAVEGADOR ==========
         def abrir_navegador():
             time.sleep(2)
             url = 'http://127.0.0.1:5000'
@@ -3753,46 +3271,19 @@ if __name__ == '__main__':
                 chrome_paths = [
                     r"C:\Program Files\Google\Chrome\Application\chrome.exe",
                     r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-                    os.path.expanduser(r"~\AppData\Local\Google\Chrome\Application\chrome.exe"),
                 ]
                 chrome = next((p for p in chrome_paths if os.path.exists(p)), None)
                 if chrome:
-                    print(f"[INFO] Abriendo Chrome desde: {chrome}")
                     webbrowser.register('chrome', None, webbrowser.GenericBrowser(chrome))
                     webbrowser.get('chrome').open(url)
                 else:
-                    print("[INFO] No se encontró Chrome, usando navegador predeterminado.")
                     webbrowser.open(url)
             except Exception as e:
-                print(f"[ERROR] No se pudo abrir navegador: {e}")
-                print(f"👉 Abre manualmente: {url}")
-
+                print(f"No se pudo abrir navegador: {e}")
         threading.Thread(target=abrir_navegador, daemon=True).start()
-
     except Exception as e:
         print(f"[ERROR] Error al iniciar: {e}")
-        print("\nVERIFIQUE:")
-        print("1. Tener la carpeta 'mysql_server' junto al .exe.")
-        print("2. Permisos de escritura en la carpeta del .exe.")
         import traceback
         traceback.print_exc()
-
-        # Guardar error en log para diagnóstico cuando console=False
-        try:
-            error_log = os.path.join(base_dir, "renaven_error.log")
-            with open(error_log, "a", encoding="utf-8") as f:
-                f.write(f"\n[{datetime.now()}] {e}\n")
-                f.write(traceback.format_exc())
-        except Exception:
-            pass
-
         sys.exit(1)
-
-    # ========== PASO 5: ARRANCAR FLASK ==========
-    app.run(
-        host='127.0.0.1',
-        port=5000,
-        debug=False,
-        use_reloader=False,
-        threaded=True
-    )
+    app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False, threaded=True)
