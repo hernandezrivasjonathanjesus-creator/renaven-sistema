@@ -2,8 +2,9 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_wtf.csrf import CSRFProtect
 from flask_mail import Mail, Message
 from flask_compress import Compress
-import mysql.connector
-from mysql.connector import Error, pooling
+import psycopg2
+import psycopg2.extras
+from psycopg2 import pool, Error
 import bcrypt
 import os
 import sys
@@ -151,70 +152,72 @@ Compress(app)
 
 # ==================== CONFIGURACIÓN DE MYSQL ====================
 DB_CONFIG = {
-    'host': 'sql10.freesqldatabase.com',
-    'port': 3306,
-    'database': 'sql1083865',
-    'user': 'sql1083865',
-    'password': 'bsyx1YZ58X',
-    'autocommit': False,
-    'use_pure': True,
-    'connection_timeout': 30,
-    'charset': 'utf8mb4',
-    'collation': 'utf8mb4_unicode_ci',
-    'consume_results': True
+    'host': 'dpg-db44593l550s73agfcjg-a',
+    'port': 5432,
+    'database': 'renaven_db',
+    'user': 'renaven_db_user',
+    'password': 'EkVMqTsSuFqsoEjltgtLx6yBGmFVVEGY',
+    'connect_timeout': 30,
 }
 
 connection_pool = None
 
 def ensure_database_exists():
-    """Crea la base de datos si no existe (evita error 1049 al arrancar el .exe)."""
-    cfg = {
-        "host":     DB_CONFIG.get("host", "127.0.0.1"),
-        "port":     DB_CONFIG.get("port", 3306),
-        "user":     DB_CONFIG.get("user", "root"),
-        "password": DB_CONFIG.get("password", ""),
-        "use_pure": True,
-        "connection_timeout": 30,
-    }
-    db_name = DB_CONFIG["database"]
-    try:
-        conn = mysql.connector.connect(**cfg)
-        cur = conn.cursor()
-        cur.execute(
-            f"CREATE DATABASE IF NOT EXISTS `{db_name}` "
-            f"CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
-        )
-        conn.commit()
-        cur.close()
-        conn.close()
-        print(f"✅ Base de datos '{db_name}' verificada/creada.")
-    except Exception as e:
-        print(f"[ERROR] No se pudo crear/verificar la DB: {e}")
-        raise
+    """En PostgreSQL la base de datos ya existe (creada por Render)."""
+    pass
+
 
 def init_connection_pool():
     global connection_pool
     try:
-        connection_pool = pooling.MySQLConnectionPool(
-            pool_name="renaven_pool",
-            pool_size=10,
-            pool_reset_session=True,
-            **DB_CONFIG
-        )
-        logger.info("[OK] Pool de conexiones MySQL iniciado (10 conexiones)")
-        print("[OK] Pool de conexiones MySQL iniciado")
-    except Error as e:
+        connection_pool = pool.SimpleConnectionPool(1, 10, **DB_CONFIG)
+        logger.info("[OK] Pool de conexiones PostgreSQL iniciado")
+        print("[OK] Pool de conexiones PostgreSQL iniciado")
+    except Exception as e:
         logger.error(f"Error al crear pool: {e}")
         raise
 
+
+def _mysql_to_pg(query):
+    """Convierte sintaxis MySQL a PostgreSQL."""
+    query = query.replace('`', '')
+    if re.match(r'^\s*SHOW\s+TABLES\s*$', query, re.IGNORECASE):
+        return "SELECT tablename AS \"Tables_in_db\" FROM pg_tables WHERE schemaname = 'public'"
+    m = re.match(r'^\s*SHOW\s+COLUMNS\s+FROM\s+(\w+)(?:\s+LIKE\s+\'([^\']+)\')?\s*$', query, re.IGNORECASE)
+    if m:
+        table = m.group(1); col = m.group(2)
+        if col:
+            return "SELECT column_name AS \"Field\" FROM information_schema.columns WHERE table_name = '" + table + "' AND column_name = '" + col + "'"
+        return "SELECT column_name AS \"Field\" FROM information_schema.columns WHERE table_name = '" + table + "'"
+    query = re.sub(r'\bINT\s+PRIMARY\s+KEY\s+AUTO_INCREMENT\b', 'SERIAL PRIMARY KEY', query, flags=re.IGNORECASE)
+    query = re.sub(r'\bAUTO_INCREMENT\b', '', query, flags=re.IGNORECASE)
+    query = re.sub(r'\bTINYINT\b', 'SMALLINT', query, flags=re.IGNORECASE)
+    query = re.sub(r'ENUM\s*\([^)]+\)', 'VARCHAR(50)', query, flags=re.IGNORECASE)
+    query = re.sub(r'\bENGINE\s*=\s*\w+', '', query, flags=re.IGNORECASE)
+    query = re.sub(r'\bDEFAULT\s+CHARSET\s*=\s*\w+', '', query, flags=re.IGNORECASE)
+    query = re.sub(r'\bCOLLATE\s*=\s*\w+', '', query, flags=re.IGNORECASE)
+    if re.search(r'\bINSERT\s+IGNORE\b', query, re.IGNORECASE):
+        query = re.sub(r'\bINSERT\s+IGNORE\b', 'INSERT', query, flags=re.IGNORECASE)
+        if 'ON CONFLICT' not in query.upper():
+            query = query.rstrip().rstrip(';') + ' ON CONFLICT DO NOTHING'
+    if re.search(r'ON\s+DUPLICATE\s+KEY\s+UPDATE', query, re.IGNORECASE):
+        query = re.sub(r'ON\s+DUPLICATE\s+KEY\s+UPDATE\s+id\s*=\s*\d+', 'ON CONFLICT (id) DO NOTHING', query, flags=re.IGNORECASE)
+    return query
+
+
 def get_db():
     try:
-        conn = connection_pool.get_connection()
-        cursor = conn.cursor(dictionary=True, buffered=True)
+        conn = connection_pool.getconn()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        _orig = cursor.execute
+        def _patched(q, p=None):
+            return _orig(_mysql_to_pg(q), p)
+        cursor.execute = _patched
         return conn, cursor
-    except Error as e:
-        logger.error(f"Error de conexión MySQL: {e}")
+    except Exception as e:
+        logger.error(f"Error de conexion PostgreSQL: {e}")
         raise
+
 
 def execute_query(query, params=None, fetch_one=False, fetch_all=False, commit=False):
     conn = None
@@ -224,40 +227,25 @@ def execute_query(query, params=None, fetch_one=False, fetch_all=False, commit=F
         cursor.execute(query, params or ())
         if commit:
             conn.commit()
-            try:
-                while cursor.nextset():
-                    pass
-            except:
-                pass
             return cursor.rowcount
         elif fetch_one:
-            result = cursor.fetchone()
-            try:
-                while cursor.nextset():
-                    pass
-            except:
-                pass
-            return result
+            return cursor.fetchone()
         elif fetch_all:
             result = cursor.fetchall()
-            if result is None:
-                result = []
-            try:
-                while cursor.nextset():
-                    pass
-            except:
-                pass
-            return result
+            return result if result is not None else []
         else:
             try:
                 cursor.fetchall()
-                while cursor.nextset():
-                    pass
-            except:
+            except Exception:
                 pass
             return True
     except Error as e:
         logger.error(f"Error en query: {e}")
+        if conn:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
         if fetch_all:
             return []
         raise
@@ -265,13 +253,14 @@ def execute_query(query, params=None, fetch_one=False, fetch_all=False, commit=F
         if cursor:
             try:
                 cursor.close()
-            except:
+            except Exception:
                 pass
         if conn:
             try:
-                conn.close()
-            except:
+                connection_pool.putconn(conn)
+            except Exception:
                 pass
+
 
 # ==================== CACHÉ DE CONSULTAS ====================
 _cache_exchange_rate = {'rate': None, 'timestamp': 0}
@@ -3690,15 +3679,6 @@ def start_scheduler():
     scheduler_thread.start()
     logger.info("[SCHEDULER] Scheduler de tasa BCV iniciado (cada 6 horas)")
 
-# ==================== INICIALIZACIÓN PARA RENDER (GUNICORN) ====================
-with app.app_context():
-    try:
-        init_connection_pool()
-        init_db()
-        print("✅ Base de datos inicializada al arrancar la app")
-    except Exception as e:
-        print(f"❌ Error al inicializar la base de datos: {e}")
-# ==============================================================================
 # ==================== INICIO DE LA APLICACIÓN ====================
 if __name__ == '__main__':
     import webbrowser
