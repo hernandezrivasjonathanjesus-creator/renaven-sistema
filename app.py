@@ -397,7 +397,6 @@ def update_bcv_rate():
     else:
         logger.warning("[WARN] No se pudo actualizar la tasa desde el BCV, manteniendo tasa actual")
         return False
-
 # ==================== FUNCIONES CAPTCHA ====================
 def generar_codigo_captcha(longitud=5):
     caracteres = string.ascii_uppercase + string.digits
@@ -405,38 +404,62 @@ def generar_codigo_captcha(longitud=5):
     return ''.join(random.choices(caracteres, k=longitud))
 
 def crear_imagen_captcha(codigo):
-    ancho = 130
-    alto = 40
+    # 1. Aumentamos el tamaño del lienzo (de 130x40 a 220x70)
+    ancho = 220
+    alto = 70
     imagen = Image.new('RGB', (ancho, alto), color=(255, 255, 255))
     draw = ImageDraw.Draw(imagen)
+
+    # 2. Fuente más grande y compatible con Linux (Render) y Windows
     try:
-        fuente = ImageFont.truetype("arial.ttf", 18)
+        # Fuente estándar en Linux (Render)
+        fuente = ImageFont.truetype("DejaVuSans-Bold.ttf", 42)
     except:
-        fuente = ImageFont.load_default()
-    colores = [
-        (255, 0, 0), (0, 255, 0), (0, 0, 255),
-        (255, 165, 0), (128, 0, 128), (255, 192, 203)
+        try:
+            # Fuente estándar en Windows
+            fuente = ImageFont.truetype("arialbd.ttf", 42)
+        except:
+            # Si nada funciona, usar la por defecto
+            fuente = ImageFont.load_default()
+
+    # 3. Colores oscuros y legibles (Alto contraste sobre fondo blanco)
+    colores_texto = [
+        (0, 0, 0),       # Negro
+        (10, 40, 100),   # Azul oscuro
+        (139, 0, 0),     # Rojo oscuro
+        (0, 100, 0),     # Verde oscuro
+        (75, 0, 130)     # Morado oscuro
     ]
-    x_inicial = 8
-    espacio = (ancho - 16) // len(codigo)
+
+    # 4. Distribución uniforme del texto para que no se salga
+    longitud_texto = len(codigo)
+    espacio_por_letra = (ancho - 50) // longitud_texto
+
     for i, char in enumerate(codigo):
-        x = x_inicial + (i * espacio) + random.randint(-3, 3)
-        y = random.randint(8, 22)
-        color = random.choice(colores)
+        # Posición más centrada y con menos aleatoriedad para que no se corten
+        x = 25 + (i * espacio_por_letra) + random.randint(-5, 5)
+        y = random.randint(10, 20)
+        color = random.choice(colores_texto)
         draw.text((x, y), char, font=fuente, fill=color)
-    for _ in range(random.randint(3, 6)):
+
+    # 5. Ruido sutil (Gris suave, no colores brillantes)
+    # Líneas suaves (solo 2 a 4)
+    for _ in range(random.randint(2, 4)):
         x1 = random.randint(0, ancho)
         y1 = random.randint(0, alto)
         x2 = random.randint(0, ancho)
         y2 = random.randint(0, alto)
-        draw.line([(x1, y1), (x2, y2)], fill=(100, 100, 100), width=1)
-    for _ in range(random.randint(50, 150)):
+        draw.line([(x1, y1), (x2, y2)], fill=(180, 180, 180), width=2) # Gris claro
+
+    # Puntos sutiles (solo 20-40, no 150)
+    for _ in range(random.randint(20, 40)):
         x = random.randint(0, ancho)
         y = random.randint(0, alto)
-        draw.point((x, y), fill=random.choice(colores))
-    imagen = imagen.filter(ImageFilter.SMOOTH)
-    return imagen
+        draw.point((x, y), fill=(160, 160, 160)) # Gris medio
 
+    # 6. ¡ELIMINAMOS el filtro SMOOTH! 
+    # Antes difuminaba la imagen, ahora queremos que las letras sean nítidas.
+    return imagen
 # ==================== FILTROS PERSONALIZADOS ====================
 @app.template_filter('format_bs')
 def format_bs(value):
