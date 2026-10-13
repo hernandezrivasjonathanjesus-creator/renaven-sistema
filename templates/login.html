@@ -1372,13 +1372,13 @@
     </div>
 
     <script>
-        // ========================================================================
-        // 1. CONOCIMIENTO LOCAL (FALLBACK)
+             // ========================================================================
+        // 1. CONOCIMIENTO LOCAL (FALLBACK) - ACTUALIZADO CON INFO DE RENAVEN
         // ========================================================================
         const knowledgeBase = {
-            "hola": "¡Hola! ¿Cómo puedo ayudarte?",
+            "hola": "¡Hola! Soy el asistente virtual de RENAVEN. ¿En qué puedo ayudarte hoy?",
             "ayuda": `
-                <strong>📚 Temas que conozco:</strong><br>
+                <strong> Temas que conozco:</strong><br>
                 • <strong>Dashboard</strong> – Resumen general y accesos rápidos<br>
                 • <strong>Facturación</strong> – Crear y gestionar facturas<br>
                 • <strong>Inventario</strong> – Control de productos y stock<br>
@@ -1392,8 +1392,23 @@
                 • <strong>Historial Facturación</strong> – Facturas pasadas<br>
                 • <strong>Roles y Usuarios</strong> – Gestión de permisos<br>
                 • <strong>Tasa de Cambio</strong> – Configuración del BCV<br><br>
+                <strong> Sobre la empresa:</strong><br>
+                • <strong>Historia / Fundación</strong><br>
+                • <strong>Significado del nombre</strong><br>
+                • <strong>Misión y Visión</strong><br><br>
                 Escribe el nombre de cualquier tema para más detalles.
             `,
+            // --- INFORMACIÓN DE LA EMPRESA ---
+            "historia": "La empresa <strong>RENAVEN OAKMONT, C.A.</strong> fue constituida formalmente el <strong>12 de noviembre de 2019</strong> ante el Registro Mercantil Segundo del Estado Falcón. Fue fundada por Manuel Eccehomo Palacio Gómez, Manuel Alfredo Palacio Gómez e Himaly Eizaga Laguna.",
+            "fundacion": "RENAVEN OAKMONT, C.A. fue fundada el <strong>12 de noviembre de 2019</strong>.",
+            "significado": "El nombre <strong>RENAVEN</strong> significa <strong>'Renacer Nacional Venezolano'</strong>. Por otro lado, <strong>OAKMONT</strong> significa <strong>'Pináculo del lujo, incluye exclusividad y calidad'</strong>.",
+            "nombre": "El nombre RENAVEN viene de 'Renacer Nacional Venezolano' y OAKMONT significa 'Pináculo del lujo, exclusividad y calidad'.",
+            "mision": "Nuestra misión es proveer soluciones integrales para el sector de construcción y el hogar en Punto Fijo, mediante la fabricación de bloques y la comercialización de insumos ferreteros de calidad, apoyados en la optimización constante de nuestros procesos.",
+            "vision": "Nuestra visión es ser la organización líder y referente en el estado Falcón por nuestra excelencia operativa y capacidad productiva, reconocida por implementar sistemas de gestión seguros.",
+            "ubicacion": "Estamos ubicados en la Calle 1 con Calle Andrés Bello, Casa Nro. 01-06, Sector San Francisco de Miranda II, Parroquia Punta Cardón, Municipio Carirubana, Estado Falcón.",
+            "empleados": "La empresa cuenta con 8 empleados en total: 1 Presidente, 1 Vicepresidente, 1 Gerente Administrativo, 1 Encargada, 1 Chofer, 1 Chequeador y 2 de Atención al Público.",
+            
+            // --- FUNCIONES DEL SISTEMA (Extraídas de tu código original) ---
             "dashboard": "El <strong>Dashboard</strong> es la pantalla principal. Muestra un resumen con el saldo actual en caja (Bs. y USD), las ventas del día y del mes, y accesos directos a los módulos más importantes.",
             "facturación": "El módulo de <strong>Facturación</strong> te permite crear nuevas ventas. Debes seleccionar el cliente, agregar productos, aplicar descuentos y calcular el total.",
             "inventario": "El <strong>Inventario</strong> administra todos los productos: puedes agregar, editar, eliminar y controlar el stock.",
@@ -1408,22 +1423,29 @@
             "roles": "Los <strong>Roles</strong> definen los permisos de cada usuario: Dueño, Administrador, Supervisor, Vendedor.",
             "usuarios": "El módulo de <strong>Usuarios</strong> permite crear, editar y eliminar cuentas de usuario.",
             "tasa": "La <strong>Tasa de Cambio</strong> se actualiza automáticamente desde el BCV.",
-            "default": "No tengo información específica sobre eso. Puedo ayudarte con: Dashboard, Facturación, Inventario, Cierre Diario, Ventas del Mes, Ganancias, Cierre de Caja, Apertura de Caja, Historial de Caja, Devoluciones, Historial Facturación, Roles, Usuarios, Tasa."
+            
+            // --- RESPUESTA POR DEFECTO ---
+            "default": "No tengo información específica sobre eso. Puedo ayudarte con: Dashboard, Facturación, Inventario, Cierre Diario, Ventas del Mes, Ganancias, Cierre de Caja, Apertura de Caja, Historial de Caja, Devoluciones, Historial Facturación, Roles, Usuarios, Tasa, Historia, Fundación, Significado, Misión, Visión, Ubicación, Empleados."
         };
 
         function getLocalResponse(userInput) {
             const lower = userInput.toLowerCase().trim();
+            
+            // Si pide ayuda o menú, mostramos el menú completo
             if (lower.includes("ayuda") || lower.includes("menu") || lower.includes("temas")) {
                 return knowledgeBase["ayuda"];
             }
+            
+            // Buscamos coincidencias en las claves
             for (let key in knowledgeBase) {
                 if (lower.includes(key) && key !== "default" && key !== "ayuda") {
                     return knowledgeBase[key];
                 }
             }
+            
+            // Si no encuentra nada, devuelve el default
             return knowledgeBase["default"];
         }
-
         // ========================================================================
         // 2. FUNCIÓN CON MISTRAL AI
         // ========================================================================
