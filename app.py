@@ -34,6 +34,12 @@ import socket
 
 _db_initialized = False
 
+# ==================== CONFIGURACIÓN DE TELEGRAM ====================
+TELEGRAM_TOKEN = "8734974003:AAGBVRytYEXZLVTqikT7w_0a3EMTkkd6ZD0"  
+TELEGRAM_CHAT_ID = "1623792128"    
+TELEGRAM_CODIGO_REINICIO = "Katherine13*"  
+_telegram_bot_iniciado = False
+
 # ==================== VALIDACIÓN DE CONTRASEÑAS ====================
 def validar_contraseña_segura(password):
     errores = []
@@ -155,7 +161,6 @@ DB_CONFIG = {
 connection_pool = None
 
 def ensure_database_exists():
-    """En PostgreSQL la base de datos ya existe (creada por Render)."""
     pass
 
 
@@ -171,14 +176,9 @@ def init_connection_pool():
 
 
 def _mysql_to_pg(query):
-    """Convierte sintaxis MySQL a PostgreSQL (version completa)."""
     query = query.replace('`', '')
-
-    # SHOW TABLES
     if re.match(r'^\s*SHOW\s+TABLES\s*$', query, re.IGNORECASE):
         return "SELECT tablename AS \"Tables_in_db\" FROM pg_tables WHERE schemaname = 'public'"
-
-    # SHOW COLUMNS FROM table LIKE 'col'
     m = re.match(r'^\s*SHOW\s+COLUMNS\s+FROM\s+(\w+)(?:\s+LIKE\s+\'([^\']+)\')?\s*$', query, re.IGNORECASE)
     if m:
         table = m.group(1)
@@ -186,8 +186,6 @@ def _mysql_to_pg(query):
         if col:
             return "SELECT column_name AS \"Field\" FROM information_schema.columns WHERE table_name = '" + table + "' AND column_name = '" + col + "'"
         return "SELECT column_name AS \"Field\" FROM information_schema.columns WHERE table_name = '" + table + "'"
-
-    # CREATE TABLE: eliminar lineas INDEX, KEY, UNIQUE KEY, FULLTEXT, SPATIAL
     if re.match(r'^\s*CREATE\s+TABLE', query, re.IGNORECASE):
         lineas = query.split('\n')
         nuevas = []
@@ -198,8 +196,6 @@ def _mysql_to_pg(query):
             nuevas.append(linea)
         query = '\n'.join(nuevas)
         query = re.sub(r',(\s*\))', r'\1', query)
-
-    # Tipos MySQL -> PostgreSQL
     query = re.sub(r'\bINT\s+PRIMARY\s+KEY\s+AUTO_INCREMENT\b', 'SERIAL PRIMARY KEY', query, flags=re.IGNORECASE)
     query = re.sub(r'\bAUTO_INCREMENT\b', '', query, flags=re.IGNORECASE)
     query = re.sub(r'\bTINYINT\b', 'SMALLINT', query, flags=re.IGNORECASE)
@@ -209,17 +205,12 @@ def _mysql_to_pg(query):
     query = re.sub(r'\bCOLLATE\s*=\s*\w+', '', query, flags=re.IGNORECASE)
     query = re.sub(r'\bON\s+UPDATE\s+CURRENT_TIMESTAMP\b', '', query, flags=re.IGNORECASE)
     query = re.sub(r'\bDATETIME\b', 'TIMESTAMP', query, flags=re.IGNORECASE)
-
-    # INSERT IGNORE -> ON CONFLICT DO NOTHING
     if re.search(r'\bINSERT\s+IGNORE\b', query, re.IGNORECASE):
         query = re.sub(r'\bINSERT\s+IGNORE\b', 'INSERT', query, flags=re.IGNORECASE)
         if 'ON CONFLICT' not in query.upper():
             query = query.rstrip().rstrip(';') + ' ON CONFLICT DO NOTHING'
-
-    # ON DUPLICATE KEY UPDATE -> ON CONFLICT DO NOTHING
     if re.search(r'ON\s+DUPLICATE\s+KEY\s+UPDATE', query, re.IGNORECASE):
         query = re.sub(r'ON\s+DUPLICATE\s+KEY\s+UPDATE\s+\w+\s*=\s*[\w\d]+', 'ON CONFLICT DO NOTHING', query, flags=re.IGNORECASE)
-
     return query
 
 
@@ -397,6 +388,7 @@ def update_bcv_rate():
     else:
         logger.warning("[WARN] No se pudo actualizar la tasa desde el BCV, manteniendo tasa actual")
         return False
+
 # ==================== FUNCIONES CAPTCHA ====================
 def generar_codigo_captcha(longitud=5):
     caracteres = string.ascii_uppercase + string.digits
@@ -404,62 +396,43 @@ def generar_codigo_captcha(longitud=5):
     return ''.join(random.choices(caracteres, k=longitud))
 
 def crear_imagen_captcha(codigo):
-    # 1. Aumentamos el tamaño del lienzo (de 130x40 a 220x70)
     ancho = 220
     alto = 70
     imagen = Image.new('RGB', (ancho, alto), color=(255, 255, 255))
     draw = ImageDraw.Draw(imagen)
-
-    # 2. Fuente más grande y compatible con Linux (Render) y Windows
     try:
-        # Fuente estándar en Linux (Render)
         fuente = ImageFont.truetype("DejaVuSans-Bold.ttf", 42)
     except:
         try:
-            # Fuente estándar en Windows
             fuente = ImageFont.truetype("arialbd.ttf", 42)
         except:
-            # Si nada funciona, usar la por defecto
             fuente = ImageFont.load_default()
-
-    # 3. Colores oscuros y legibles (Alto contraste sobre fondo blanco)
     colores_texto = [
-        (0, 0, 0),       # Negro
-        (10, 40, 100),   # Azul oscuro
-        (139, 0, 0),     # Rojo oscuro
-        (0, 100, 0),     # Verde oscuro
-        (75, 0, 130)     # Morado oscuro
+        (0, 0, 0),
+        (10, 40, 100),
+        (139, 0, 0),
+        (0, 100, 0),
+        (75, 0, 130)
     ]
-
-    # 4. Distribución uniforme del texto para que no se salga
     longitud_texto = len(codigo)
     espacio_por_letra = (ancho - 50) // longitud_texto
-
     for i, char in enumerate(codigo):
-        # Posición más centrada y con menos aleatoriedad para que no se corten
         x = 25 + (i * espacio_por_letra) + random.randint(-5, 5)
         y = random.randint(10, 20)
         color = random.choice(colores_texto)
         draw.text((x, y), char, font=fuente, fill=color)
-
-    # 5. Ruido sutil (Gris suave, no colores brillantes)
-    # Líneas suaves (solo 2 a 4)
     for _ in range(random.randint(2, 4)):
         x1 = random.randint(0, ancho)
         y1 = random.randint(0, alto)
         x2 = random.randint(0, ancho)
         y2 = random.randint(0, alto)
-        draw.line([(x1, y1), (x2, y2)], fill=(180, 180, 180), width=2) # Gris claro
-
-    # Puntos sutiles (solo 20-40, no 150)
+        draw.line([(x1, y1), (x2, y2)], fill=(180, 180, 180), width=2)
     for _ in range(random.randint(20, 40)):
         x = random.randint(0, ancho)
         y = random.randint(0, alto)
-        draw.point((x, y), fill=(160, 160, 160)) # Gris medio
-
-    # 6. ¡ELIMINAMOS el filtro SMOOTH! 
-    # Antes difuminaba la imagen, ahora queremos que las letras sean nítidas.
+        draw.point((x, y), fill=(160, 160, 160))
     return imagen
+
 # ==================== FILTROS PERSONALIZADOS ====================
 @app.template_filter('format_bs')
 def format_bs(value):
@@ -858,6 +831,133 @@ def obtener_proximo_return_number():
         result = execute_query("SELECT COALESCE(MAX(return_number), 0) + 1 as next_return FROM returns", fetch_one=True)
         return int(result['next_return']) if result else 1
 
+# ==================== INTEGRACIÓN TELEGRAM ====================
+def enviar_telegram(mensaje, parse_mode='HTML'):
+    if not TELEGRAM_TOKEN or TELEGRAM_TOKEN == "TU_TOKEN_AQUI":
+        logger.warning("[TELEGRAM] Token no configurado. Mensaje no enviado.")
+        return False
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        payload = {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": mensaje,
+            "parse_mode": parse_mode
+        }
+        respuesta = requests.post(url, data=payload, timeout=10)
+        if respuesta.status_code == 200:
+            logger.info("[TELEGRAM] Mensaje enviado correctamente")
+            return True
+        else:
+            logger.error(f"[TELEGRAM] Error al enviar: {respuesta.text}")
+            return False
+    except Exception as e:
+        logger.error(f"[TELEGRAM] Excepción al enviar: {e}")
+        return False
+
+
+def enviar_cierre_caja_telegram(total_usd, total_bs, efectivo_bs, efectivo_usd,
+                                 zelle, pago_movil, transferencia, tarjeta,
+                                 apertura, diferencia, cajero, supervisor, tasa):
+    fecha_actual = datetime.now().strftime('%d/%m/%Y %I:%M %p')
+    if diferencia > 0.01:
+        estado = f"⚠️ SOBRANTE: Bs. {diferencia:,.2f}"
+    elif diferencia < -0.01:
+        estado = f"❌ FALTANTE: Bs. {diferencia:,.2f}"
+    else:
+        estado = "✅ CUADRADO PERFECTO"
+    mensaje = (
+        f"🧾 <b>CIERRE DE CAJA - RENAVEN</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━\n"
+        f"📅 <b>Fecha:</b> {fecha_actual}\n"
+        f"👤 <b>Cajero:</b> {cajero}\n"
+        f"👔 <b>Supervisor:</b> {supervisor}\n"
+        f"💱 <b>Tasa:</b> Bs. {tasa:,.2f}/USD\n"
+        f"━━━━━━━━━━━━━━━━━━━━━\n"
+        f"💰 <b>Total Vendido:</b>\n"
+        f"   • Bs. {total_bs:,.2f}\n"
+        f"   • ${total_usd:,.2f}\n"
+        f"━━━━━━━━━━━━━━━━━━━━━\n"
+        f"💵 <b>Desglose de Pagos:</b>\n"
+        f"   • Efectivo Bs: Bs. {efectivo_bs:,.2f}\n"
+        f"   • Efectivo USD: ${efectivo_usd:,.2f}\n"
+        f"   • Zelle: ${zelle:,.2f}\n"
+        f"   • Pago Móvil: Bs. {pago_movil:,.2f}\n"
+        f"   • Transferencia: Bs. {transferencia:,.2f}\n"
+        f"   • Tarjeta: Bs. {tarjeta:,.2f}\n"
+        f"━━━━━━━━━━━━━━━━━━━━━\n"
+        f"🏦 <b>Fondo Apertura:</b> Bs. {apertura:,.2f}\n"
+        f"📊 <b>Resultado:</b> {estado}\n"
+        f"━━━━━━━━━━━━━━━━━━━━━\n"
+        f"⚙️ <i>Sistema RENAVEN</i>"
+    )
+    return enviar_telegram(mensaje)
+
+
+def _procesar_comando_telegram(update):
+    try:
+        mensaje = update.get('message', {})
+        chat_id = str(mensaje.get('chat', {}).get('id', ''))
+        texto = mensaje.get('text', '').strip()
+        if chat_id != TELEGRAM_CHAT_ID:
+            logger.warning(f"[TELEGRAM] Comando ignorado de chat no autorizado: {chat_id}")
+            return
+        if texto.startswith('/reiniciar'):
+            partes = texto.split()
+            if len(partes) == 2 and partes[1] == TELEGRAM_CODIGO_REINICIO:
+                enviar_telegram("🔄 <b>Reiniciando el sistema RENAVEN...</b>\nEl servidor se reiniciará en 3 segundos.")
+                time.sleep(3)
+                logger.warning("[TELEGRAM] Reinicio solicitado vía Telegram")
+                if sys.platform == 'win32':
+                    subprocess.Popen(["shutdown", "/r", "/t", "0"])
+                else:
+                    subprocess.Popen(["sudo", "reboot"])
+            else:
+                enviar_telegram("❌ <b>Código incorrecto.</b>\nUso: /reiniciar TuCodigoSecreto")
+        elif texto == '/estado':
+            saldo = obtener_saldo_actual()
+            rate = get_cached_exchange_rate()
+            enviar_telegram(
+                f"📊 <b>ESTADO DEL SISTEMA</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━━\n"
+                f"💱 Tasa BCV: Bs. {rate:,.2f}\n"
+                f"💰 Saldo Caja Bs: Bs. {saldo['bs']:,.2f}\n"
+                f"💵 Saldo Caja USD: ${saldo['usd']:,.2f}\n"
+                f"🕒 {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}"
+            )
+        elif texto == '/ayuda':
+            enviar_telegram(
+                "🤖 <b>COMANDOS DISPONIBLES</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━━\n"
+                "/estado - Ver estado del sistema\n"
+                "/ayuda - Ver esta ayuda\n"
+                "/reiniciar [código] - Reiniciar el servidor"
+            )
+    except Exception as e:
+        logger.error(f"[TELEGRAM] Error procesando comando: {e}")
+
+
+def _escuchar_telegram():
+    global _telegram_bot_iniciado
+    if _telegram_bot_iniciado:
+        return
+    _telegram_bot_iniciado = True
+    offset = None
+    logger.info("[TELEGRAM] Iniciando escucha de comandos...")
+    while True:
+        try:
+            url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/getUpdates"
+            params = {"timeout": 30, "offset": offset}
+            response = requests.get(url, params=params, timeout=35)
+            data = response.json()
+            if data.get('ok'):
+                for update in data.get('result', []):
+                    offset = update['update_id'] + 1
+                    _procesar_comando_telegram(update)
+        except Exception as e:
+            logger.debug(f"[TELEGRAM] Polling error (reintentando): {e}")
+            time.sleep(5)
+
+
 # ==================== API TASA BCV ====================
 @app.route('/api/bcv-rate')
 def api_bcv_rate():
@@ -907,7 +1007,6 @@ def force_update_bcv():
 
 # ==================== VERIFICAR COLUMNAS CASH_CLOSURES ====================
 def verificar_columnas_cash_closures(cursor):
-    """Agrega columnas faltantes a la tabla cash_closures si no existen (PostgreSQL)."""
     try:
         cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'cash_closures' AND column_name = 'devoluciones_bs'")
         if not cursor.fetchone():
@@ -2620,6 +2719,27 @@ def daily_closure():
         ), commit=True)
         execute_query("UPDATE config SET value = '0' WHERE key_name = 'opening_balance'", commit=True)
         execute_query("UPDATE saldo_caja SET saldo_bs = 0, saldo_usd = 0 WHERE id = 1", commit=True)
+        
+        # ===== ENVIAR CIERRE DE CAJA A TELEGRAM =====
+        try:
+            threading.Thread(
+                target=enviar_cierre_caja_telegram,
+                args=(
+                    total_usd, total_bs,
+                    entregado_efectivo_bs, entregado_efectivo_usd,
+                    entregado_zelle, entregado_movil,
+                    entregado_transferencia, entregado_tarjeta,
+                    opening_balance, difference,
+                    session.get('username', 'Usuario'),
+                    autorizado['username'],
+                    rate
+                ),
+                daemon=True
+            ).start()
+        except Exception as e:
+            logger.error(f"Error al enviar cierre a Telegram: {e}")
+        # ===== FIN TELEGRAM =====
+        
         saldo = obtener_saldo_actual()
         if saldo['bs'] > 0:
             registrar_movimiento_caja(
@@ -3283,6 +3403,16 @@ if __name__ == '__main__':
         except Exception as e:
             print(f"No se pudo actualizar tasa BCV: {e}")
         start_scheduler()
+
+        # ===== INICIAR BOT DE TELEGRAM EN SEGUNDO PLANO =====
+        if TELEGRAM_TOKEN and TELEGRAM_TOKEN != "TU_TOKEN_AQUI":
+            telegram_thread = threading.Thread(target=_escuchar_telegram, daemon=True)
+            telegram_thread.start()
+            print("[OK] Bot de Telegram escuchando comandos")
+        else:
+            print("[WARN] Telegram no configurado. Edita TELEGRAM_TOKEN para activarlo.")
+        # =====================================================
+
         print("\n" + "="*60)
         print("[OK] SISTEMA RENAVEN - POSTGRESQL")
         print("http://127.0.0.1:5000")
