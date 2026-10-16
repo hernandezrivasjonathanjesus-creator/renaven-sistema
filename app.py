@@ -846,7 +846,7 @@ def enviar_telegram(mensaje, parse_mode='HTML'):
             "parse_mode": parse_mode
         }
         respuesta = requests.post(url, data=payload, timeout=10)
-        if respuesta.status_code == 200:
+        if respuesta.status_code in (200, 202):
             logger.info("[TELEGRAM] Mensaje enviado correctamente")
             return True
         else:
