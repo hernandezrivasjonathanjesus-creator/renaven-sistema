@@ -35,7 +35,6 @@ import socket
 _db_initialized = False
 
 # ==================== CONFIGURACIÓN DE TELEGRAM ====================
-# ==================== CONFIGURACIÓN DE TELEGRAM ====================
 TELEGRAM_TOKEN = "8734974003:AAGBVRytYEXZLVTqikT7w_0a3EMTkkd6ZD0"
 TELEGRAM_CHAT_ID = "1623792128"
 TELEGRAM_CODIGO_REINICIO = "Katherine2026Seguro"
