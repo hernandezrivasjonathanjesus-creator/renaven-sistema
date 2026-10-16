@@ -3412,7 +3412,6 @@ def start_scheduler():
     scheduler_thread = threading.Thread(target=run_scheduled, daemon=True)
     scheduler_thread.start()
     logger.info("[SCHEDULER] Scheduler de tasa BCV iniciado (cada 6 horas)")
-
 # ==================== RUTA TEMPORAL: BORRAR TODO ====================
 @app.route('/borrar-todo-renaven-2026')
 def borrar_todo_renaven():
@@ -3420,7 +3419,6 @@ def borrar_todo_renaven():
     try:
         resultados = []
 
-        # Lista de tablas a limpiar (orden importante por las relaciones)
         tablas_a_borrar = [
             "movimientos_devolucion",
             "movimientos_caja",
@@ -3445,14 +3443,12 @@ def borrar_todo_renaven():
             except Exception as e:
                 resultados.append("ADVERTENCIA - " + tabla + ": " + str(e)[:80])
 
-        # Reiniciar saldo_caja
         try:
             execute_query("UPDATE saldo_caja SET saldo_bs = 0, saldo_usd = 0 WHERE id = 1", commit=True)
             resultados.append("OK - saldo_caja reiniciado a 0")
         except Exception as e:
             resultados.append("ADVERTENCIA - saldo_caja: " + str(e)[:80])
 
-        # Reiniciar contadores en config
         try:
             execute_query("UPDATE config SET value = '1' WHERE key_name = 'next_invoice'", commit=True)
             execute_query("UPDATE config SET value = '1' WHERE key_name = 'next_return'", commit=True)
@@ -3470,6 +3466,8 @@ def borrar_todo_renaven():
         return html
     except Exception as e:
         return "<h1>Error</h1><pre>" + str(e) + "</pre>"
+# ==================================================================
+
 
 # ==================== INICIALIZACIÓN PARA RENDER (GUNICORN) ====================
 with app.app_context():
