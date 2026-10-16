@@ -3414,11 +3414,22 @@ def start_scheduler():
     logger.info("[SCHEDULER] Scheduler de tasa BCV iniciado (cada 6 horas)")
 
 # ==================== INICIALIZACIÓN PARA RENDER (GUNICORN) ====================
+# ⚠️ AQUÍ ESTÁ EL CAMBIO IMPORTANTE ⚠️
+# Movimos el arranque del bot de Telegram a esta sección
+# porque Render SÍ ejecuta este bloque (a diferencia del if __name__)
 with app.app_context():
     try:
         init_connection_pool()
         init_db()
         print("Base de datos inicializada al arrancar la app")
+
+        # ===== INICIAR BOT DE TELEGRAM (AHORA SÍ FUNCIONA EN RENDER) =====
+        if TELEGRAM_TOKEN and TELEGRAM_TOKEN != "TU_TOKEN_AQUI":
+            if not _telegram_bot_iniciado:
+                telegram_thread = threading.Thread(target=_escuchar_telegram, daemon=True)
+                telegram_thread.start()
+                print("[OK] Bot de Telegram iniciado desde app_context")
+        # ==================================================================
     except Exception as e:
         print(f"Error al inicializar la base de datos: {e}")
 # ==============================================================================
@@ -3441,9 +3452,10 @@ if __name__ == '__main__':
 
         # ===== INICIAR BOT DE TELEGRAM EN SEGUNDO PLANO =====
         if TELEGRAM_TOKEN and TELEGRAM_TOKEN != "TU_TOKEN_AQUI":
-            telegram_thread = threading.Thread(target=_escuchar_telegram, daemon=True)
-            telegram_thread.start()
-            print("[OK] Bot de Telegram escuchando comandos")
+            if not _telegram_bot_iniciado:
+                telegram_thread = threading.Thread(target=_escuchar_telegram, daemon=True)
+                telegram_thread.start()
+                print("[OK] Bot de Telegram escuchando comandos")
         else:
             print("[WARN] Telegram no configurado. Edita TELEGRAM_TOKEN para activarlo.")
         # =====================================================
