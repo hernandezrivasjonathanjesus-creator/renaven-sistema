@@ -3413,83 +3413,65 @@ def start_scheduler():
     scheduler_thread.start()
     logger.info("[SCHEDULER] Scheduler de tasa BCV iniciado (cada 6 horas)")
 
-
 # ==================== RUTA TEMPORAL: BORRAR TODO ====================
 @app.route('/borrar-todo-renaven-2026')
 def borrar_todo_renaven():
     """⚠️ RUTA TEMPORAL - Borra todos los datos de prueba. ELIMINAR DESPUÉS DE USAR."""
     try:
-        tablas = [
-            'movimientos_devolucion',
-            'movimientos_caja',
-            'returns',
-            'sales',
-            'purchases',
-            'cash_closures',
-            'cash_opening',
-            'deleted_products',
-            'clientes_frecuentes',
-            'notas_credito',
-            'exchange_rate_history',
-            'user_logs',
-            'password_resets',
-        ]
         resultados = []
-        for tabla in tablas:
-            try:
-                execute_query(f"DELETE FROM {tabla}", commit=True)
-                resultados.append(f"✅ {tabla} borrada")
-            except Exception as e:
-                resultados.append(f"⚠️ {tabla}: {str(e)[:80]}")
 
-        # Borrar productos
-        try:
-            execute_query("DELETE FROM products", commit=True)
-            resultados.append("✅ products borrada")
-        except Exception as e:
-            resultados.append(f"⚠️ products: {str(e)[:80]}")
+        # Lista de tablas a limpiar (orden importante por las relaciones)
+        tablas_a_borrar = [
+            "movimientos_devolucion",
+            "movimientos_caja",
+            "returns",
+            "sales",
+            "purchases",
+            "cash_closures",
+            "cash_opening",
+            "deleted_products",
+            "clientes_frecuentes",
+            "notas_credito",
+            "exchange_rate_history",
+            "user_logs",
+            "password_resets",
+            "products",
+        ]
+
+        for tabla in tablas_a_borrar:
+            try:
+                # Usamos TRUNCATE que es más rápido que DELETE y reinicia los IDs
+                execute_query("TRUNCATE TABLE " + tabla + " RESTART IDENTITY CASCADE", commit=True)
+                resultados.append("✅ " + tabla + " vaciada")
+            except Exception as e:
+                resultados.append("⚠️ " + tabla + ": " + str(e)[:80])
 
         # Reiniciar saldo_caja
         try:
             execute_query("UPDATE saldo_caja SET saldo_bs = 0, saldo_usd = 0 WHERE id = 1", commit=True)
             resultados.append("✅ saldo_caja reiniciado a 0")
         except Exception as e:
-            resultados.append(f"⚠️ saldo_caja: {str(e)[:80]}")
+            resultados.append("⚠️ saldo_caja: " + str(e)[:80])
 
         # Reiniciar contadores en config
         try:
             execute_query("UPDATE config SET value = '1' WHERE key_name = 'next_invoice'", commit=True)
             execute_query("UPDATE config SET value = '1' WHERE key_name = 'next_return'", commit=True)
             execute_query("UPDATE config SET value = '0' WHERE key_name = 'opening_balance'", commit=True)
-            resultados.append("✅ config reiniciado (next_invoice=1, next_return=1, opening_balance=0)")
+            resultados.append("✅ config reiniciado")
         except Exception as e:
-            resultados.append(f"⚠️ config: {str(e)[:80]}")
-
-        # Reiniciar secuencias de PostgreSQL
-        secuencias = [
-            'products_id_seq', 'sales_id_seq', 'returns_id_seq',
-            'movimientos_caja_id_seq', 'movimientos_devolucion_id_seq',
-            'cash_closures_id_seq', 'cash_opening_id_seq',
-            'deleted_products_id_seq', 'clientes_frecuentes_id_seq',
-            'user_logs_id_seq', 'exchange_rate_history_id_seq',
-        ]
-        for seq in secuencias:
-            try:
-                execute_query(f"ALTER SEQUENCE {seq} RESTART WITH 1", commit=True)
-            except Exception:
-                pass
-        resultados.append("✅ Secuencias reiniciadas")
+            resultados.append("⚠️ config: " + str(e)[:80])
 
         html = "<h1>🧹 Limpieza completada</h1><ul>"
         for r in resultados:
-            html += f"<li>{r}</li>"
-        html += "</ul><p><strong>⚠️ IMPORTANTE: Elimina esta ruta del código ahora mismo.</strong></p>"
+            html += "<li>" + r + "</li>"
+        html += "</ul>"
+        html += "<p><strong>⚠️ IMPORTANTE: Elimina esta ruta del codigo ahora mismo.</strong></p>"
         html += "<p>Vuelve a <a href='/dashboard'>/dashboard</a></p>"
         return html
     except Exception as e:
-        return f"<h1>❌ Error</h1><pre>{str(e)}</pre>"
+        return "<h1>❌ Error</h1><pre>" + str(e) + "</pre>"
 # ==================================================================
-
 
 # ==================== INICIALIZACIÓN PARA RENDER (GUNICORN) ====================
 with app.app_context():
