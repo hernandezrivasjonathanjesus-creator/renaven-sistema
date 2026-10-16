@@ -35,9 +35,14 @@ import socket
 _db_initialized = False
 
 # ==================== CONFIGURACIÓN DE TELEGRAM ====================
-TELEGRAM_TOKEN = "8734974003:AAGBVRytYEXZLVTqikT7w_0a3EMTkkd6ZD0"  
-TELEGRAM_CHAT_ID = "1623792128"    
-TELEGRAM_CODIGO_REINICIO = "Katherine13*"  
+TELEGRAM_TOKEN = "8734974003:AAGBVRytYEXZLVTqikT7w_0a3EMTkkd6ZD0"
+TELEGRAM_CHAT_ID = "1623792128"
+TELEGRAM_CODIGO_REINICIO = "Katherine13*"
+
+#  IMPORTANTE: Reemplaza esta URL con tu Deploy Hook NUEVO de Render
+# (Primero haz clic en "Regenerate hook" en Render para obtener una URL nueva)
+RENDER_DEPLOY_HOOK = "https://api.render.com/deploy/srv-XXXXXXXXXXXXX?key=YYYYYYYYYYYY"
+
 _telegram_bot_iniciado = False
 
 # ==================== VALIDACIÓN DE CONTRASEÑAS ====================
@@ -901,18 +906,27 @@ def _procesar_comando_telegram(update):
         if chat_id != TELEGRAM_CHAT_ID:
             logger.warning(f"[TELEGRAM] Comando ignorado de chat no autorizado: {chat_id}")
             return
+
+        # ===== COMANDO /reiniciar -> USA DEPLOY HOOK DE RENDER =====
         if texto.startswith('/reiniciar'):
             partes = texto.split()
             if len(partes) == 2 and partes[1] == TELEGRAM_CODIGO_REINICIO:
-                enviar_telegram("🔄 <b>Reiniciando el sistema RENAVEN...</b>\nEl servidor se reiniciará en 3 segundos.")
-                time.sleep(3)
-                logger.warning("[TELEGRAM] Reinicio solicitado vía Telegram")
-                if sys.platform == 'win32':
-                    subprocess.Popen(["shutdown", "/r", "/t", "0"])
-                else:
-                    subprocess.Popen(["sudo", "reboot"])
+                enviar_telegram("🔄 <b>Reiniciando el sistema RENAVEN en Render...</b>\nEsto tardará unos 2-3 minutos.")
+                time.sleep(2)
+                logger.warning("[TELEGRAM] Reinicio solicitado vía Telegram - Llamando Deploy Hook de Render")
+                try:
+                    respuesta = requests.get(RENDER_DEPLOY_HOOK, timeout=30)
+                    if respuesta.status_code == 200:
+                        logger.info(f"[TELEGRAM] Deploy Hook ejecutado correctamente: {respuesta.status_code}")
+                    else:
+                        logger.error(f"[TELEGRAM] Deploy Hook respondió con error: {respuesta.status_code} - {respuesta.text}")
+                        enviar_telegram(f"⚠️ El Deploy Hook respondió con código {respuesta.status_code}. Revisa los logs de Render.")
+                except Exception as e:
+                    logger.error(f"[TELEGRAM] Error al llamar Deploy Hook: {e}")
+                    enviar_telegram(f"❌ Error al contactar Render: {str(e)}")
             else:
                 enviar_telegram("❌ <b>Código incorrecto.</b>\nUso: /reiniciar TuCodigoSecreto")
+
         elif texto == '/estado':
             saldo = obtener_saldo_actual()
             rate = get_cached_exchange_rate()
@@ -930,7 +944,7 @@ def _procesar_comando_telegram(update):
                 "━━━━━━━━━━━━━━━━━━━━━\n"
                 "/estado - Ver estado del sistema\n"
                 "/ayuda - Ver esta ayuda\n"
-                "/reiniciar [código] - Reiniciar el servidor"
+                "/reiniciar [código] - Reiniciar el servidor en Render"
             )
     except Exception as e:
         logger.error(f"[TELEGRAM] Error procesando comando: {e}")
@@ -2719,7 +2733,7 @@ def daily_closure():
         ), commit=True)
         execute_query("UPDATE config SET value = '0' WHERE key_name = 'opening_balance'", commit=True)
         execute_query("UPDATE saldo_caja SET saldo_bs = 0, saldo_usd = 0 WHERE id = 1", commit=True)
-        
+
         # ===== ENVIAR CIERRE DE CAJA A TELEGRAM =====
         try:
             threading.Thread(
@@ -2739,7 +2753,7 @@ def daily_closure():
         except Exception as e:
             logger.error(f"Error al enviar cierre a Telegram: {e}")
         # ===== FIN TELEGRAM =====
-        
+
         saldo = obtener_saldo_actual()
         if saldo['bs'] > 0:
             registrar_movimiento_caja(
