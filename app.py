@@ -35,13 +35,11 @@ import socket
 _db_initialized = False
 
 # ==================== CONFIGURACIÓN DE TELEGRAM ====================
+# ==================== CONFIGURACIÓN DE TELEGRAM ====================
 TELEGRAM_TOKEN = "8734974003:AAGBVRytYEXZLVTqikT7w_0a3EMTkkd6ZD0"
 TELEGRAM_CHAT_ID = "1623792128"
-TELEGRAM_CODIGO_REINICIO = "Katherine13*"
-
-#  IMPORTANTE: Reemplaza esta URL con tu Deploy Hook NUEVO de Render
-# (Primero haz clic en "Regenerate hook" en Render para obtener una URL nueva)
-RENDER_DEPLOY_HOOK = "https://api.render.com/deploy/srv-XXXXXXXXXXXXX?key=YYYYYYYYYYYY"
+TELEGRAM_CODIGO_REINICIO = "Katherine2026Seguro"
+RENDER_DEPLOY_HOOK = "https://api.render.com/deploy/srv-db44p43bc2fs73ak72lg?key=eU1rtZVyfhl"
 
 _telegram_bot_iniciado = False
 
@@ -911,13 +909,22 @@ def _procesar_comando_telegram(update):
         if texto.startswith('/reiniciar'):
             partes = texto.split()
             if len(partes) == 2 and partes[1] == TELEGRAM_CODIGO_REINICIO:
-                enviar_telegram("🔄 <b>Reiniciando el sistema RENAVEN en Render...</b>\nEsto tardará unos 2-3 minutos.")
+                enviar_telegram(
+                    "🔄 <b>Reiniciando el sistema RENAVEN en Render...</b>\n"
+                    "⏳ Esto tardará aproximadamente 2-3 minutos.\n"
+                    "📱 Te avisaré cuando esté listo."
+                )
                 time.sleep(2)
                 logger.warning("[TELEGRAM] Reinicio solicitado vía Telegram - Llamando Deploy Hook de Render")
                 try:
                     respuesta = requests.get(RENDER_DEPLOY_HOOK, timeout=30)
                     if respuesta.status_code == 200:
                         logger.info(f"[TELEGRAM] Deploy Hook ejecutado correctamente: {respuesta.status_code}")
+                        enviar_telegram(
+                            "✅ <b>Deploy Hook ejecutado correctamente</b>\n"
+                            "🔄 Render está reiniciando el servicio.\n"
+                            "⏱️ Espera 2-3 minutos y vuelve a entrar al sistema."
+                        )
                     else:
                         logger.error(f"[TELEGRAM] Deploy Hook respondió con error: {respuesta.status_code} - {respuesta.text}")
                         enviar_telegram(f"⚠️ El Deploy Hook respondió con código {respuesta.status_code}. Revisa los logs de Render.")
@@ -925,26 +932,42 @@ def _procesar_comando_telegram(update):
                     logger.error(f"[TELEGRAM] Error al llamar Deploy Hook: {e}")
                     enviar_telegram(f"❌ Error al contactar Render: {str(e)}")
             else:
-                enviar_telegram("❌ <b>Código incorrecto.</b>\nUso: /reiniciar TuCodigoSecreto")
+                enviar_telegram(
+                    "❌ <b>Código incorrecto</b>\n"
+                    "━━━━━━━━━━━━━━━━━━━━━\n"
+                    "Uso correcto:\n"
+                    "<code>/reiniciar Katherine2026Seguro</code>"
+                )
 
         elif texto == '/estado':
-            saldo = obtener_saldo_actual()
-            rate = get_cached_exchange_rate()
+            try:
+                saldo = obtener_saldo_actual()
+                rate = get_cached_exchange_rate()
+                enviar_telegram(
+                    f"📊 <b>ESTADO DEL SISTEMA RENAVEN</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━━\n"
+                    f"💱 <b>Tasa BCV:</b> Bs. {rate:,.2f}\n"
+                    f"💰 <b>Saldo Caja Bs:</b> Bs. {saldo['bs']:,.2f}\n"
+                    f"💵 <b>Saldo Caja USD:</b> ${saldo['usd']:,.2f}\n"
+                    f"━━━━━━━━━━━━━━━━━━━━━\n"
+                    f"🕒 {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}"
+                )
+            except Exception as e:
+                logger.error(f"[TELEGRAM] Error en /estado: {e}")
+                enviar_telegram(f"⚠️ Error al consultar estado: {str(e)}")
+
+        elif texto == '/ayuda' or texto == '/start':
             enviar_telegram(
-                f"📊 <b>ESTADO DEL SISTEMA</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━━\n"
-                f"💱 Tasa BCV: Bs. {rate:,.2f}\n"
-                f"💰 Saldo Caja Bs: Bs. {saldo['bs']:,.2f}\n"
-                f"💵 Saldo Caja USD: ${saldo['usd']:,.2f}\n"
-                f"🕒 {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}"
-            )
-        elif texto == '/ayuda':
-            enviar_telegram(
-                "🤖 <b>COMANDOS DISPONIBLES</b>\n"
+                "🤖 <b>COMANDOS DISPONIBLES - RENAVEN</b>\n"
                 "━━━━━━━━━━━━━━━━━━━━━\n"
-                "/estado - Ver estado del sistema\n"
-                "/ayuda - Ver esta ayuda\n"
-                "/reiniciar [código] - Reiniciar el servidor en Render"
+                "📊 <code>/estado</code>\n"
+                "   Ver saldo de caja y tasa BCV\n\n"
+                "🔄 <code>/reiniciar [código]</code>\n"
+                "   Reiniciar el servidor en Render\n\n"
+                "❓ <code>/ayuda</code>\n"
+                "   Ver esta lista de comandos\n"
+                "━━━━━━━━━━━━━━━━━━━━━\n"
+                "⚙️ <i>Sistema RENAVEN</i>"
             )
     except Exception as e:
         logger.error(f"[TELEGRAM] Error procesando comando: {e}")
@@ -970,7 +993,6 @@ def _escuchar_telegram():
         except Exception as e:
             logger.debug(f"[TELEGRAM] Polling error (reintentando): {e}")
             time.sleep(5)
-
 
 # ==================== API TASA BCV ====================
 @app.route('/api/bcv-rate')
