@@ -3416,7 +3416,7 @@ def start_scheduler():
 # ==================== RUTA TEMPORAL: BORRAR TODO ====================
 @app.route('/borrar-todo-renaven-2026')
 def borrar_todo_renaven():
-    """⚠️ RUTA TEMPORAL - Borra todos los datos de prueba. ELIMINAR DESPUÉS DE USAR."""
+    """RUTA TEMPORAL - Borra todos los datos de prueba. ELIMINAR DESPUES DE USAR."""
     try:
         resultados = []
 
@@ -3440,38 +3440,36 @@ def borrar_todo_renaven():
 
         for tabla in tablas_a_borrar:
             try:
-                # Usamos TRUNCATE que es más rápido que DELETE y reinicia los IDs
                 execute_query("TRUNCATE TABLE " + tabla + " RESTART IDENTITY CASCADE", commit=True)
-                resultados.append("✅ " + tabla + " vaciada")
+                resultados.append("OK - " + tabla + " vaciada")
             except Exception as e:
-                resultados.append("⚠️ " + tabla + ": " + str(e)[:80])
+                resultados.append("ADVERTENCIA - " + tabla + ": " + str(e)[:80])
 
         # Reiniciar saldo_caja
         try:
             execute_query("UPDATE saldo_caja SET saldo_bs = 0, saldo_usd = 0 WHERE id = 1", commit=True)
-            resultados.append("✅ saldo_caja reiniciado a 0")
+            resultados.append("OK - saldo_caja reiniciado a 0")
         except Exception as e:
-            resultados.append("⚠️ saldo_caja: " + str(e)[:80])
+            resultados.append("ADVERTENCIA - saldo_caja: " + str(e)[:80])
 
         # Reiniciar contadores en config
         try:
             execute_query("UPDATE config SET value = '1' WHERE key_name = 'next_invoice'", commit=True)
             execute_query("UPDATE config SET value = '1' WHERE key_name = 'next_return'", commit=True)
             execute_query("UPDATE config SET value = '0' WHERE key_name = 'opening_balance'", commit=True)
-            resultados.append("✅ config reiniciado")
+            resultados.append("OK - config reiniciado")
         except Exception as e:
-            resultados.append("⚠️ config: " + str(e)[:80])
+            resultados.append("ADVERTENCIA - config: " + str(e)[:80])
 
-        html = "<h1>🧹 Limpieza completada</h1><ul>"
+        html = "<h1>Limpieza completada</h1><ul>"
         for r in resultados:
             html += "<li>" + r + "</li>"
         html += "</ul>"
-        html += "<p><strong>⚠️ IMPORTANTE: Elimina esta ruta del codigo ahora mismo.</strong></p>"
+        html += "<p><strong>IMPORTANTE: Elimina esta ruta del codigo ahora mismo.</strong></p>"
         html += "<p>Vuelve a <a href='/dashboard'>/dashboard</a></p>"
         return html
     except Exception as e:
-        return "<h1>❌ Error</h1><pre>" + str(e) + "</pre>"
-# ==================================================================
+        return "<h1>Error</h1><pre>" + str(e) + "</pre>"
 
 # ==================== INICIALIZACIÓN PARA RENDER (GUNICORN) ====================
 with app.app_context():
