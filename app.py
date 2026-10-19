@@ -895,6 +895,143 @@ def enviar_cierre_caja_telegram(total_usd, total_bs, efectivo_bs, efectivo_usd,
     return enviar_telegram(mensaje)
 
 
+# ====================================================================
+# ===== NUEVO: FUNCIONES DE CONSULTA PARA TELEGRAM (INVENTARIO) =====
+# ====================================================================
+def _obtener_inventario_por_categoria():
+    """Devuelve inventario agrupado por categoría con conteo y valor.
+    Se actualiza en tiempo real porque consulta directamente la tabla products.
+    Si creas una categoría nueva desde el sistema, aparecerá automáticamente aquí.
+    """
+    try:
+        rows = execute_query("""
+            SELECT category,
+                   COUNT(*) as total_productos,
+                   COALESCE(SUM(stock), 0) as total_stock,
+                   COALESCE(SUM(stock * cost), 0) as valor_costo,
+                   COALESCE(SUM(stock * price), 0) as valor_venta
+            FROM products
+            WHERE activo = 1 AND stock > 0
+            GROUP BY category
+            ORDER BY total_productos DESC
+        """, fetch_all=True)
+        return rows or []
+    except Exception as e:
+        logger.error(f"[TELEGRAM] Error inventario por categoría: {e}")
+        return []
+
+
+def _obtener_top_productos_vendidos(limite=10, mes_actual=True):
+    """Devuelve los N productos más vendidos (mes actual o histórico)."""
+    try:
+        if mes_actual:
+            hoy = datetime.now()
+            start = f"{hoy.year}-{hoy.month:02d}-01"
+            if hoy.month == 12:
+                end = f"{hoy.year+1}-01-01"
+            else:
+                end = f"{hoy.year}-{hoy.month+1:02d}-01"
+            ventas = execute_query("""
+                SELECT items FROM sales
+                WHERE date >= %s AND date < %s AND invoice_number > 0
+            """, (start, end), fetch_all=True)
+        else:
+            ventas = execute_query("""
+                SELECT items FROM sales
+                WHERE invoice_number > 0
+            """, fetch_all=True)
+
+        acumulado = defaultdict(lambda: {'cantidad': 0.0, 'ingresos': 0.0})
+        for venta in (ventas or []):
+            if not venta.get('items'):
+                continue
+            try:
+                items = json.loads(venta['items']) if isinstance(venta['items'], str) else venta['items']
+            except:
+                continue
+            if not isinstance(items, list):
+                continue
+            for item in items:
+                nombre = (item.get('name') or '').strip().upper()
+                if not nombre:
+                    continue
+                cantidad = float(item.get('quantity', 0) or 0)
+                precio = float(item.get('price', 0) or 0)
+                acumulado[nombre]['cantidad'] += cantidad
+                acumulado[nombre]['ingresos'] += cantidad * precio
+
+        if not acumulado:
+            return []
+
+        top = sorted(acumulado.items(), key=lambda x: x[1]['cantidad'], reverse=True)[:limite]
+        return [{'nombre': k, 'cantidad': v['cantidad'], 'ingresos': v['ingresos']} for k, v in top]
+    except Exception as e:
+        logger.error(f"[TELEGRAM] Error top productos: {e}")
+        return []
+
+
+def _obtener_stock_bajo(umbral=5):
+    """Lista productos con stock bajo o agotados."""
+    try:
+        rows = execute_query("""
+            SELECT name, stock, category
+            FROM products
+            WHERE activo = 1 AND stock <= %s
+            ORDER BY stock ASC
+            LIMIT 15
+        """, (umbral,), fetch_all=True)
+        return rows or []
+    except Exception as e:
+        logger.error(f"[TELEGRAM] Error stock bajo: {e}")
+        return []
+
+
+# ===== NUEVO: REPORTE DIARIO AUTOMÁTICO =====
+def _reporte_diario_telegram():
+    """Envía reporte automático diario con inventario + top + stock bajo."""
+    try:
+        cats = _obtener_inventario_por_categoria()
+        top = _obtener_top_productos_vendidos(limite=5, mes_actual=True)
+        bajos = _obtener_stock_bajo(umbral=5)
+        saldo = obtener_saldo_actual()
+        rate = get_cached_exchange_rate()
+
+        lineas = [
+            "📋 <b>REPORTE DIARIO RENAVEN</b>",
+            f"📅 {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+            "━━━━━━━━━━━━━━━━━━━━━",
+            f"💱 Tasa: Bs. {rate:,.2f}",
+            f"💰 Caja Bs: Bs. {saldo['bs']:,.2f}",
+            f"💵 Caja USD: ${saldo['usd']:,.2f}",
+            "━━━━━━━━━━━━━━━━━━━━━"
+        ]
+        if top:
+            lineas.append("🏆 <b>TOP 3 DEL MES:</b>")
+            medallas = ["🥇", "🥈", "🥉"]
+            for i, p in enumerate(top[:3]):
+                lineas.append(f"{medallas[i]} {p['nombre']} ({p['cantidad']:,.2f})")
+
+        if bajos:
+            lineas.append("━━━━━━━━━━━━━━━━━━━━━")
+            lineas.append(f"⚠️ <b>STOCK BAJO:</b> {len(bajos)} productos")
+            for p in bajos[:5]:
+                lineas.append(f"• {p['name']}: {float(p['stock']):,.2f}")
+
+        if cats:
+            lineas.append("━━━━━━━━━━━━━━━━━━━━━")
+            lineas.append(f"📦 <b>Inventario:</b> {len(cats)} categorías activas")
+
+        enviar_telegram("\n".join(lineas))
+        logger.info("[TELEGRAM] Reporte diario enviado")
+    except Exception as e:
+        logger.error(f"[TELEGRAM] Error reporte diario: {e}")
+
+
+# ====================================================================
+# ===== FIN NUEVO ====================================================
+# ====================================================================
+
+
 def _procesar_comando_telegram(update):
     try:
         mensaje = update.get('message', {})
@@ -955,12 +1092,113 @@ def _procesar_comando_telegram(update):
                 logger.error(f"[TELEGRAM] Error en /estado: {e}")
                 enviar_telegram(f"⚠️ Error al consultar estado: {str(e)}")
 
+        # ===== NUEVO: /inventario =====
+        elif texto == '/inventario':
+            try:
+                cats = _obtener_inventario_por_categoria()
+                if not cats:
+                    enviar_telegram("📦 <b>INVENTARIO</b>\n━━━━━━━━━━━━━━━━━━━━━\nNo hay productos activos con stock.")
+                else:
+                    total_prod = sum(int(c['total_productos']) for c in cats)
+                    total_stock = sum(float(c['total_stock']) for c in cats)
+                    total_costo = sum(float(c['valor_costo']) for c in cats)
+                    total_venta = sum(float(c['valor_venta']) for c in cats)
+                    lineas = [
+                        "📦 <b>INVENTARIO POR CATEGORÍA</b>",
+                        "━━━━━━━━━━━━━━━━━━━━━"
+                    ]
+                    for c in cats:
+                        cat = c['category'] or 'SIN CATEGORÍA'
+                        lineas.append(
+                            f"📂 <b>{cat}</b>\n"
+                            f"   • {int(c['total_productos'])} productos | {float(c['total_stock']):,.2f} unidades\n"
+                            f"   • Costo: Bs. {float(c['valor_costo']):,.2f}\n"
+                            f"   • Venta: Bs. {float(c['valor_venta']):,.2f}"
+                        )
+                    lineas.append("━━━━━━━━━━━━━━━━━━━━━")
+                    lineas.append(
+                        f"📊 <b>TOTALES:</b>\n"
+                        f"   • {total_prod} productos\n"
+                        f"   • {total_stock:,.2f} unidades\n"
+                        f"   • Costo: Bs. {total_costo:,.2f}\n"
+                        f"   • Venta: Bs. {total_venta:,.2f}"
+                    )
+                    lineas.append(f"🕒 {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+                    enviar_telegram("\n".join(lineas))
+            except Exception as e:
+                logger.error(f"[TELEGRAM] Error en /inventario: {e}")
+                enviar_telegram(f"⚠️ Error al consultar inventario: {str(e)}")
+
+        # ===== NUEVO: /masvendido o /top =====
+        elif texto == '/masvendido' or texto == '/top':
+            try:
+                top = _obtener_top_productos_vendidos(limite=10, mes_actual=True)
+                mes_nombre = datetime.now().strftime('%B %Y').capitalize()
+                if not top:
+                    enviar_telegram(f"🏆 <b>MÁS VENDIDOS - {mes_nombre}</b>\n━━━━━━━━━━━━━━━━━━━━━\nAún no hay ventas este mes.")
+                else:
+                    lineas = [
+                        f"🏆 <b>TOP 10 MÁS VENDIDOS - {mes_nombre}</b>",
+                        "━━━━━━━━━━━━━━━━━━━━━"
+                    ]
+                    medallas = ["🥇", "🥈", "🥉"]
+                    for i, p in enumerate(top, 1):
+                        icono = medallas[i-1] if i <= 3 else f"{i}."
+                        lineas.append(
+                            f"{icono} <b>{p['nombre']}</b>\n"
+                            f"   • {p['cantidad']:,.2f} vendidos | ${p['ingresos']:,.2f}"
+                        )
+                    lineas.append(f"🕒 {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+                    enviar_telegram("\n".join(lineas))
+            except Exception as e:
+                logger.error(f"[TELEGRAM] Error en /masvendido: {e}")
+                enviar_telegram(f"⚠️ Error al consultar más vendidos: {str(e)}")
+
+        # ===== NUEVO: /stockbajo o /alertas =====
+        elif texto == '/stockbajo' or texto == '/alertas':
+            try:
+                bajos = _obtener_stock_bajo(umbral=5)
+                if not bajos:
+                    enviar_telegram("✅ <b>STOCK BAJO</b>\n━━━━━━━━━━━━━━━━━━━━━\nTodo bien, no hay productos con stock bajo.")
+                else:
+                    lineas = [
+                        "⚠️ <b>PRODUCTOS CON STOCK BAJO/AGOTADO</b>",
+                        "━━━━━━━━━━━━━━━━━━━━━"
+                    ]
+                    for p in bajos:
+                        stock_val = float(p['stock'])
+                        if stock_val <= 0:
+                            icono = "🔴"
+                            estado = "AGOTADO"
+                        elif stock_val <= 2:
+                            icono = "🟠"
+                            estado = "CRÍTICO"
+                        else:
+                            icono = "🟡"
+                            estado = "BAJO"
+                        lineas.append(
+                            f"{icono} <b>{p['name']}</b>\n"
+                            f"   • Stock: {stock_val:,.2f} ({estado})\n"
+                            f"   • Categoría: {p['category'] or 'Sin categoría'}"
+                        )
+                    lineas.append(f"🕒 {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+                    enviar_telegram("\n".join(lineas))
+            except Exception as e:
+                logger.error(f"[TELEGRAM] Error en /stockbajo: {e}")
+                enviar_telegram(f"⚠️ Error al consultar stock bajo: {str(e)}")
+
         elif texto == '/ayuda' or texto == '/start':
             enviar_telegram(
                 "🤖 <b>COMANDOS DISPONIBLES - RENAVEN</b>\n"
                 "━━━━━━━━━━━━━━━━━━━━━\n"
                 "📊 <code>/estado</code>\n"
                 "   Ver saldo de caja y tasa BCV\n\n"
+                "📦 <code>/inventario</code>\n"
+                "   Inventario completo por categoría (tiempo real)\n\n"
+                "🏆 <code>/masvendido</code> o <code>/top</code>\n"
+                "   Top 10 productos más vendidos del mes\n\n"
+                "⚠️ <code>/stockbajo</code> o <code>/alertas</code>\n"
+                "   Productos con stock bajo o agotado\n\n"
                 "🔄 <code>/reiniciar [código]</code>\n"
                 "   Reiniciar el servidor en Render\n\n"
                 "❓ <code>/ayuda</code>\n"
@@ -3405,13 +3643,23 @@ def scheduled_bcv_update():
         update_bcv_rate()
 
 def start_scheduler():
+    # ===== NUEVO: incluye reporte diario automático =====
     def run_scheduled():
+        ultimo_reporte = None
         while True:
             time.sleep(BCV_CACHE_TTL)
             scheduled_bcv_update()
+
+            # Reporte diario a las 8 PM
+            ahora = datetime.now()
+            if ahora.hour == 20 and (ultimo_reporte is None or ultimo_reporte.date() != ahora.date()):
+                with app.app_context():
+                    _reporte_diario_telegram()
+                ultimo_reporte = ahora
+
     scheduler_thread = threading.Thread(target=run_scheduled, daemon=True)
     scheduler_thread.start()
-    logger.info("[SCHEDULER] Scheduler de tasa BCV iniciado (cada 6 horas)")
+    logger.info("[SCHEDULER] Scheduler BCV + Reporte diario iniciado")
 # ==================== INICIALIZACIÓN PARA RENDER (GUNICORN) ====================
 with app.app_context():
     try:
