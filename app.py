@@ -165,6 +165,7 @@ connection_pool = None
 def ensure_database_exists():
     pass
 
+
 def init_connection_pool():
     global connection_pool
     try:
@@ -174,6 +175,7 @@ def init_connection_pool():
     except Exception as e:
         logger.error(f"Error al crear pool: {e}")
         raise
+
 
 def _mysql_to_pg(query):
     query = query.replace('`', '')
@@ -213,6 +215,7 @@ def _mysql_to_pg(query):
         query = re.sub(r'ON\s+DUPLICATE\s+KEY\s+UPDATE\s+\w+\s*=\s*[\w\d]+', 'ON CONFLICT DO NOTHING', query, flags=re.IGNORECASE)
     return query
 
+
 def get_db():
     try:
         conn = connection_pool.getconn()
@@ -225,6 +228,7 @@ def get_db():
     except Exception as e:
         logger.error(f"Error de conexion PostgreSQL: {e}")
         raise
+
 
 def execute_query(query, params=None, fetch_one=False, fetch_all=False, commit=False):
     conn = None
@@ -267,6 +271,7 @@ def execute_query(query, params=None, fetch_one=False, fetch_all=False, commit=F
                 connection_pool.putconn(conn)
             except Exception:
                 pass
+
 
 # ==================== CACHÉ DE CONSULTAS ====================
 _cache_exchange_rate = {'rate': None, 'timestamp': 0}
@@ -851,6 +856,7 @@ def enviar_telegram(mensaje, parse_mode='HTML'):
         logger.error(f"[TELEGRAM] Excepción al enviar: {e}")
         return False
 
+
 def enviar_cierre_caja_telegram(total_usd, total_bs, efectivo_bs, efectivo_usd,
                                  zelle, pago_movil, transferencia, tarjeta,
                                  apertura, diferencia, cajero, supervisor, tasa):
@@ -888,17 +894,25 @@ def enviar_cierre_caja_telegram(total_usd, total_bs, efectivo_bs, efectivo_usd,
     )
     return enviar_telegram(mensaje)
 
+
+# ====================================================================
+# ===== NUEVO: FUNCIONES DE CONSULTA PARA TELEGRAM (INVENTARIO) =====
+# ====================================================================
 def _obtener_inventario_por_categoria():
+    """Devuelve inventario agrupado por categoría con conteo y valor.
+    Se actualiza en tiempo real porque consulta directamente la tabla products.
+    Si creas una categoría nueva desde el sistema, aparecerá automáticamente aquí.
+    """
     try:
         rows = execute_query("""
-            SELECT category,
+            SELECT COALESCE(NULLIF(TRIM(category), ''), 'SIN CATEGORÍA') as category,
                    COUNT(*) as total_productos,
                    COALESCE(SUM(stock), 0) as total_stock,
                    COALESCE(SUM(stock * cost), 0) as valor_costo,
                    COALESCE(SUM(stock * price), 0) as valor_venta
             FROM products
             WHERE activo = 1 AND stock > 0
-            GROUP BY category
+            GROUP BY COALESCE(NULLIF(TRIM(category), ''), 'SIN CATEGORÍA')
             ORDER BY total_productos DESC
         """, fetch_all=True)
         return rows or []
@@ -906,7 +920,9 @@ def _obtener_inventario_por_categoria():
         logger.error(f"[TELEGRAM] Error inventario por categoría: {e}")
         return []
 
+
 def _obtener_top_productos_vendidos(limite=10, mes_actual=True):
+    """Devuelve los N productos más vendidos (mes actual o histórico)."""
     try:
         if mes_actual:
             hoy = datetime.now()
@@ -953,7 +969,9 @@ def _obtener_top_productos_vendidos(limite=10, mes_actual=True):
         logger.error(f"[TELEGRAM] Error top productos: {e}")
         return []
 
+
 def _obtener_stock_bajo(umbral=5):
+    """Lista productos con stock bajo o agotados."""
     try:
         rows = execute_query("""
             SELECT name, stock, category
@@ -967,7 +985,10 @@ def _obtener_stock_bajo(umbral=5):
         logger.error(f"[TELEGRAM] Error stock bajo: {e}")
         return []
 
+
+# ===== NUEVO: REPORTE DIARIO AUTOMÁTICO =====
 def _reporte_diario_telegram():
+    """Envía reporte automático diario con inventario + top + stock bajo."""
     try:
         cats = _obtener_inventario_por_categoria()
         top = _obtener_top_productos_vendidos(limite=5, mes_actual=True)
@@ -1005,6 +1026,12 @@ def _reporte_diario_telegram():
     except Exception as e:
         logger.error(f"[TELEGRAM] Error reporte diario: {e}")
 
+
+# ====================================================================
+# ===== FIN NUEVO ====================================================
+# ====================================================================
+
+
 def _procesar_comando_telegram(update):
     try:
         mensaje = update.get('message', {})
@@ -1014,6 +1041,7 @@ def _procesar_comando_telegram(update):
             logger.warning(f"[TELEGRAM] Comando ignorado de chat no autorizado: {chat_id}")
             return
 
+        # ===== COMANDO /reiniciar -> USA DEPLOY HOOK DE RENDER =====
         if texto.startswith('/reiniciar'):
             partes = texto.split()
             if len(partes) == 2 and partes[1] == TELEGRAM_CODIGO_REINICIO:
@@ -1064,6 +1092,7 @@ def _procesar_comando_telegram(update):
                 logger.error(f"[TELEGRAM] Error en /estado: {e}")
                 enviar_telegram(f"⚠️ Error al consultar estado: {str(e)}")
 
+        # ===== NUEVO: /inventario =====
         elif texto == '/inventario':
             try:
                 cats = _obtener_inventario_por_categoria()
@@ -1100,6 +1129,7 @@ def _procesar_comando_telegram(update):
                 logger.error(f"[TELEGRAM] Error en /inventario: {e}")
                 enviar_telegram(f"⚠️ Error al consultar inventario: {str(e)}")
 
+        # ===== NUEVO: /masvendido o /top =====
         elif texto == '/masvendido' or texto == '/top':
             try:
                 top = _obtener_top_productos_vendidos(limite=10, mes_actual=True)
@@ -1124,6 +1154,7 @@ def _procesar_comando_telegram(update):
                 logger.error(f"[TELEGRAM] Error en /masvendido: {e}")
                 enviar_telegram(f"⚠️ Error al consultar más vendidos: {str(e)}")
 
+        # ===== NUEVO: /stockbajo o /alertas =====
         elif texto == '/stockbajo' or texto == '/alertas':
             try:
                 bajos = _obtener_stock_bajo(umbral=5)
@@ -1178,6 +1209,7 @@ def _procesar_comando_telegram(update):
     except Exception as e:
         logger.error(f"[TELEGRAM] Error procesando comando: {e}")
 
+
 def _escuchar_telegram():
     global _telegram_bot_iniciado
     if _telegram_bot_iniciado:
@@ -1195,6 +1227,9 @@ def _escuchar_telegram():
                 for update in data.get('result', []):
                     offset = update['update_id'] + 1
                     _procesar_comando_telegram(update)
+            else:
+                logger.warning(f"[TELEGRAM] getUpdates no OK: {data}")
+                time.sleep(3)
         except Exception as e:
             logger.debug(f"[TELEGRAM] Polling error (reintentando): {e}")
             time.sleep(5)
@@ -1549,6 +1584,7 @@ def init_db():
                 connection_pool.putconn(conn)
             except Exception:
                 pass
+
 
 def insert_initial_data(cursor):
     cursor.execute("SELECT COUNT(*) as count FROM users")
@@ -3638,7 +3674,6 @@ with app.app_context():
 # ===== NUEVO: ARRANCAR BOT Y SCHEDULER SIEMPRE (también en Render/Gunicorn) =====
 def _arrancar_servicios_background():
     global _telegram_bot_iniciado
-
     # 1. Bot de Telegram
     if TELEGRAM_TOKEN and TELEGRAM_TOKEN != "TU_TOKEN_AQUI":
         if not _telegram_bot_iniciado:
@@ -3653,7 +3688,6 @@ def _arrancar_servicios_background():
                 _telegram_bot_iniciado = False
     else:
         print("[WARN] Telegram no configurado")
-
     # 2. Scheduler
     try:
         start_scheduler()
@@ -3661,7 +3695,6 @@ def _arrancar_servicios_background():
     except Exception as e:
         print(f"[ERROR] No se pudo iniciar scheduler: {e}")
 
-# Arrancar servicios apenas el módulo se importe (Gunicorn incluido)
 _arrancar_servicios_background()
 
 # ==================== INICIO LOCAL ====================
