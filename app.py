@@ -35,7 +35,7 @@ import socket
 _db_initialized = False
 
 # ==================== CONFIGURACIÓN DE TELEGRAM ====================
-TELEGRAM_TOKEN = "8734974003:AAGtM8_fFoSrHqFZUeRakLbkFbK5AVGHmY4"
+TELEGRAM_TOKEN = "8608664375:AAGvF7SQtddRtqv8wJ2USTG7YV0peQMggLQ"
 TELEGRAM_CHAT_ID = "1623792128"
 TELEGRAM_CODIGO_REINICIO = "Katherine2026Seguro"
 RENDER_DEPLOY_HOOK = "https://api.render.com/deploy/srv-db44p43bc2fs73ak72lg?key=j8Rb20K9xyw"
