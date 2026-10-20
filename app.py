@@ -1239,7 +1239,6 @@ def obtener_producto_mas_vendido_mes(month, year):
         ganador = max(productos.items(), key=lambda x: x[1]['cantidad'])
         return ganador[0], ganador[1]['cantidad'], ganador[1]['ingresos']
     except: return None, 0, 0.0
-
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -1277,7 +1276,6 @@ def dashboard():
     except Exception as e:
         flash(f'[ERROR] {str(e)}', 'danger')
         return render_template('dashboard.html', saldo_bs=0, saldo_usd=0, company=None, exchange_rate=40, discount_percent=5, opening_balance=0, total_ventas_mes_usd=0, total_ventas_mes_bs=0, total_ventas_dia_usd=0, total_ventas_dia_bs=0, mes_actual='', can_view_sales=False, datetime=datetime, current_date=datetime.now().strftime('%d/%m/%Y %H:%M:%S'), top_product_name=None, top_product_qty=0, top_product_total=0.0)
-
 @app.route('/api/saldo_actual')
 @login_required
 def api_saldo_actual():
@@ -2485,7 +2483,6 @@ def debug_ventas():
         return html
     except Exception as e:
         return f"<div class='error'>Error: {str(e)}</div>"
-
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template('404.html'), 404
@@ -2520,7 +2517,6 @@ def start_scheduler():
     scheduler_thread = threading.Thread(target=run_scheduled, daemon=True)
     scheduler_thread.start()
     logger.info("[SCHEDULER] Scheduler BCV + Reporte diario iniciado")
-
 with app.app_context():
     try:
         init_connection_pool()
