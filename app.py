@@ -3674,7 +3674,6 @@ with app.app_context():
 # ===== NUEVO: ARRANCAR BOT Y SCHEDULER SIEMPRE (también en Render/Gunicorn) =====
 def _arrancar_servicios_background():
     global _telegram_bot_iniciado
-    # 1. Bot de Telegram
     if TELEGRAM_TOKEN and TELEGRAM_TOKEN != "TU_TOKEN_AQUI":
         if not _telegram_bot_iniciado:
             _telegram_bot_iniciado = True
@@ -3688,7 +3687,6 @@ def _arrancar_servicios_background():
                 _telegram_bot_iniciado = False
     else:
         print("[WARN] Telegram no configurado")
-    # 2. Scheduler
     try:
         start_scheduler()
         print("[OK] Scheduler BCV + reporte diario iniciado")
@@ -3697,7 +3695,6 @@ def _arrancar_servicios_background():
 
 _arrancar_servicios_background()
 
-# ==================== INICIO LOCAL ====================
 if __name__ == '__main__':
     import webbrowser
     try:
