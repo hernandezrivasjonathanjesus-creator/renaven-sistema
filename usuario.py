@@ -35,7 +35,7 @@ DB_CONFIG = {
 try:
     conn = pymysql.connect(**DB_CONFIG)
     cursor = conn.cursor()
-    print(f"{Colors.VERDE}✅ Conexión a MySQL exitosa{Colors.RESET}")
+    print(f"{Colors.VERDE} Conexión a MySQL exitosa{Colors.RESET}")
     print(f"   Host: {DB_CONFIG['host']}:{DB_CONFIG['port']}")
     print(f"   Base de datos: {DB_CONFIG['database']}")
 except Exception as e:
@@ -44,7 +44,7 @@ except Exception as e:
 
 # Limpiar la tabla users
 cursor.execute("DELETE FROM users")
-print(f"{Colors.AMARILLO}🗑️ Usuarios anteriores eliminados{Colors.RESET}")
+print(f"{Colors.AMARILLO} Usuarios anteriores eliminados{Colors.RESET}")
 
 # Lista de usuarios con sus contraseñas
 usuarios = [
@@ -55,7 +55,7 @@ usuarios = [
     ('jonathan', 'hernandezrivasjonathanjesus@gmail.com', 'jonathan123', 'Dueño')
 ]
 
-print(f"\n{Colors.AZUL}📝 Creando usuarios...{Colors.RESET}")
+print(f"\n{Colors.AZUL} Creando usuarios...{Colors.RESET}")
 print(f"{Colors.GRIS}{'-'*40}{Colors.RESET}")
 
 # Insertar cada usuario
@@ -74,7 +74,7 @@ for username, email, password, role in usuarios:
 # Guardar los cambios
 conn.commit()
 print(f"{Colors.GRIS}{'-'*40}{Colors.RESET}")
-print(f"{Colors.VERDE}🎉 USUARIOS CREADOS EXITOSAMENTE!{Colors.RESET}")
+print(f"{Colors.VERDE} USUARIOS CREADOS EXITOSAMENTE!{Colors.RESET}")
 
 # Verificar los usuarios creados
 cursor.execute("SELECT id, username, role FROM users")
