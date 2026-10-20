@@ -7,7 +7,7 @@ from flask import Flask
 app = Flask(__name__)
 
 # EL TOKEN NUEVO QUE TE DIO BOTFATHER
-TELEGRAM_TOKEN = "8734974003:AAGbAcQusTuUKq8yj63nky8jX4BKEudsvKo"
+TELEGRAM_TOKEN = "8734974003:AAGtM8_fFoSrHqFZUeRakLbkFbK5AVGHmY4"
 TELEGRAM_CHAT_ID = "1623792128"
 
 def escuchar_telegram():
