@@ -3681,7 +3681,6 @@ def _arrancar_servicios_background():
                 telegram_thread = threading.Thread(target=_escuchar_telegram, daemon=True)
                 telegram_thread.start()
                 print("[OK] Bot de Telegram escuchando comandos")
-                logger.info("[TELEGRAM] Bot iniciado desde _arrancar_servicios_background")
             except Exception as e:
                 print(f"[ERROR] No se pudo iniciar bot Telegram: {e}")
                 _telegram_bot_iniciado = False
@@ -3692,7 +3691,6 @@ def _arrancar_servicios_background():
         print("[OK] Scheduler BCV + reporte diario iniciado")
     except Exception as e:
         print(f"[ERROR] No se pudo iniciar scheduler: {e}")
-
 _arrancar_servicios_background()
 
 if __name__ == '__main__':
