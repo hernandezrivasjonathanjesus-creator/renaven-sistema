@@ -6,7 +6,7 @@ from flask import Flask
 
 app = Flask(__name__)
 
-TELEGRAM_TOKEN = "8734974003:AAGbAcQusTuUKq8yj63nky8jX4BKEudsvKo"
+TELEGRAM_TOKEN = "8608664375:AAGvF7SQtddRtqv8wJ2USTG7YV0peQMggLQ"
 TELEGRAM_CHAT_ID = "1623792128"
 
 def escuchar_telegram():
