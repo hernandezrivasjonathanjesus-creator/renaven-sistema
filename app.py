@@ -369,6 +369,12 @@ DB_CONFIG = {
     'database': os.environ.get('DB_NAME', 'renaven_db'),
     'user': os.environ.get('DB_USER', 'root'),
     'password': os.environ.get('DB_PASSWORD', ''),
+    
+    # ---- SOPORTE SSL PARA AIVEN ----
+    'ssl_ca': os.path.join(base_dir, 'ca.pem'),
+    'ssl_verify_cert': True,
+    # --------------------------------
+    
     'autocommit': False,
     'use_pure': True,
     'connection_timeout': 30,
