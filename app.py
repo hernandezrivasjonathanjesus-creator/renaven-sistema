@@ -2526,7 +2526,6 @@ with app.app_context():
         init_connection_pool()
         init_db()
         print("Base de datos inicializada al arrancar la app")
-
 def _arrancar_servicios_background():
     global _telegram_bot_iniciado
     if TELEGRAM_TOKEN and TELEGRAM_TOKEN != "TU_TOKEN_AQUI":
