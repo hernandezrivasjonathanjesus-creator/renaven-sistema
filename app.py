@@ -3678,7 +3678,30 @@ def _arrancar_servicios_background():
         if not _telegram_bot_iniciado:
             _telegram_bot_iniciado = True
             try:
-                telegram_thread = threading.Thread(target=_escuchar_telegram, daemon=True)
+                # --- CÓDIGO PARA EL BOT NUEVO ---
+                def escuchar_nuevo():
+                    offset = None
+                    while True:
+                        try:
+                            url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/getUpdates"
+                            response = requests.get(url, params={"timeout": 30, "offset": offset}, timeout=35)
+                            data = response.json()
+                            if data.get('ok'):
+                                for update in data.get('result', []):
+                                    offset = update['update_id'] + 1
+                                    msg = update.get('message', {})
+                                    chat_id = str(msg.get('chat', {}).get('id', ''))
+                                    texto = msg.get('text', '').strip()
+                                    if chat_id == TELEGRAM_CHAT_ID:
+                                        if texto in ['/start', '/ayuda']:
+                                            payload = {"chat_id": chat_id, "text": "🤖 <b>BOT RENAVEN ACTIVO</b>\n¡Ya estoy conectado!", "parse_mode": "HTML"}
+                                            requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", data=payload)
+                            else:
+                                time.sleep(2)
+                        except Exception:
+                            time.sleep(5)
+
+                telegram_thread = threading.Thread(target=escuchar_nuevo, daemon=True)
                 telegram_thread.start()
                 print("[OK] Bot de Telegram escuchando comandos")
             except Exception as e:
@@ -3686,11 +3709,13 @@ def _arrancar_servicios_background():
                 _telegram_bot_iniciado = False
     else:
         print("[WARN] Telegram no configurado")
+    
     try:
         start_scheduler()
         print("[OK] Scheduler BCV + reporte diario iniciado")
     except Exception as e:
         print(f"[ERROR] No se pudo iniciar scheduler: {e}")
+
 _arrancar_servicios_background()
 
 if __name__ == '__main__':
