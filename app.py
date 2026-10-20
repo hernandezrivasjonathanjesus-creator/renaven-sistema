@@ -2,8 +2,9 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_wtf.csrf import CSRFProtect
 from flask_mail import Mail, Message
 from flask_compress import Compress
-import mysql.connector
-from mysql.connector import pooling, Error
+import psycopg2
+import psycopg2.extras
+from psycopg2 import pool, Error
 import bcrypt
 import os
 import time
@@ -29,251 +30,7 @@ import requests
 from bs4 import BeautifulSoup
 import subprocess
 
-# ==================== CARGAR .env SI EXISTE ====================
-load_dotenv()
-
 _db_initialized = False
-
-# ==================== CONFIGURACIÓN TELEGRAM ====================
-TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '8608664375:AAGvF7SQtddRtqv8wJ2USTG7YV0peQMggLQ')
-TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')  # Se autodetecta si está vacío
-TELEGRAM_ENABLED = bool(TELEGRAM_BOT_TOKEN)
-_telegram_chat_id_cache = {'chat_id': TELEGRAM_CHAT_ID, 'timestamp': 0}
-
-def _obtener_chat_id_telegram():
-    """Obtiene el chat_id desde getUpdates si no está configurado."""
-    if _telegram_chat_id_cache['chat_id']:
-        return _telegram_chat_id_cache['chat_id']
-    
-    if time.time() - _telegram_chat_id_cache['timestamp'] < 30:
-        return _telegram_chat_id_cache['chat_id']
-    
-    _telegram_chat_id_cache['timestamp'] = time.time()
-    
-    try:
-        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getUpdates"
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('ok') and data.get('result'):
-                for update in reversed(data['result']):
-                    message = update.get('message') or update.get('edited_message') or update.get('channel_post')
-                    if message and message.get('chat'):
-                        chat_id = str(message['chat']['id'])
-                        _telegram_chat_id_cache['chat_id'] = chat_id
-                        logger.info(f"[TELEGRAM] Chat ID detectado: {chat_id}")
-                        return chat_id
-    except Exception as e:
-        logger.error(f"[TELEGRAM] Error obteniendo chat_id: {e}")
-    
-    return None
-
-def enviar_telegram(mensaje, parse_mode='HTML'):
-    """Envía un mensaje a Telegram de forma asíncrona."""
-    if not TELEGRAM_ENABLED:
-        return False
-    
-    def _enviar():
-        try:
-            chat_id = _obtener_chat_id_telegram()
-            if not chat_id:
-                logger.warning("[TELEGRAM] No hay chat_id. Envía un mensaje a tu bot primero.")
-                return
-            
-            url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-            payload = {
-                'chat_id': chat_id,
-                'text': mensaje,
-                'parse_mode': parse_mode,
-                'disable_web_page_preview': True
-            }
-            response = requests.post(url, data=payload, timeout=15)
-            if response.status_code == 200:
-                logger.info("[TELEGRAM] Mensaje enviado correctamente")
-            else:
-                logger.error(f"[TELEGRAM] Error {response.status_code}: {response.text[:300]}")
-        except Exception as e:
-            logger.error(f"[TELEGRAM] Error al enviar: {e}")
-    
-    threading.Thread(target=_enviar, daemon=True).start()
-    return True
-
-def _fmt_bs(valor):
-    try:
-        num = float(valor or 0)
-        partes = f"{num:,.2f}".split('.')
-        entero = partes[0].replace(',', '.')
-        return f"{entero},{partes[1]}"
-    except:
-        return "0,00"
-
-def _fmt_usd(valor):
-    try:
-        return f"{float(valor or 0):,.2f}"
-    except:
-        return "0.00"
-
-def obtener_resumen_dia_telegram():
-    try:
-        today_str = datetime.now().strftime('%Y-%m-%d')
-        rate = get_cached_exchange_rate()
-        
-        ventas_dia = execute_query("""
-            SELECT COALESCE(SUM(total_usd), 0) as total_usd,
-                   COALESCE(SUM(total_bs), 0) as total_bs,
-                   COUNT(*) as num_facturas
-            FROM sales 
-            WHERE date LIKE %s AND invoice_number > 0
-        """, (today_str + '%',), fetch_one=True) or {}
-        
-        total_usd_dia = float(ventas_dia.get('total_usd', 0) or 0)
-        total_bs_dia = float(ventas_dia.get('total_bs', 0) or 0)
-        num_facturas = int(ventas_dia.get('num_facturas', 0) or 0)
-        
-        try:
-            devoluciones = execute_query("""
-                SELECT COALESCE(SUM(total_usd), 0) as total_usd,
-                       COALESCE(SUM(total_bs), 0) as total_bs,
-                       COUNT(*) as num_devoluciones
-                FROM returns 
-                WHERE return_date LIKE %s
-            """, (today_str + '%',), fetch_one=True) or {}
-        except:
-            devoluciones = {}
-        
-        dev_usd = float(devoluciones.get('total_usd', 0) or 0)
-        dev_bs = float(devoluciones.get('total_bs', 0) or 0)
-        num_dev = int(devoluciones.get('num_devoluciones', 0) or 0)
-        
-        try:
-            saldo = obtener_saldo_actual()
-        except:
-            saldo = {'bs': 0, 'usd': 0}
-        
-        inventario = execute_query("""
-            SELECT 
-                COUNT(*) as total_productos,
-                SUM(CASE WHEN stock <= 0 THEN 1 ELSE 0 END) as agotados,
-                SUM(CASE WHEN stock > 0 AND stock <= 5 THEN 1 ELSE 0 END) as stock_bajo,
-                COALESCE(SUM(stock), 0) as stock_total,
-                COALESCE(SUM(stock * cost), 0) as valor_costo,
-                COALESCE(SUM(stock * price), 0) as valor_venta
-            FROM products 
-            WHERE activo = 1
-        """, fetch_one=True) or {}
-        
-        total_productos = int(inventario.get('total_productos', 0) or 0)
-        agotados = int(inventario.get('agotados', 0) or 0)
-        stock_bajo = int(inventario.get('stock_bajo', 0) or 0)
-        stock_total = float(inventario.get('stock_total', 0) or 0)
-        valor_costo = float(inventario.get('valor_costo', 0) or 0)
-        valor_venta = float(inventario.get('valor_venta', 0) or 0)
-        
-        criticos = execute_query("""
-            SELECT name, stock, unit 
-            FROM products 
-            WHERE activo = 1 AND stock > 0 AND stock <= 5
-            ORDER BY stock ASC 
-            LIMIT 5
-        """, fetch_all=True) or []
-        
-        criticos_texto = ""
-        if criticos:
-            criticos_texto = "\n\n⚠️ <b>Productos con stock bajo:</b>\n"
-            for p in criticos:
-                criticos_texto += f"  • {p['name']}: {_fmt_bs(p['stock'])} {p.get('unit', '')}\n"
-        
-        fecha_actual = datetime.now().strftime('%d/%m/%Y %H:%M')
-        
-        mensaje = f"""📊 <b>RESUMEN DEL DÍA</b>
-
-📅 <b>Fecha:</b> {fecha_actual}
-💱 <b>Tasa BCV:</b> Bs. {_fmt_bs(rate)}
-
-━━━━━━━━━━━━━━━━━━
-💵 <b>VENTAS DEL DÍA</b>
-━━━━━━━━━━━━━━━━━━
-📄 Facturas emitidas: <b>{num_facturas}</b>
-💵 Total USD: <b>${_fmt_usd(total_usd_dia)}</b>
-💴 Total Bs: <b>Bs. {_fmt_bs(total_bs_dia)}</b>
-
-🔙 Devoluciones: <b>{num_dev}</b> (${_fmt_usd(dev_usd)} / Bs. {_fmt_bs(dev_bs)})
-✅ <b>Neto USD:</b> <b>${_fmt_usd(total_usd_dia - dev_usd)}</b>
-✅ <b>Neto Bs:</b> <b>Bs. {_fmt_bs(total_bs_dia - dev_bs)}</b>
-
-━━━━━━━━━━━━━━━━━━
-💰 <b>SALDO DE CAJA</b>
-━━━━━━━━━━━━━━━━━━
-💴 Saldo Bs: <b>Bs. {_fmt_bs(saldo['bs'])}</b>
-💵 Saldo USD: <b>${_fmt_usd(saldo['usd'])}</b>
-
-━━━━━━━━━━━━━━━━━━
-📦 <b>INVENTARIO</b>
-━━━━━━━━━━━━━━━━━━
-📊 Productos activos: <b>{total_productos}</b>
-✅ Disponibles: <b>{total_productos - agotados - stock_bajo}</b>
-⚠️ Stock bajo: <b>{stock_bajo}</b>
-❌ Agotados: <b>{agotados}</b>
-📦 Unidades totales: <b>{_fmt_bs(stock_total)}</b>
-
-💵 Valor al costo: <b>${_fmt_usd(valor_costo)}</b>
-💵 Valor a la venta: <b>${_fmt_usd(valor_venta)}</b>{criticos_texto}"""
-        
-        return mensaje
-    except Exception as e:
-        logger.error(f"[TELEGRAM] Error generando resumen: {e}")
-        return f"⚠️ Error generando resumen: {e}"
-
-def notificar_login_telegram(username, role, ip):
-    if not TELEGRAM_ENABLED:
-        return
-    try:
-        fecha_actual = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-        encabezado = f"""🔐 <b>INICIO DE SESIÓN</b>
-
-👤 Usuario: <b>{username}</b>
-🎭 Rol: <b>{role}</b>
-🌐 IP: <code>{ip}</code>
-🕐 {fecha_actual}
-"""
-        resumen = obtener_resumen_dia_telegram()
-        mensaje = f"{encabezado}\n{resumen}"
-        enviar_telegram(mensaje)
-    except Exception as e:
-        logger.error(f"[TELEGRAM] Error en notificar_login_telegram: {e}")
-
-def notificar_venta_telegram(invoice_number, client_name, total_usd, total_bs, username):
-    if not TELEGRAM_ENABLED:
-        return
-    try:
-        mensaje = f"""💰 <b>NUEVA VENTA</b>
-
-📄 Factura N°: <b>{invoice_number:04d}</b>
-👤 Cliente: <b>{client_name}</b>
-💵 Total USD: <b>${_fmt_usd(total_usd)}</b>
-💴 Total Bs: <b>Bs. {_fmt_bs(total_bs)}</b>
-👨‍💼 Cajero: <b>{username}</b>
-🕐 {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}"""
-        enviar_telegram(mensaje)
-    except Exception as e:
-        logger.error(f"[TELEGRAM] Error notificar_venta: {e}")
-
-def notificar_devolucion_telegram(return_number, invoice_number, client_name, total_usd, total_bs, username):
-    if not TELEGRAM_ENABLED:
-        return
-    try:
-        mensaje = f"""🔙 <b>DEVOLUCIÓN REGISTRADA</b>
-
-📄 Devolución N°: <b>{return_number:04d}</b>
-📋 Factura original: <b>N° {invoice_number}</b>
-👤 Cliente: <b>{client_name}</b>
-💵 Total USD: <b>${_fmt_usd(total_usd)}</b>
-💴 Total Bs: <b>Bs. {_fmt_bs(total_bs)}</b>
-👨‍💼 Usuario: <b>{username}</b>
-🕐 {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}"""
-        enviar_telegram(mensaje)
-    except Exception as e:
-        logger.error(f"[TELEGRAM] Error notificar_devolucion: {e}")
 
 # ==================== VALIDACIÓN DE CONTRASEÑAS ====================
 def validar_contraseña_segura(password):
@@ -346,7 +103,7 @@ app.secret_key = 'renaven-super-secret-key-2024'
 # ==================== CONTEXT PROCESSORS ====================
 @app.context_processor
 def utility_processor():
-    meses_nombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    meses_nombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
                     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
     return dict(meses_nombres=meses_nombres, now=datetime.now())
 
@@ -362,19 +119,13 @@ def caja_context():
 # ==================== COMPRESIÓN GZIP ====================
 Compress(app)
 
-# ==================== CONFIGURACIÓN DE MYSQL (COMPATIBLE RENDER Y LOCAL) ====================
+# ==================== CONFIGURACIÓN DE MYSQL ====================
 DB_CONFIG = {
-    'host': os.environ.get('DB_HOST', 'localhost'),
-    'port': int(os.environ.get('DB_PORT', 3306)),
-    'database': os.environ.get('DB_NAME', 'renaven_db'),
-    'user': os.environ.get('DB_USER', 'root'),
-    'password': os.environ.get('DB_PASSWORD', ''),
-    
-    # ---- SOPORTE SSL PARA AIVEN ----
-    'ssl_ca': os.path.join(base_dir, 'ca.pem'),
-    'ssl_verify_cert': True,
-    # --------------------------------
-    
+    'host': 'localhost',
+    'port': 3306,
+    'database': 'renaven_db',
+    'user': 'root',
+    'password': '',
     'autocommit': False,
     'use_pure': True,
     'connection_timeout': 30,
@@ -723,7 +474,9 @@ csrf = CSRFProtect()
 csrf.init_app(app)
 mail = Mail(app)
 
-# ==================== RUTAS API DE CSRF EXEMPT ====================
+
+
+# ==================== RUTAS API DE CSRF ====================
 @csrf.exempt
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart_exempt():
@@ -769,11 +522,6 @@ def buscar_factura_devolucion_exempt():
 def procesar_devolucion_exempt():
     return procesar_devolucion()
 
-@csrf.exempt
-@app.route('/buscar_nota_credito', methods=['GET'])
-def buscar_nota_credito_exempt():
-    return buscar_nota_credito()
-
 # ==================== MIDDLEWARE DE PERFORMANCE ====================
 @app.before_request
 def start_timer():
@@ -807,9 +555,8 @@ def health_check():
     return jsonify({
         'status': 'healthy' if db_status == 'healthy' else 'degraded',
         'database': db_status,
-        'telegram': 'enabled' if TELEGRAM_ENABLED else 'disabled',
         'timestamp': datetime.now().isoformat(),
-        'version': '3.1.0'
+        'version': '3.0.0'
     })
 
 # ==================== METRICS ====================
@@ -822,7 +569,7 @@ def metrics():
         memoria = psutil.virtual_memory()
         return jsonify({
             'sistema': {
-                'versión': '3.1.0',
+                'versión': '3.0.0',
                 'python': platform.python_version(),
                 'servidor': 'Flask',
                 'uptime_segundos': round(uptime),
@@ -841,10 +588,6 @@ def metrics():
             'base_datos': {
                 'pool_conexiones': 10,
                 'pool_activo': connection_pool is not None
-            },
-            'telegram': {
-                'habilitado': TELEGRAM_ENABLED,
-                'chat_id_configurado': bool(_telegram_chat_id_cache['chat_id'])
             },
             'rendimiento': {
                 'memoria_uso_porcentaje': memoria.percent,
@@ -891,7 +634,7 @@ def permission_required(perm):
     return decorator
 
 # ==================== FUNCIONES DE CAJA ====================
-def registrar_movimiento_caja(tipo, monto_bs, monto_usd, concepto, referencia_tipo=None,
+def registrar_movimiento_caja(tipo, monto_bs, monto_usd, concepto, referencia_tipo=None, 
                               referencia_id=None, metodo='efectivo', usuario=None, nota='', tasa=None):
     if tasa is None:
         tasa = get_cached_exchange_rate()
@@ -924,7 +667,7 @@ def registrar_movimiento_caja(tipo, monto_bs, monto_usd, concepto, referencia_ti
                    (tipo, monto_bs, monto_usd, concepto, referencia_tipo, referencia_id, 
                     metodo, usuario, nota, tasa_usd, fecha) 
                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())"""
-        execute_query(query, (tipo, monto_bs, monto_usd, concepto, referencia_tipo,
+        execute_query(query, (tipo, monto_bs, monto_usd, concepto, referencia_tipo, 
                               referencia_id, metodo, usuario, nota, tasa), commit=True)
         actualizar_saldo_caja(tipo, monto_bs, monto_usd)
         logger.info(f"[CAJA] {tipo}: {concepto} - Bs.{monto_bs:.2f} / ${monto_usd:.2f}")
@@ -1068,7 +811,6 @@ def api_bcv_rate():
                 'last_update': datetime.fromtimestamp(_bcv_rate_cache['timestamp']).isoformat()
             })
         current_rate = get_cached_exchange_rate()
-
         def background_update():
             with app.app_context():
                 update_bcv_rate()
@@ -1101,8 +843,9 @@ def force_update_bcv():
         flash('[ERROR] No se pudo actualizar la tasa desde el BCV. Verifique su conexión a internet.', 'danger')
     return redirect(url_for('exchange_rate'))
 
-# ==================== VERIFICAR COLUMNAS CASH_CLOSURES ====================
+# ==================== FUNCIÓN PARA VERIFICAR COLUMNAS EN CASH_CLOSURES ====================
 def verificar_columnas_cash_closures(cursor):
+    """Agrega columnas faltantes a la tabla cash_closures si no existen."""
     try:
         cursor.execute("SHOW COLUMNS FROM cash_closures LIKE 'devoluciones_bs'")
         if not cursor.fetchone():
@@ -1390,6 +1133,7 @@ def init_db():
         if tables and len(tables) > 0:
             logger.info("Las tablas ya existen, omitiendo creación...")
             _db_initialized = True
+            # ===== Verificar columnas faltantes en cash_closures =====
             verificar_columnas_cash_closures(cursor)
             return True
         for query in queries:
@@ -1444,7 +1188,7 @@ def insert_initial_data(cursor):
         ('jonathan', 'hernandezrivasjonathanjesus@gmail.com', bcrypt.hashpw('Jonathan$2024Secure!'.encode(), bcrypt.gensalt()).decode(), 'Dueño')
     ]
     for username, email, pwd, role in usuarios:
-        cursor.execute("INSERT IGNORE INTO users (username, email, password, role) VALUES (%s, %s, %s, %s)",
+        cursor.execute("INSERT IGNORE INTO users (username, email, password, role) VALUES (%s, %s, %s, %s)", 
                     (username, email, pwd, role))
     cursor.execute("INSERT IGNORE INTO company (id, name, rif, address, phone, email, parish, city, state) VALUES (1, %s, %s, %s, %s, %s, %s, %s, %s)",
                 ('RENAVEN OAKMONT, C.A.', 'J-41323725-3', 'CALLE 1 ANDRES BELLO N°01-06, SECTOR FRANCISCO DE MIRANDA II', '(0412) 123-4567', 'renaven@correo.com', 'PUNTA CARDON', 'PUNTO FIJO', 'FALCON'))
@@ -1463,7 +1207,7 @@ def log_action(user_id, username, action, details="", ip_address=""):
     try:
         query = """INSERT INTO user_logs (user_id, username, action, details, ip_address, date) 
                 VALUES (%s, %s, %s, %s, %s, %s)"""
-        execute_query(query, (user_id, username, action, details, ip_address or request.remote_addr,
+        execute_query(query, (user_id, username, action, details, ip_address or request.remote_addr, 
                         datetime.now().isoformat()), commit=True)
     except Exception as e:
         logger.error(f"Error al registrar: {e}")
@@ -1536,6 +1280,58 @@ def limpiar_o_reactivar_productos_agotados():
         logger.error(f"Error en limpiar_o_reactivar_productos_agotados: {e}")
         return 0
 
+# ==================== FUNCIÓN PARA ASEGURAR MYSQL (MODIFICADA) ====================
+def asegurar_mysql():
+    """Arranca el MySQL portable que está en la carpeta 'mysql_server' junto al .exe"""
+    import os
+    import subprocess
+    import time
+    
+    # Detecta si estamos empaquetados o en código fuente
+    if getattr(sys, 'frozen', False):
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Ruta del ejecutable de MySQL y de la carpeta de datos
+    mysql_exe_path = os.path.join(base_dir, 'mysql_server', 'bin', 'mysqld.exe')
+    data_dir = os.path.join(base_dir, 'mysql_server', 'data')
+
+    print("🔍 Verificando motor MySQL portable...")
+
+    # Si no existe el motor MySQL, detenemos todo con un mensaje claro
+    if not os.path.exists(mysql_exe_path):
+        print("❌ ¡ERROR CRÍTICO! No se encontró el motor MySQL en la carpeta 'mysql_server/bin'.")
+        print("👉 Asegúrate de que la carpeta 'mysql_server' esté junto al archivo .exe.")
+        input("Presiona Enter para cerrar...")
+        return False
+
+    # Si es la primera vez que se ejecuta en esa PC, inicializamos la base de datos
+    if not os.path.exists(data_dir):
+        print("🛠️ Inicializando base de datos portable (primera ejecución)...")
+        try:
+            subprocess.run([os.path.join(base_dir, 'mysql_server', 'bin', 'mysql_install_db.exe'), '--datadir=' + data_dir], shell=True)
+            print("✅ Base de datos inicializada correctamente.")
+        except Exception as e:
+            print(f"❌ Error al inicializar la base de datos: {e}")
+            return False
+
+    print("🚀 Iniciando servidor MySQL Portable en segundo plano...")
+    # Ocultamos la ventana negra del motor MySQL
+    startupinfo = subprocess.STARTUPINFO()
+    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    
+    try:
+        # Ejecutamos el motor de MySQL
+        subprocess.Popen([mysql_exe_path, '--datadir=' + data_dir], startupinfo=startupinfo)
+        print("⏳ Esperando 5 segundos a que MySQL arranque...")
+        time.sleep(5) 
+        print("✅ MySQL Portable en funcionamiento.")
+        return True
+    except Exception as e:
+        print(f"❌ Error al ejecutar mysqld.exe: {e}")
+        return False
+
 # ==================== RUTAS DE AUTENTICACIÓN ====================
 @app.route('/')
 def index():
@@ -1589,13 +1385,6 @@ def login():
                 session['role'] = user['role']
                 session.permanent = True
                 log_action(user['id'], username, 'LOGIN_EXITOSO', f"Rol: {user['role']}")
-                
-                # 🔔 NOTIFICAR A TELEGRAM CON RESUMEN DEL DÍA
-                try:
-                    notificar_login_telegram(username, user['role'], client_ip)
-                except Exception as tg_err:
-                    logger.error(f"Error notificando Telegram en login: {tg_err}")
-                
                 flash(f'[OK] Bienvenido {username}', 'success')
                 session.pop('captcha_text', None)
                 return redirect(url_for('dashboard'))
@@ -1717,27 +1506,27 @@ def dashboard():
                 total_dia_bs = float(sales_day['total_bs']) if sales_day['total_bs'] else 0
         meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
         current_date = today.strftime('%d/%m/%Y %H:%M:%S')
-        return render_template('dashboard.html',
-                              company=company,
-                              exchange_rate=rate,
-                              discount_percent=discount_percent,
-                              opening_balance=opening_balance,
-                              total_ventas_mes_usd=total_ventas_usd,
-                              total_ventas_mes_bs=total_ventas_bs,
-                              total_ventas_dia_usd=total_dia_usd,
-                              total_ventas_dia_bs=total_dia_bs,
-                              mes_actual=meses[month-1],
+        return render_template('dashboard.html', 
+                              company=company, 
+                              exchange_rate=rate, 
+                              discount_percent=discount_percent, 
+                              opening_balance=opening_balance, 
+                              total_ventas_mes_usd=total_ventas_usd, 
+                              total_ventas_mes_bs=total_ventas_bs, 
+                              total_ventas_dia_usd=total_dia_usd, 
+                              total_ventas_dia_bs=total_dia_bs, 
+                              mes_actual=meses[month-1], 
                               can_view_sales=can_view_sales,
-                              saldo_bs=saldo['bs'],
-                              saldo_usd=saldo['usd'],
+                              saldo_bs=saldo['bs'], 
+                              saldo_usd=saldo['usd'], 
                               datetime=datetime,
                               current_date=current_date)
     except Exception as e:
         logger.error(f"Error en dashboard: {e}")
         flash(f'[ERROR] Error al cargar dashboard: {str(e)}', 'danger')
-        return render_template('dashboard.html',
-                              saldo_bs=0,
-                              saldo_usd=0,
+        return render_template('dashboard.html', 
+                              saldo_bs=0, 
+                              saldo_usd=0, 
                               company=None,
                               exchange_rate=40,
                               discount_percent=5,
@@ -1750,39 +1539,6 @@ def dashboard():
                               can_view_sales=False,
                               datetime=datetime,
                               current_date=datetime.now().strftime('%d/%m/%Y %H:%M:%S'))
-
-# ==================== TELEGRAM - RUTAS DE PRUEBA ====================
-@app.route('/test_telegram')
-@login_required
-def test_telegram():
-    if session.get('role') != 'Dueño':
-        flash('Solo el Dueño puede probar Telegram', 'danger')
-        return redirect(url_for('dashboard'))
-    try:
-        chat_id = _obtener_chat_id_telegram()
-        if not chat_id:
-            flash('❌ No se pudo detectar el chat_id. Envía un mensaje a tu bot primero (t.me/Renaven_Alertq2_bot) y vuelve a intentar.', 'danger')
-            return redirect(url_for('dashboard'))
-        notificar_login_telegram(session['username'], session['role'], request.remote_addr)
-        flash(f'✅ Notificación de prueba enviada a Telegram (chat: {chat_id}). Revisa tu chat.', 'success')
-    except Exception as e:
-        logger.error(f"Error en test_telegram: {e}")
-        flash(f'❌ Error: {e}', 'danger')
-    return redirect(url_for('dashboard'))
-
-@app.route('/test_telegram_resumen')
-@login_required
-def test_telegram_resumen():
-    if session.get('role') != 'Dueño':
-        flash('Solo el Dueño puede probar Telegram', 'danger')
-        return redirect(url_for('dashboard'))
-    try:
-        resumen = obtener_resumen_dia_telegram()
-        enviar_telegram(resumen)
-        flash('✅ Resumen del día enviado a Telegram. Revisa tu chat.', 'success')
-    except Exception as e:
-        flash(f'❌ Error: {e}', 'danger')
-    return redirect(url_for('dashboard'))
 
 # ==================== API SALDO ACTUAL ====================
 @app.route('/api/saldo_actual')
@@ -1820,12 +1576,12 @@ def facturacion():
         exchange_rate = 36.50
         discount_percent = 5.0
         saldo = {'bs': 0, 'usd': 0}
-    return render_template('facturacion.html',
-                          categories=categories,
-                          company=company,
-                          exchange_rate=exchange_rate,
+    return render_template('facturacion.html', 
+                          categories=categories, 
+                          company=company, 
+                          exchange_rate=exchange_rate, 
                           discount_percent=discount_percent,
-                          saldo_bs=saldo['bs'],
+                          saldo_bs=saldo['bs'], 
                           saldo_usd=saldo['usd'])
 
 def buscar_productos():
@@ -1921,11 +1677,13 @@ def guardar_cliente_route():
     return guardar_cliente()
 
 # ==================== DEVOLUCIONES ====================
+
 @app.route('/buscar_factura_devolucion', methods=['GET'])
 def buscar_factura_devolucion():
     invoice_num = request.args.get('invoice', '')
     if not invoice_num:
         return jsonify({'error': 'Número de factura requerido'}), 400
+
     try:
         sale = execute_query("""
             SELECT id, invoice_number, date, client_name, client_id, 
@@ -1934,36 +1692,49 @@ def buscar_factura_devolucion():
             FROM sales 
             WHERE invoice_number = %s AND invoice_number > 0
         """, (invoice_num,), fetch_one=True)
+
         if not sale:
             return jsonify({'error': f'Factura N° {invoice_num} no encontrada'}), 404
+
+        # --- Obtener valores con seguridad (evita None) ---
         subtotal = float(sale.get('subtotal', 0) or 0)
         tax = float(sale.get('tax', 0) or 0)
         discount = float(sale.get('discount', 0) or 0)
         total_usd_guardado = float(sale.get('total_usd', 0) or 0)
+
+        # --- Calcular total de la factura ---
         if total_usd_guardado > 0:
             total_factura = total_usd_guardado
         else:
+            # Recalcular como respaldo (por si total_usd es 0)
             iva_calculado = subtotal * 0.16
             total_factura = subtotal - discount + iva_calculado
             if total_factura <= 0:
                 total_factura = subtotal - discount + (subtotal * 0.16)
+
+        # --- Verificar devoluciones previas ---
         existing_returns = execute_query("""
             SELECT COUNT(*) as count, COALESCE(SUM(total_usd),0) as total_devuelto 
             FROM returns WHERE original_invoice = %s
         """, (invoice_num,), fetch_one=True)
+
         total_devuelto = float(existing_returns.get('total_devuelto', 0) or 0)
         count_returns = int(existing_returns.get('count', 0) or 0)
         disponible = max(0, total_factura - total_devuelto)
+
+        # --- Parsear items ---
         items = []
         if sale.get('items'):
             try:
                 items = json.loads(sale['items']) if isinstance(sale['items'], str) else sale['items']
             except:
                 items = []
+
         for item in items:
             item['price'] = float(item.get('price', 0))
             item['quantity'] = float(item.get('quantity', 0))
             item['available_return'] = item['quantity']
+
         return jsonify({
             'sale': {
                 'id': sale['id'],
@@ -1982,9 +1753,13 @@ def buscar_factura_devolucion():
             'count_returns': count_returns,
             'disponible': disponible
         })
+
     except Exception as e:
         logger.error(f"Error en buscar_factura_devolucion: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/procesar_devolucion', methods=['POST'])
 def procesar_devolucion():
@@ -1992,16 +1767,22 @@ def procesar_devolucion():
     invoice_number = data.get('invoice_number')
     items = data.get('items', [])
     reason = data.get('reason', '')
+
     if not invoice_number or not items:
         return jsonify({'error': 'Datos incompletos'}), 400
+
     try:
-        sale = execute_query("SELECT * FROM sales WHERE invoice_number = %s AND invoice_number > 0",
+        # 1. Obtener factura original
+        sale = execute_query("SELECT * FROM sales WHERE invoice_number = %s AND invoice_number > 0", 
                             (invoice_number,), fetch_one=True)
         if not sale:
             return jsonify({'error': 'Factura no encontrada'}), 404
+
+        # 2. Calcular total factura (usar total_usd guardado)
         total_usd_guardado = float(sale.get('total_usd', 0) or 0)
         subtotal = float(sale.get('subtotal', 0) or 0)
         discount = float(sale.get('discount', 0) or 0)
+
         if total_usd_guardado > 0:
             total_factura = total_usd_guardado
         else:
@@ -2009,15 +1790,21 @@ def procesar_devolucion():
             total_factura = subtotal - discount + iva
             if total_factura <= 0:
                 total_factura = subtotal - discount + (subtotal * 0.16)
+
+        # 3. Verificar límite de devolución
         existing_returns = execute_query("""
             SELECT COALESCE(SUM(total_usd),0) as total_devuelto 
             FROM returns WHERE original_invoice = %s
         """, (invoice_number,), fetch_one=True)
         total_devuelto = float(existing_returns.get('total_devuelto', 0) or 0)
         disponible = max(0, total_factura - total_devuelto)
+
+        # 4. Calcular subtotal de los items devueltos (sin IVA)
         subtotal_devolucion = sum(float(item['price']) * float(item['quantity']) for item in items)
         iva_devolucion = subtotal_devolucion * 0.16
         total_usd_devolucion = subtotal_devolucion + iva_devolucion
+
+        # 5. Validar que no exceda el disponible
         if total_usd_devolucion > disponible + 0.01:
             return jsonify({
                 'error': f'El monto a devolver (${total_usd_devolucion:.2f}) excede el disponible (${disponible:.2f})',
@@ -2025,21 +1812,28 @@ def procesar_devolucion():
                 'subtotal': subtotal_devolucion,
                 'total_usd': total_usd_devolucion
             }), 400
+
+        # 6. Obtener tasa y crear registro en "returns"
         rate = get_cached_exchange_rate()
         total_bs_devolucion = total_usd_devolucion * rate
         next_return = obtener_proximo_return_number()
         items_json = json.dumps(items)
+
         execute_query("""
             INSERT INTO returns 
             (return_number, original_invoice, return_date, user_id, 
              client_id, client_name, items, subtotal, total_usd, total_bs, reason) 
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (next_return, invoice_number, datetime.now().isoformat(), session.get('user_id', 1),
-              sale['client_id'], sale['client_name'], items_json,
+        """, (next_return, invoice_number, datetime.now().isoformat(), session.get('user_id', 1), 
+              sale['client_id'], sale['client_name'], items_json, 
               subtotal_devolucion, total_usd_devolucion, total_bs_devolucion, reason), commit=True)
-        devolucion = execute_query("SELECT id FROM returns WHERE return_number = %s",
+
+        # 7. Obtener ID de la devolución
+        devolucion = execute_query("SELECT id FROM returns WHERE return_number = %s", 
                                   (next_return,), fetch_one=True)
         devolucion_id = devolucion['id'] if devolucion else None
+
+        # 8. Registrar movimiento de caja (Egreso) por el total con IVA
         registrar_movimiento_caja(
             tipo='egreso',
             monto_bs=total_bs_devolucion,
@@ -2052,6 +1846,8 @@ def procesar_devolucion():
             nota=f"Devolución de factura N° {invoice_number}. Motivo: {reason}",
             tasa=rate
         )
+
+        # 9. Detalles de movimientos (opcional)
         if devolucion_id:
             for item in items:
                 subtotal_item = float(item['price']) * float(item['quantity'])
@@ -2065,12 +1861,14 @@ def procesar_devolucion():
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (devolucion_id, item['id'], item['quantity'], item['price'],
                       subtotal_item, iva_item, total_item_usd, total_item_bs, reason), commit=True)
+
+        # 10. Actualizar STOCK (devolver al inventario)
         for item in items:
-            product = execute_query("SELECT id, name, stock, activo FROM products WHERE id = %s",
+            product = execute_query("SELECT id, name, stock, activo FROM products WHERE id = %s", 
                                    (item['id'],), fetch_one=True)
             if product:
                 if product.get('activo') == 0:
-                    execute_query("UPDATE products SET activo = 1 WHERE id = %s",
+                    execute_query("UPDATE products SET activo = 1 WHERE id = %s", 
                                  (item['id'],), commit=True)
                 new_stock = float(product['stock']) + float(item['quantity'])
                 if new_stock <= 0:
@@ -2079,8 +1877,10 @@ def procesar_devolucion():
                     new_status = 'STOCK BAJO'
                 else:
                     new_status = 'DISPONIBLE'
-                execute_query("UPDATE products SET stock = %s, stock_status = %s, activo = 1 WHERE id = %s",
+                execute_query("UPDATE products SET stock = %s, stock_status = %s, activo = 1 WHERE id = %s", 
                              (new_stock, new_status, item['id']), commit=True)
+
+        # 11. Registrar VENTA NEGATIVA (para contabilidad) con el total con IVA
         fecha_actual = datetime.now().isoformat()
         items_negativos_json = json.dumps([{**item, 'quantity': -float(item['quantity'])} for item in items])
         execute_query("""
@@ -2092,40 +1892,38 @@ def procesar_devolucion():
              pago_transferencia, pago_tarjeta, cambio_usd, cambio_bs, notes) 
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
                     %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (-next_return, fecha_actual, session.get('user_id', 1), sale['client_id'],
-              sale['client_name'], sale.get('client_phone', '') or '', sale.get('client_address', '') or '',
-              items_negativos_json, -subtotal_devolucion, 0, -iva_devolucion,
-              -total_usd_devolucion, -total_bs_devolucion,
-              f"DEVOLUCIÓN N° {next_return} - {reason}",
-              json.dumps({"devolucion": True, "return_number": next_return}),
-              -total_bs_devolucion, 0, 0, 0, 0, 0, 0, 0,
+        """, (-next_return, fecha_actual, session.get('user_id', 1), sale['client_id'], 
+              sale['client_name'], sale.get('client_phone', '') or '', sale.get('client_address', '') or '', 
+              items_negativos_json, -subtotal_devolucion, 0, -iva_devolucion, 
+              -total_usd_devolucion, -total_bs_devolucion, 
+              f"DEVOLUCIÓN N° {next_return} - {reason}", 
+              json.dumps({"devolucion": True, "return_number": next_return}), 
+              -total_bs_devolucion, 0, 0, 0, 0, 0, 0, 0, 
               f"Devolución de factura N° {invoice_number}"), commit=True)
-        log_action(session.get('user_id', 1), session.get('username', 'SISTEMA'), 'RETURN',
+
+        # 12. Log de acción
+        log_action(session.get('user_id', 1), session.get('username', 'SISTEMA'), 'RETURN', 
                    f"Devolución N° {next_return} - Factura N° {invoice_number} - Total: -${total_usd_devolucion:.2f} (incluye IVA)")
-        
-        # 🔔 NOTIFICAR A TELEGRAM
-        try:
-            notificar_devolucion_telegram(
-                next_return, invoice_number, sale['client_name'],
-                total_usd_devolucion, total_bs_devolucion,
-                session.get('username', 'SISTEMA')
-            )
-        except Exception as tg_err:
-            logger.error(f"Error notificando devolución a Telegram: {tg_err}")
-        
+
+        # 13. Obtener saldo actualizado
         saldo = obtener_saldo_actual()
+
         return jsonify({
-            'success': True,
-            'return_number': next_return,
+            'success': True, 
+            'return_number': next_return, 
             'total_usd': total_usd_devolucion,
             'total_bs': total_bs_devolucion,
             'saldo_bs': saldo['bs'],
             'saldo_usd': saldo['usd'],
             'message': f'Devolución N° {next_return} procesada. Se devolvieron ${total_usd_devolucion:.2f} USD (incluye IVA)'
         })
+
     except Exception as e:
         logger.error(f"Error en procesar_devolucion: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/buscar_nota_credito', methods=['GET'])
 def buscar_nota_credito():
@@ -2140,6 +1938,7 @@ def buscar_nota_credito():
         """, (nc_number,), fetch_one=True)
         if not ret:
             return jsonify({'error': f'Nota de devolución N° {nc_number} no encontrada'}), 404
+        
         usado = execute_query("""
             SELECT COALESCE(SUM(total_usd), 0) as usado
             FROM sales
@@ -2148,6 +1947,7 @@ def buscar_nota_credito():
         usado = float(usado.get('usado', 0) or 0)
         total = float(ret.get('total_usd', 0) or 0)
         disponible = max(0, total - usado)
+        
         return jsonify({
             'success': True,
             'numero': ret['return_number'],
@@ -2161,6 +1961,7 @@ def buscar_nota_credito():
     except Exception as e:
         logger.error(f"Error en buscar_nota_credito: {e}")
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/historial_devoluciones')
 @login_required
@@ -2190,46 +1991,65 @@ def historial_devoluciones():
         company = None
     return render_template('historial_devoluciones.html', returns=returns, company=company, datetime=datetime)
 
+
 @app.route('/imprimir_devolucion/<int:return_number>')
 @login_required
 def imprimir_devolucion(return_number):
     try:
+        # 1. Obtener la devolución
         devolucion = execute_query("""
             SELECT r.*, u.username as user_name 
             FROM returns r 
             LEFT JOIN users u ON r.user_id = u.id 
             WHERE r.return_number = %s
         """, (return_number,), fetch_one=True)
+
         if not devolucion:
             flash('Devolución no encontrada', 'danger')
             return redirect(url_for('historial_devoluciones'))
+
+        # 2. Obtener la factura original para teléfono y dirección
         sale_original = execute_query("""
             SELECT client_phone, client_address 
             FROM sales 
             WHERE invoice_number = %s AND invoice_number > 0
         """, (devolucion['original_invoice'],), fetch_one=True)
+
+        # 3. Parsear items
         items = json.loads(devolucion['items']) if devolucion['items'] else []
+
+        # 4. Calcular subtotal sin IVA, IVA, y total con IVA
         tasa_iva = 0.16
         subtotal_usd = 0.0
         for item in items:
             precio = float(item.get('price', 0))
             cantidad = float(item.get('quantity', 0))
             subtotal_usd += precio * cantidad
+
         iva_usd = subtotal_usd * tasa_iva
         total_usd = subtotal_usd + iva_usd
+
+        # 5. Para cada item, calcular campos adicionales
         for item in items:
             precio = float(item.get('price', 0))
             cantidad = float(item.get('quantity', 0))
             item['price_without_tax'] = precio
             item['tax_amount'] = precio * tasa_iva
             item['total_with_tax'] = (precio + (precio * tasa_iva)) * cantidad
+            # Asegurar sale_type
             if 'sale_type' not in item:
                 product = execute_query("SELECT sale_type FROM products WHERE id = %s", (item.get('id'),), fetch_one=True)
                 item['sale_type'] = product['sale_type'] if product else 'unit'
+
+        # 6. Obtener empresa y tasa de cambio
         company = execute_query("SELECT * FROM company WHERE id = 1", fetch_one=True)
         rate = get_cached_exchange_rate()
         total_bs = total_usd * rate
+
+        # 7. Obtener saldo actual
         saldo = obtener_saldo_actual()
+
+        # 8. Renderizar el template con TODOS los datos necesarios
         return render_template('devolucion.html',
                                return_number=devolucion['return_number'],
                                original_invoice=devolucion['original_invoice'],
@@ -2242,7 +2062,7 @@ def imprimir_devolucion(return_number):
                                iva_usd=iva_usd,
                                total_usd=total_usd,
                                total_bs=total_bs,
-                               tasa_iva=int(tasa_iva * 100),
+                               tasa_iva=int(tasa_iva * 100),  # Para mostrar "IVA (16%)"
                                reason=devolucion['reason'],
                                current_date=datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
                                company=company,
@@ -2251,6 +2071,8 @@ def imprimir_devolucion(return_number):
                                saldo_usd=saldo['usd'])
     except Exception as e:
         logger.error(f"Error en imprimir_devolucion: {e}")
+        import traceback
+        traceback.print_exc()
         flash(f'Error al cargar devolución: {str(e)}', 'danger')
         return redirect(url_for('historial_devoluciones'))
 
@@ -2434,7 +2256,7 @@ def deleted_products():
             new_item['price'] = float(new_item['price']) if new_item.get('price') else 0
             new_item['margin'] = float(new_item['margin']) if new_item.get('margin') else 0
             converted_deleted.append(new_item)
-        meses_nombres_list = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        meses_nombres_list = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
                             "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
         chart_months = []
         chart_counts = []
@@ -2469,8 +2291,8 @@ def deleted_products():
                 chart_discontinuados.append(mensual[mes]['discontinuado'])
                 chart_dañados.append(mensual[mes]['dañado'])
         current_date = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-        return render_template('deleted_products.html',
-                            deleted=converted_deleted,
+        return render_template('deleted_products.html', 
+                            deleted=converted_deleted, 
                             available_years=available_years,
                             selected_year=selected_year,
                             selected_month=selected_month or '',
@@ -2486,12 +2308,12 @@ def deleted_products():
         logger.error(f"Error en deleted_products: {e}")
         flash(f'Error al cargar productos eliminados: {str(e)}', 'danger')
         current_date = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-        return render_template('deleted_products.html',
-                            deleted=[],
+        return render_template('deleted_products.html', 
+                            deleted=[], 
                             available_years=[],
                             selected_year=datetime.now().year,
                             selected_month='',
-                            meses_nombres=["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                            meses_nombres=["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
                                             "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
                             now=current_date,
                             current_date=current_date,
@@ -2599,6 +2421,7 @@ def checkout():
         return redirect(url_for('facturacion'))
     
     try:
+        # Verificar stock
         for item in cart:
             product = execute_query("SELECT stock FROM products WHERE id = %s AND activo = 1", (item['id'],), fetch_one=True)
             if not product or float(product['stock']) < item['quantity']:
@@ -2626,12 +2449,12 @@ def checkout():
         total_usd = taxable + tax
         total_bs = total_usd * rate
         
-        total_pagado_usd = (pago_efectivo_usd + pago_zelle +
-                           (pago_efectivo_bs / rate) +
-                           (pago_movil / rate) +
-                           (pago_transferencia / rate) +
+        total_pagado_usd = (pago_efectivo_usd + pago_zelle + 
+                           (pago_efectivo_bs / rate) + 
+                           (pago_movil / rate) + 
+                           (pago_transferencia / rate) + 
                            (pago_tarjeta / rate) +
-                           pago_nota_credito_usd +
+                           pago_nota_credito_usd +   
                            pago_devolucion_usd)
         
         cambio_usd = total_pagado_usd - total_usd
@@ -2649,16 +2472,16 @@ def checkout():
         
         payment_method = " | ".join(metodos_pagos) if metodos_pagos else "Múltiples métodos"
         payment_details = json.dumps({
-            'efectivo_bs': pago_efectivo_bs,
-            'efectivo_usd': pago_efectivo_usd,
-            'zelle': pago_zelle,
-            'movil': pago_movil,
-            'transferencia': pago_transferencia,
+            'efectivo_bs': pago_efectivo_bs, 
+            'efectivo_usd': pago_efectivo_usd, 
+            'zelle': pago_zelle, 
+            'movil': pago_movil, 
+            'transferencia': pago_transferencia, 
             'tarjeta': pago_tarjeta,
             'nota_credito_usd': pago_nota_credito_usd,
             'devolucion_usd': pago_devolucion_usd,
-            'cambio_usd': cambio_usd,
-            'cambio_bs': cambio_bs,
+            'cambio_usd': cambio_usd, 
+            'cambio_bs': cambio_bs, 
             'tasa': rate
         })
         
@@ -2712,12 +2535,6 @@ def checkout():
             execute_query("INSERT INTO clientes_frecuentes (cedula, nombre, telefono, direccion, ultima_compra, monto_total) VALUES (%s, %s, %s, %s, %s, %s)", (client_id, client_name, client_phone, client_address, fecha_actual, total_usd), commit=True)
         
         log_action(session['user_id'], session['username'], 'SALE', f"Factura N° {next_inv} - Total: ${total_usd:.2f}")
-        
-        # 🔔 NOTIFICAR A TELEGRAM
-        try:
-            notificar_venta_telegram(next_inv, client_name, total_usd, total_bs, session.get('username', 'SISTEMA'))
-        except Exception as tg_err:
-            logger.error(f"Error notificando venta a Telegram: {tg_err}")
         
         if cambio_usd > 0.01:
             flash(f'[OK] Factura N° {next_inv:04d} generada. Cambio: ${cambio_usd:.2f} USD (Bs. {cambio_bs:.2f})', 'success')
@@ -2847,13 +2664,14 @@ def opening_balance():
     return render_template('opening_balance.html', current_balance=current_balance, company=company, 
                           puede_abrir=puede_abrir, datetime=datetime, saldo_bs=saldo['bs'], saldo_usd=saldo['usd'])
 
-# ==================== CIERRE DE CAJA (REDIRECCIÓN) ====================
+# ==================== CIERRE DE CAJA (REDIRECCIÓN A UNIFICADO) ====================
 @app.route('/cash_closure', methods=['GET', 'POST'])
 @login_required
 def cash_closure():
+    # Redirigir a la nueva ruta unificada
     return redirect(url_for('daily_closure'))
 
-# ==================== REPORTE UNIFICADO ====================
+# ==================== REPORTE UNIFICADO (CIERRE DIARIO + CIERRE DE CAJA) ====================
 @app.route('/daily_closure', methods=['GET', 'POST'])
 @login_required
 @permission_required('reports')
@@ -2867,6 +2685,7 @@ def daily_closure():
     if cierre_hoy:
         cierre_realizado = True
 
+    # ========== PROCESAR POST (CIERRE DE CAJA) ==========
     if request.method == 'POST':
         if cierre_realizado:
             flash('[WARN] Ya se realizó el cierre de caja hoy.', 'warning')
@@ -2877,6 +2696,7 @@ def daily_closure():
             flash('[ERROR] Se requiere contraseña para cerrar caja', 'danger')
             return redirect(url_for('daily_closure'))
 
+        # Verificar supervisor
         autorizado = execute_query(
             "SELECT * FROM users WHERE role IN ('Dueño', 'Supervisor')",
             fetch_one=True
@@ -2885,12 +2705,14 @@ def daily_closure():
             flash('Contraseña incorrecta. Solo Dueño o Supervisor pueden cerrar caja', 'danger')
             return redirect(url_for('daily_closure'))
 
+        # Obtener datos del día
         rate = get_cached_exchange_rate()
         opening_row = execute_query(
             "SELECT value FROM config WHERE key_name = 'opening_balance'", fetch_one=True
         )
         opening_balance = float(opening_row['value']) if opening_row else 0
 
+        # Totales de ventas (facturadas)
         ventas = execute_query(
             "SELECT * FROM sales WHERE date LIKE %s AND invoice_number > 0",
             (today_str + '%',), fetch_all=True
@@ -2898,6 +2720,7 @@ def daily_closure():
         total_bs = sum(float(v['total_bs']) for v in ventas) if ventas else 0
         total_usd = sum(float(v['total_usd']) for v in ventas) if ventas else 0
 
+        # Totales por método de pago (solo facturas)
         metodos = execute_query("""
             SELECT 
                 COALESCE(SUM(pago_efectivo_bs),0) as efectivo_bs,
@@ -2917,12 +2740,15 @@ def daily_closure():
         total_transferencia = float(metodos.get('transferencia', 0))
         total_tarjeta = float(metodos.get('tarjeta', 0))
 
+        # Devoluciones (del formulario)
         devoluciones_bs = float(request.form.get('devoluciones_bs', 0) or 0)
         devoluciones_usd = float(request.form.get('devoluciones_usd', 0) or 0)
         total_devoluciones_bs = devoluciones_bs + (devoluciones_usd * rate)
 
+        # Total esperado ajustado = apertura + ventas - devoluciones
         expected_cash = opening_balance + total_bs - total_devoluciones_bs
 
+        # Total entregado (lo que la cajera dice tener)
         entregado_efectivo_bs = float(request.form.get('cash_bs_delivered', 0) or 0)
         entregado_efectivo_usd = float(request.form.get('cash_usd_delivered', 0) or 0)
         entregado_zelle = float(request.form.get('zelle_delivered', 0) or 0)
@@ -2941,6 +2767,7 @@ def daily_closure():
 
         difference = total_entregado - expected_cash
 
+        # Determinar resultado
         if difference > 0.01:
             resultado = f"SOBRANTE: +{difference:.2f} Bs"
             tipo_flash = 'warning'
@@ -2951,6 +2778,7 @@ def daily_closure():
             resultado = "CUADRADO PERFECTO"
             tipo_flash = 'success'
 
+        # Registrar cierre
         notes = request.form.get('notes', '')
         execute_query("""
             INSERT INTO cash_closures 
@@ -2981,9 +2809,11 @@ def daily_closure():
             f"{resultado}\n{notes}" if notes else resultado
         ), commit=True)
 
+        # Reiniciar fondos
         execute_query("UPDATE config SET value = '0' WHERE key_name = 'opening_balance'", commit=True)
         execute_query("UPDATE saldo_caja SET saldo_bs = 0, saldo_usd = 0 WHERE id = 1", commit=True)
 
+        # Registrar movimiento de egreso
         saldo = obtener_saldo_actual()
         if saldo['bs'] > 0:
             registrar_movimiento_caja(
@@ -3003,6 +2833,7 @@ def daily_closure():
         flash(f'[OK] Cierre de caja completado. {resultado} Fondo de caja reiniciado a CERO (Bs. 0.00).', tipo_flash)
         return redirect(url_for('daily_closure'))
 
+    # ========== MÉTODO GET – MOSTRAR PÁGINA ==========
     try:
         rate = get_cached_exchange_rate()
         opening_row = execute_query(
@@ -3010,11 +2841,13 @@ def daily_closure():
         )
         opening_balance = float(opening_row['value']) if opening_row else 0
 
+        # Ventas detalladas (para tabla)
         sales = execute_query(
             "SELECT * FROM sales WHERE date LIKE %s AND invoice_number > 0 ORDER BY date DESC",
             (today_str + '%',), fetch_all=True
         ) or []
 
+        # Totales por método de pago (para tarjetas de resumen)
         metodos = execute_query("""
             SELECT 
                 COALESCE(SUM(pago_efectivo_bs),0) as efectivo_bs,
@@ -3038,11 +2871,17 @@ def daily_closure():
         total_transferencia = float(metodos.get('transferencia', 0))
         total_tarjeta = float(metodos.get('tarjeta', 0))
 
+        # Saldo actual (para las tarjetas de saldo en tiempo real)
         saldo = obtener_saldo_actual()
+
         company = execute_query("SELECT * FROM company WHERE id = 1", fetch_one=True)
+
+        # Variables para el template
         cashier_name = session.get('username', 'Usuario')
         today = today_str
 
+        # Para mostrar valores en cero si la caja está cerrada (no se usan porque la vista ya maneja condicionales)
+        # Pero los pasamos para consistencia
         opening_balance_cero = opening_balance if not cierre_realizado else 0
         total_bs_cero = total_bs if not cierre_realizado else 0
         total_usd_cero = total_usd if not cierre_realizado else 0
@@ -3244,7 +3083,7 @@ def historial_facturacion():
         flash(f'Error al cargar historial de facturación: {str(e)}', 'danger')
         return render_template('historial_facturacion.html', sales=[], company=None, datetime=datetime)
 
-# ==================== IMPRIMIR FACTURA ====================
+# ==================== IMPRIMIR FACTURA  ====================
 @app.route('/imprimir_factura/<int:invoice_number>')
 @login_required
 def imprimir_factura(invoice_number):
@@ -3269,6 +3108,7 @@ def imprimir_factura(invoice_number):
         rate = get_cached_exchange_rate()
         total_bs = float(sale['total_bs']) if sale.get('total_bs') else (float(sale['total_usd']) * rate)
         
+        # Procesar items para tener sale_type y unit
         for item in items:
             product = execute_query("SELECT sale_type, unit FROM products WHERE id = %s", (item['id'],), fetch_one=True)
             item['sale_type'] = product['sale_type'] if product else 'unit'
@@ -3276,12 +3116,14 @@ def imprimir_factura(invoice_number):
             item['price'] = float(item['price']) if item.get('price') else 0
             item['quantity'] = float(item['quantity']) if item.get('quantity') else 0
         
+        # Parsear payment_details para pasarlo como 'pagos' al template
         pagos = {}
         if sale.get('payment_details'):
             try:
                 pagos = json.loads(sale['payment_details']) if isinstance(sale['payment_details'], str) else sale['payment_details']
             except:
                 pagos = {}
+        # Si no hay pagos, usar valores por defecto
         if not pagos:
             pagos = {
                 'efectivo_bs': float(sale.get('pago_efectivo_bs', 0)),
@@ -3297,6 +3139,7 @@ def imprimir_factura(invoice_number):
                 'tasa': rate
             }
         else:
+            # Asegurar que existan las claves
             pagos.setdefault('nota_credito_usd', float(sale.get('pago_nota_credito_usd', 0)) if 'pago_nota_credito_usd' in sale else 0)
             pagos.setdefault('devolucion_usd', float(sale.get('pago_devolucion_usd', 0)) if 'pago_devolucion_usd' in sale else 0)
             pagos.setdefault('cambio_usd', float(sale.get('cambio_usd', 0)))
@@ -3324,6 +3167,8 @@ def imprimir_factura(invoice_number):
                               rate=rate)
     except Exception as e:
         logger.error(f"❌ ERROR al imprimir factura N° {invoice_number}: {e}")
+        import traceback
+        traceback.print_exc()
         flash(f'Error al cargar factura: {str(e)}', 'danger')
         return redirect(url_for('historial_facturacion'))
 
@@ -3524,7 +3369,7 @@ def delete_user(user_id):
         flash(f'Error: {e}', 'danger')
     return redirect(url_for('manage_users'))
 
-# ==================== DIAGNÓSTICO Y CORRECCIÓN ====================
+# ==================== RUTAS DE DIAGNÓSTICO Y CORRECCIÓN ====================
 @app.route('/corregir_stocks_negativos')
 @login_required
 def corregir_stocks_negativos():
@@ -3676,76 +3521,53 @@ def start_scheduler():
     scheduler_thread.start()
     logger.info("[SCHEDULER] Scheduler de tasa BCV iniciado (cada 6 horas)")
 
-# ==================== FUNCIÓN PARA ASEGURAR MYSQL (LOCAL) ====================
-def asegurar_mysql():
-    """Arranca el MySQL portable que está en la carpeta 'mysql_server' junto al .exe"""
-    if getattr(sys, 'frozen', False):
-        base_dir = os.path.dirname(sys.executable)
-    else:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-
-    mysql_exe_path = os.path.join(base_dir, 'mysql_server', 'bin', 'mysqld.exe')
-    data_dir = os.path.join(base_dir, 'mysql_server', 'data')
-
-    print("🔍 Verificando motor MySQL portable...")
-
-    if not os.path.exists(mysql_exe_path):
-        print("❌ ¡ERROR CRÍTICO! No se encontró el motor MySQL en la carpeta 'mysql_server/bin'.")
-        print("👉 Asegúrate de que la carpeta 'mysql_server' esté junto al archivo .exe.")
-        return False
-
-    if not os.path.exists(data_dir):
-        print("🛠️ Inicializando base de datos portable (primera ejecución)...")
-        try:
-            subprocess.run([os.path.join(base_dir, 'mysql_server', 'bin', 'mysql_install_db.exe'), '--datadir=' + data_dir], shell=True)
-            print("✅ Base de datos inicializada correctamente.")
-        except Exception as e:
-            print(f"❌ Error al inicializar la base de datos: {e}")
-            return False
-
-    print("🚀 Iniciando servidor MySQL Portable en segundo plano...")
-    startupinfo = subprocess.STARTUPINFO()
-    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-
-    try:
-        subprocess.Popen([mysql_exe_path, '--datadir=' + data_dir], startupinfo=startupinfo)
-        print("⏳ Esperando 5 segundos a que MySQL arranque...")
-        time.sleep(5)
-        print("✅ MySQL Portable en funcionamiento.")
-        return True
-    except Exception as e:
-        print(f"❌ Error al ejecutar mysqld.exe: {e}")
-        return False
-
 # ==================== INICIO DE LA APLICACIÓN ====================
 if __name__ == '__main__':
     import webbrowser
+    import threading
+    import time
+    import os
+    import subprocess
 
-    # --- LÓGICA PARA RENDER O LOCAL ---
-    port = int(os.environ.get("PORT", 5000))
-    is_render = os.environ.get("RENDER") == "true"
+    # ADVERTENCIA: La función 'asegurar_mysql' ahora está modificada para buscar la carpeta 'mysql_server' junto al ejecutable.
+    # NO intentará iniciar el servicio de Windows 'MySQL'. 
 
     try:
+        # Intentamos inicializar el pool de conexiones y la base de datos
         init_connection_pool()
         init_db()
         update_bcv_rate()
         start_scheduler()
-
-        print("\n" + "="*60)
-        print("[OK] SISTEMA CON MYSQL - VERSIÓN 3.1 CON TELEGRAM")
-        print("="*60)
-        print("TELEGRAM INTEGRADO:")
-        print("   Bot: @Renaven_Alertq2_bot")
-        print("   Estado:", "✅ Habilitado" if TELEGRAM_ENABLED else "❌ Deshabilitado")
-        print("="*60)
         
-        if not is_render:
-            print("🌐 ABRIENDO NAVEGADOR LOCAL EN 2 SEGUNDOS...")
-            print("="*60)
-            
+        print("\n" + "="*60)
+        print("[OK] SISTEMA CON MYSQL PORTÁTIL - VERSIÓN 3.0 COMPLETA")
+        print("Base de datos: renaven_db en modo portable")
+        print("http://127.0.0.1:5000")
+        print("="*60)
+        print("USUARIOS CREADOS (CONTRASEÑAS SEGURAS):")
+        print("   dueño      | Admin123!@#Renaven      | Dueño")
+        print("   supervisor | Super2024!@#Seguro      | Supervisor")
+        print("   cajera     | Cajera$2024Segura       | Cajera")
+        print("   almacen    | Almacen*2024Safe        | Almacenista")
+        print("   jonathan   | Jonathan$2024Secure!    | Dueño")
+        print("="*60)
+        print("REQUISITOS DE CONTRASEÑA:")
+        print("   ✓ Mínimo 16 caracteres")
+        print("   ✓ Al menos una MAYÚSCULA (A-Z)")
+        print("   ✓ Al menos una minúscula (a-z)")
+        print("   ✓ Al menos un carácter especial (!@#$%^&*()_+-=[]{}|;:,.<>?/)")
+        print("="*60)
+        print("TASA BCV AUTOMÁTICA EN TIEMPO REAL")
+        print("   Actualización cada 6 horas")
+        print("   Endpoint /api/bcv-rate")
+        print("="*60)
+        print("🌐 ABRIENDO NAVEGADOR EN 2 SEGUNDOS...")
+        print("="*60)
+
+        if (not app.debug) or (os.environ.get('WERKZEUG_RUN_MAIN') == 'true'):
             def abrir_navegador():
                 time.sleep(2)
-                url = f'http://127.0.0.1:{port}'
+                url = 'http://127.0.0.1:5000'
                 try:
                     chrome_paths = [
                         "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
@@ -3758,23 +3580,27 @@ if __name__ == '__main__':
                             chrome = path
                             break
                     if chrome:
+                        print(f"[INFO] Abriendo Chrome desde: {chrome}")
                         webbrowser.register('chrome', None, webbrowser.GenericBrowser(chrome))
                         webbrowser.get('chrome').open(url)
                     else:
+                        print("[INFO] No se encontró Chrome, usando navegador predeterminado.")
                         webbrowser.open(url)
                 except Exception as e:
                     print(f"[ERROR] No se pudo abrir el navegador: {e}")
+                    print(f"👉 Abre manualmente en tu navegador: {url}")
             
             threading.Thread(target=abrir_navegador).start()
         else:
-            print("🚀 EJECUTANDO EN RENDER. Esperando peticiones...")
-            
+            print("[INFO] Proceso principal (no se abre navegador aquí).")
+            print("👉 Cuando el servidor esté listo, ve a http://127.0.0.1:5000")
+
     except Exception as e:
         print(f"[ERROR] Error al iniciar: {e}")
         print("\nVERIFIQUE:")
-        print("1. SI ESTÁS EN TU PC: Asegúrate de tener el servicio MySQL corriendo.")
-        print("2. SI ESTÁS EN RENDER: Revisa las variables de entorno (DB_HOST, DB_USER, DB_PASSWORD, etc).")
+        print("1. SI ESTÁS EN TU PC DE DESARROLLO: Asegúrate de tener el servicio MySQL corriendo (XAMPP).")
+        print("2. SI ESTÁS EMPAQUETANDO: Asegúrate de copiar la carpeta 'mysql_server' con MariaDB portable al lado del .exe.")
+        print("3. pip install flask flask-wtf flask-mail flask-compress mysql-connector-python bcrypt pillow psutil requests beautifulsoup4")
         exit(1)
 
-    # Ejecutar servidor (debug=False en Render, debug=True en local)
-    app.run(host='0.0.0.0', port=port, debug=not is_render, threaded=True)
+    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
