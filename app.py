@@ -509,7 +509,7 @@ MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'hernandezrivasjonat
 
 app.config.update(
     MAIL_SERVER='smtp.gmail.com',
-    MAIL_PORT=587,
+    MAIL_PORT=465,
     MAIL_USE_TLS=false,
     MAIL_USE_SSL=True,
     MAIL_USERNAME=MAIL_USERNAME,
