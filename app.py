@@ -512,9 +512,9 @@ MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'hernandezrivasjonat
 
 app.config.update(
     MAIL_SERVER='smtp.gmail.com',
-    MAIL_PORT=587,                # Cambiado a 587 para usar TLS
-    MAIL_USE_TLS=True,            # Activado TLS (sin comillas y en mayúscula)
-    MAIL_USE_SSL=False,           # Desactivado SSL (los puertos TLS y SSL son excluyentes)
+    MAIL_PORT=466,                
+    MAIL_USE_TLS=True,            
+    MAIL_USE_SSL=False,           
     MAIL_USERNAME=MAIL_USERNAME,
     MAIL_PASSWORD=MAIL_PASSWORD,
     MAIL_DEFAULT_SENDER=MAIL_DEFAULT_SENDER,
