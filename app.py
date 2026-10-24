@@ -511,7 +511,7 @@ MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'hernandezrivasjonat
 
 app.config.update(
     MAIL_SERVER='smtp.gmail.com',
-    MAIL_PORT=587,               
+    MAIL_PORT=465,               
     MAIL_USE_SSL=True,            
     MAIL_USE_TLS=False,           
     MAIL_USERNAME=MAIL_USERNAME,
@@ -1436,47 +1436,71 @@ def log_action(user_id, username, action, details="", ip_address=""):
         logger.error(f"Error al registrar: {e}")
 
 def send_reset_email(user_email, username, reset_link):
-    try:
-        msg = Message(
-            subject="Recuperación de Contraseña - RENAVEN",
-            recipients=[user_email],
-            html=f"""
-            <!DOCTYPE html>
-            <html>
-            <head><meta charset="UTF-8"></head>
-            <body style="font-family: Arial, sans-serif;">
-                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <div style="background: linear-gradient(135deg, #001C47 0%, #6BB6EC 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
-                        <h2>RENAVEN OAKMONT, C.A.</h2>
-                        <p>Sistema de Facturación</p>
-                    </div>
-                    <div style="padding: 20px; background: #f8f9fa; border-radius: 0 0 10px 10px;">
-                        <h3>Hola {username},</h3>
-                        <p>Hemos recibido una solicitud para restablecer la contraseña.</p>
-                        <p><strong>Requisitos de la nueva contraseña:</strong></p>
-                        <ul>
-                            <li>Mínimo 16 caracteres</li>
-                            <li>Al menos una letra MAYÚSCULA (A-Z)</li>
-                            <li>Al menos una letra minúscula (a-z)</li>
-                            <li>Al menos un carácter especial (!@#$%^&*()_+-=[]{{}}|;:,.<>?/)</li>
-                        </ul>
-                        <div style="text-align: center; margin: 20px 0;">
-                            <a href="{reset_link}" style="background: #001C47; color: white; padding: 12px 24px; text-decoration: none; border-radius: 50px;">Restablecer Contraseña</a>
-                        </div>
-                        <p><small>Este enlace expirará en 1 hora</small></p>
-                        <p><small>Si no solicitaste este cambio, ignora este correo.</small></p>
-                    </div>
-                    <div style="text-align: center; margin-top: 20px; font-size: 12px; color: #666;">
-                        <p>RENAVEN OAKMONT, C.A. - Sistema de Facturación</p>
-                    </div>
+    BREVO_API_KEY = os.environ.get('BREVO_API_KEY')
+    
+    if not BREVO_API_KEY:
+        logger.error("BREVO_API_KEY no configurada")
+        return False
+
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+    }
+
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="UTF-8"></head>
+    <body style="font-family: Arial, sans-serif;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #001C47 0%, #6BB6EC 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h2>RENAVEN OAKMONT, C.A.</h2>
+                <p>Sistema de Facturación</p>
+            </div>
+            <div style="padding: 20px; background: #f8f9fa; border-radius: 0 0 10px 10px;">
+                <h3>Hola {username},</h3>
+                <p>Hemos recibido una solicitud para restablecer la contraseña.</p>
+                <p><strong>Requisitos de la nueva contraseña:</strong></p>
+                <ul>
+                    <li>Mínimo 16 caracteres</li>
+                    <li>Al menos una letra MAYÚSCULA (A-Z)</li>
+                    <li>Al menos una letra minúscula (a-z)</li>
+                    <li>Al menos un carácter especial (!@#$%^&*()_+-=[]{{}}|;:,.<>?/)</li>
+                </ul>
+                <div style="text-align: center; margin: 20px 0;">
+                    <a href="{reset_link}" style="background: #001C47; color: white; padding: 12px 24px; text-decoration: none; border-radius: 50px;">Restablecer Contraseña</a>
                 </div>
-            </body>
-            </html>
-            """
-        )
-        mail.send(msg)
-        logger.info(f"Correo enviado exitosamente a {user_email}")
-        return True
+                <p><small>Este enlace expirará en 1 hora</small></p>
+                <p><small>Si no solicitaste este cambio, ignora este correo.</small></p>
+            </div>
+            <div style="text-align: center; margin-top: 20px; font-size: 12px; color: #666;">
+                <p>RENAVEN OAKMONT, C.A. - Sistema de Facturación</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    payload = {
+        "sender": {
+            "name": "RENAVEN",
+            "email": "hernandezrivasjonathanjesus@gmail.com"
+        },
+        "to": [{"email": user_email, "name": username}],
+        "subject": "Recuperación de Contraseña - RENAVEN",
+        "htmlContent": html_content
+    }
+
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=15)
+        if response.status_code == 201:
+            logger.info(f"Correo enviado exitosamente a {user_email} vía Brevo")
+            return True
+        else:
+            logger.error(f"Error Brevo: {response.status_code} - {response.text}")
+            return False
     except Exception as e:
         logger.error(f"Error al enviar correo a {user_email}: {e}")
         return False
@@ -1502,7 +1526,6 @@ def limpiar_o_reactivar_productos_agotados():
     except Exception as e:
         logger.error(f"Error en limpiar_o_reactivar_productos_agotados: {e}")
         return 0
-
 # ==================== RUTAS DE AUTENTICACIÓN ====================
 @app.route('/')
 def index():
