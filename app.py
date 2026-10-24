@@ -506,19 +506,17 @@ def parse_venezuela_number(valor):
 import os
 
 MAIL_USERNAME = os.environ.get('MAIL_USERNAME', 'hernandezrivasjonathanjesus@gmail.com')
-# Asegúrate de que esta sea una Contraseña de Aplicación de 16 dígitos
 MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', 'nkgw nchu sxqf muli')
 MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'hernandezrivasjonathanjesus@gmail.com')
 
 app.config.update(
     MAIL_SERVER='smtp.gmail.com',
-    MAIL_PORT=466,                
-    MAIL_USE_TLS=True,            
-    MAIL_USE_SSL=False,           
+    MAIL_PORT=465,               
+    MAIL_USE_SSL=True,            
+    MAIL_USE_TLS=False,           
     MAIL_USERNAME=MAIL_USERNAME,
     MAIL_PASSWORD=MAIL_PASSWORD,
     MAIL_DEFAULT_SENDER=MAIL_DEFAULT_SENDER,
-    # El resto de tu configuración de sesión y compresión se mantiene igual...
     SESSION_COOKIE_SECURE=False,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
