@@ -503,18 +503,22 @@ def parse_venezuela_number(valor):
         return 0.0
 
 # ==================== CONFIGURACIÓN DE CORREO ====================
+import os
+
 MAIL_USERNAME = os.environ.get('MAIL_USERNAME', 'hernandezrivasjonathanjesus@gmail.com')
+# Asegúrate de que esta sea una Contraseña de Aplicación de 16 dígitos
 MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', 'nkgw nchu sxqf muli')
 MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'hernandezrivasjonathanjesus@gmail.com')
 
 app.config.update(
     MAIL_SERVER='smtp.gmail.com',
-    MAIL_PORT=465,
-    MAIL_USE_TLS=false,
-    MAIL_USE_SSL=True,
+    MAIL_PORT=587,                # Cambiado a 587 para usar TLS
+    MAIL_USE_TLS=True,            # Activado TLS (sin comillas y en mayúscula)
+    MAIL_USE_SSL=False,           # Desactivado SSL (los puertos TLS y SSL son excluyentes)
     MAIL_USERNAME=MAIL_USERNAME,
     MAIL_PASSWORD=MAIL_PASSWORD,
     MAIL_DEFAULT_SENDER=MAIL_DEFAULT_SENDER,
+    # El resto de tu configuración de sesión y compresión se mantiene igual...
     SESSION_COOKIE_SECURE=False,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
@@ -530,7 +534,6 @@ app.config.update(
 csrf = CSRFProtect()
 csrf.init_app(app)
 mail = Mail(app)
-
 # ==================== RUTAS API DE CSRF ====================
 @csrf.exempt
 @app.route('/add_to_cart', methods=['POST'])
