@@ -2522,7 +2522,7 @@ def remove_from_cart(index):
 def clear_cart():
     session.pop('cart', None)
     flash('Carrito limpiado', 'success')
-    return redirect(url_for('facturacion'))
+    return redirect(url_for('nota_entrega'))
 
 # ==================== CHECKOUT ====================
 def checkout():
@@ -2632,7 +2632,7 @@ def checkout():
     except Exception as e:
         logger.error(f"Error en checkout: {e}")
         flash(f'[ERROR] Error al procesar la venta: {str(e)}', 'danger')
-        return redirect(url_for('facturacion'))
+        return redirect(url_for('nota_entrega'))
     session.pop('cart', None)
     return render_template('invoice.html',
                           invoice_number=next_inv, client_id=client_id, client_name=client_name,
@@ -2654,7 +2654,7 @@ def presupuesto():
     cart = session.get('cart', [])
     if not cart:
         flash('Carrito vacío', 'warning')
-        return redirect(url_for('facturacion'))
+        return redirect(url_for('nota_entrega'))
     client_name = request.form.get('client_name', '').upper() or "CLIENTE"
     client_id = request.form.get('client_id', '')
     client_phone = request.form.get('client_phone', '')
