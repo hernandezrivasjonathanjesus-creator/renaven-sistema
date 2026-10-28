@@ -1807,7 +1807,7 @@ def api_saldo_actual():
 @app.route('/nota_entrega')
 @login_required
 @permission_required('sell')
-def facturacion():
+def nota_entrega():
     try:
         categories = execute_query("SELECT name FROM categories ORDER BY name", fetch_all=True)
         company = execute_query("SELECT * FROM company WHERE id = 1", fetch_one=True)
@@ -2515,7 +2515,7 @@ def remove_from_cart(index):
     if 0 <= index < len(cart):
         cart.pop(index)
         session['cart'] = cart
-    return redirect(url_for('facturacion'))
+    return redirect(url_for('nota_entrega'))
 
 @app.route('/clear_cart')
 @login_required
@@ -2544,7 +2544,7 @@ def checkout():
             product = execute_query("SELECT stock FROM products WHERE id = %s AND activo = 1", (item['id'],), fetch_one=True)
             if not product or float(product['stock']) < item['quantity']:
                 flash(f'[ERROR] Stock insuficiente para {item["name"]}', 'danger')
-                return redirect(url_for('facturacion'))
+                return redirect(url_for('nota_entrega'))
         subtotal = sum(item['price'] * item['quantity'] for item in cart)
         rate = get_cached_exchange_rate()
         discount_percent = get_cached_discount()
