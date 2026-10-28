@@ -1803,8 +1803,8 @@ def api_saldo_actual():
         logger.error(f"Error en api_saldo_actual: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ==================== FACTURACIÓN ====================
-@app.route('/facturacion')
+# ==================== NOTA DE ENTREGA ====================
+@app.route('/nota_entrega')
 @login_required
 @permission_required('sell')
 def facturacion():
