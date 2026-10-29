@@ -389,7 +389,7 @@
                     <a class="nav-link" href="{{ url_for('opening_balance') }}"><i class="fas fa-money-bill-wave me-2"></i> <span>Apertura de Caja</span></a>
                     <a class="nav-link" href="{{ url_for('historial_caja') }}"><i class="fas fa-wallet me-2"></i> <span>Historial de Caja</span></a>
                     <a class="nav-link" href="{{ url_for('historial_devoluciones') }}"><i class="fas fa-undo-alt me-2"></i> <span>Devoluciones</span></a>
-                    <a class="nav-link" href="{{ url_for('historial_facturacion') }}"><i class="fas fa-file-invoice me-2"></i> <span>Historial Facturación</span></a>
+                    <a class="nav-link" href="{{ url_for('historial_nota_entrega') }}"><i class="fas fa-file-invoice me-2"></i> <span>Historial Facturación</span></a>
                     {% if session.get('role') == 'Dueño' %}
                     <hr>
                     <a class="nav-link" href="{{ url_for('manage_roles') }}"><i class="fas fa-users-cog me-2"></i> <span>Roles</span></a>
