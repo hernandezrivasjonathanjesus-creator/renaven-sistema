@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -139,8 +140,6 @@
         }
 
         body.bg-black-solid { background-color: #000000 !important; }
-        body.bg-black-solid .card,
-        body.bg-black-solid .saldo-card { background: #1a1a1a !important; color: #fff !important; }
         body.bg-white-solid { background-color: #FFFFFF !important; }
 
         *:focus { outline: 3px solid #FFD700 !important; outline-offset: 2px !important; }
@@ -364,6 +363,25 @@
             .top-bar { flex-direction: column; align-items: stretch !important; }
             .top-bar .d-flex { justify-content: space-between; flex-wrap: wrap; }
         }
+
+        /* ========== MODO OSCURO: LETRAS BLANCAS ========== */
+        body.bg-black-solid, 
+        body.bg-black-solid * {
+            color: #ffffff !important;
+        }
+        
+        /* Para que los botones y tarjetas no se vuelvan invisibles */
+        body.bg-black-solid .card,
+        body.bg-black-solid .saldo-card,
+        body.bg-black-solid .sidebar {
+            background-color: #1a1a1a !important;
+            border-color: #444 !important;
+        }
+        body.bg-black-solid .sidebar .nav-link:hover,
+        body.bg-black-solid .sidebar .nav-link.active {
+            background-color: #333 !important;
+            color: #fff !important;
+        }
     </style>
 </head>
 <body>
@@ -375,8 +393,8 @@
             <div class="col-md-2 p-0 sidebar">
                 <div class="text-center py-4 px-2">
                     <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/70x70?text=R'">
-                    <h5 class="mt-2 fw-bold" style="font-size: 1rem; color: #000;">RENAVEN</h5>
-                    <small style="font-size: 0.7rem; color: #000;">{{ session.get('role', 'Administrador') }}</small>
+                    <h5 class="mt-2 fw-bold" style="font-size: 1rem;">RENAVEN</h5>
+                    <small style="font-size: 0.7rem;">{{ session.get('role', 'Administrador') }}</small>
                 </div>
                 <nav class="nav flex-column px-3 pb-4">
                     <a class="nav-link active" href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i> <span>Dashboard</span></a>
@@ -406,7 +424,7 @@
                 <div class="top-bar d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                     <div class="d-flex align-items-center gap-2">
                         <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="logo-circle">
-                        <h1 class="m-0 d-flex align-items-center gap-2 fs-4" style="color: #000 !important;">
+                        <h1 class="m-0 d-flex align-items-center gap-2 fs-4">
                             <i class="fas fa-chart-line"></i>
                             <span>Dashboard</span>
                         </h1>
@@ -510,7 +528,7 @@
                             <div class="card-body p-3">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h2 class="mb-1 fw-semibold fs-6" style="color: #000 !important;"><i class="fas fa-calendar-day me-1"></i> Ventas del Día</h2>
+                                        <h2 class="mb-1 fw-semibold fs-6"><i class="fas fa-calendar-day me-1"></i> Ventas del Día</h2>
                                         <p class="stat-number mb-0" id="ventasDiaBs">Bs. {{ total_ventas_dia_bs|default(0)|format_bs }}</p>
                                         <span class="small fw-medium" id="ventasDiaUsd">$ {{ total_ventas_dia_usd|default(0)|format_usd }} USD</span>
                                     </div>
@@ -524,7 +542,7 @@
                             <div class="card-body p-3">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h2 class="mb-1 fw-semibold fs-6" style="color: #000 !important;"><i class="fas fa-calendar-alt me-1"></i> Ventas del Mes ({{ mes_actual|default('Enero') }})</h2>
+                                        <h2 class="mb-1 fw-semibold fs-6"><i class="fas fa-calendar-alt me-1"></i> Ventas del Mes ({{ mes_actual|default('Enero') }})</h2>
                                         <p class="stat-number mb-0" id="ventasMesBs">Bs. {{ total_ventas_mes_bs|default(0)|format_bs }}</p>
                                         <span class="small fw-medium" id="ventasMesUsd">$ {{ total_ventas_mes_usd|default(0)|format_usd }} USD</span>
                                     </div>
@@ -559,7 +577,7 @@
                                         </div>
                                         {% endif %}
                                     </div>
-                                    <span class="badge" style="background: var(--renaven-azul-cielo); border: 1px solid var(--renaven-borde); font-size: 0.75rem; padding: 6px 14px; color: #000 !important;">
+                                    <span class="badge" style="background: var(--renaven-azul-cielo); border: 1px solid var(--renaven-borde); font-size: 0.75rem; padding: 6px 14px;">
                                         <i class="fas fa-calendar-alt me-1"></i> {{ mes_actual|default('Este mes') }}
                                     </span>
                                 </div>
@@ -577,8 +595,8 @@
                                 <div class="card-body p-3">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <h3 class="fw-bold mb-0 fs-6" style="color: #000 !important;"><i class="fas fa-shopping-cart me-1"></i>Nota de Entrega</h3>
-                                            <p class="mb-0 small" style="color: #000 !important;">Nueva venta</p>
+                                            <h3 class="fw-bold mb-0 fs-6"><i class="fas fa-shopping-cart me-1"></i>Nota de Entrega</h3>
+                                            <p class="mb-0 small">Nueva venta</p>
                                         </div>
                                         <i class="fas fa-receipt fa-1x opacity-50"></i>
                                     </div>
@@ -592,8 +610,8 @@
                                 <div class="card-body p-3">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <h3 class="fw-bold mb-0 fs-6" style="color: #000 !important;"><i class="fas fa-boxes me-1"></i>Inventario</h3>
-                                            <p class="mb-0 small" style="color: #000 !important;">Gestionar</p>
+                                            <h3 class="fw-bold mb-0 fs-6"><i class="fas fa-boxes me-1"></i>Inventario</h3>
+                                            <p class="mb-0 small">Gestionar</p>
                                         </div>
                                         <i class="fas fa-cubes fa-1x opacity-50"></i>
                                     </div>
@@ -607,8 +625,8 @@
                                 <div class="card-body p-3">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <h3 class="fw-bold mb-0 fs-6" style="color: #000 !important;"><i class="fas fa-chart-line me-1"></i>Cierre Diario</h3>
-                                            <p class="mb-0 small" style="color: #000 !important;">Resumen</p>
+                                            <h3 class="fw-bold mb-0 fs-6"><i class="fas fa-chart-line me-1"></i>Cierre Diario</h3>
+                                            <p class="mb-0 small">Resumen</p>
                                         </div>
                                         <i class="fas fa-chart-simple fa-1x opacity-50"></i>
                                     </div>
@@ -622,8 +640,8 @@
                                 <div class="card-body p-3">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <h3 class="fw-bold mb-0 fs-6" style="color: #000 !important;"><i class="fas fa-cash-register me-1"></i>Cierre Caja</h3>
-                                            <p class="mb-0 small" style="color: #000 !important;">Finalizar</p>
+                                            <h3 class="fw-bold mb-0 fs-6"><i class="fas fa-cash-register me-1"></i>Cierre Caja</h3>
+                                            <p class="mb-0 small">Finalizar</p>
                                         </div>
                                         <i class="fas fa-coins fa-1x opacity-50"></i>
                                     </div>
@@ -639,8 +657,8 @@
                                 <div class="card-body p-3">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <h3 class="fw-bold mb-0 fs-6" style="color: #000 !important;"><i class="fas fa-money-bill-wave me-1"></i>Apertura</h3>
-                                            <p class="mb-0 small" style="color: #000 !important;">Iniciar turno</p>
+                                            <h3 class="fw-bold mb-0 fs-6"><i class="fas fa-money-bill-wave me-1"></i>Apertura</h3>
+                                            <p class="mb-0 small">Iniciar turno</p>
                                         </div>
                                         <i class="fas fa-door-open fa-1x opacity-50"></i>
                                     </div>
@@ -654,8 +672,8 @@
                                 <div class="card-body p-3">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <h3 class="fw-bold mb-0 fs-6" style="color: #000 !important;"><i class="fas fa-wallet me-1"></i>Historial Caja</h3>
-                                            <p class="mb-0 small" style="color: #000 !important;">Ver movimientos</p>
+                                            <h3 class="fw-bold mb-0 fs-6"><i class="fas fa-wallet me-1"></i>Historial Caja</h3>
+                                            <p class="mb-0 small">Ver movimientos</p>
                                         </div>
                                         <i class="fas fa-clock-history fa-1x opacity-50"></i>
                                     </div>
@@ -669,8 +687,8 @@
                                 <div class="card-body p-3">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <h3 class="fw-bold mb-0 fs-6" style="color: #000 !important;"><i class="fas fa-undo-alt me-1"></i>Devoluciones</h3>
-                                            <p class="mb-0 small" style="color: #000 !important;">Historial</p>
+                                            <h3 class="fw-bold mb-0 fs-6"><i class="fas fa-undo-alt me-1"></i>Devoluciones</h3>
+                                            <p class="mb-0 small">Historial</p>
                                         </div>
                                         <i class="fas fa-exchange-alt fa-1x opacity-50"></i>
                                     </div>
@@ -684,8 +702,8 @@
                                 <div class="card-body p-3">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <h3 class="fw-bold mb-0 fs-6" style="color: #000 !important;"><i class="fas fa-file-invoice me-1"></i>Historial</h3>
-                                            <p class="mb-0 small" style="color: #000 !important;">Ver notas</p>
+                                            <h3 class="fw-bold mb-0 fs-6"><i class="fas fa-file-invoice me-1"></i>Historial</h3>
+                                            <p class="mb-0 small">Ver notas</p>
                                         </div>
                                         <i class="fas fa-print fa-1x opacity-50"></i>
                                     </div>
@@ -700,29 +718,29 @@
                     <div class="col-lg-7">
                         <div class="card h-100">
                             <div class="card-header">
-                                <h4 class="mb-0 fw-semibold fs-6" style="color: #000 !important;"><i class="fas fa-store me-2"></i> Información Corporativa</h4>
+                                <h4 class="mb-0 fw-semibold fs-6"><i class="fas fa-store me-2"></i> Información Corporativa</h4>
                             </div>
                             <div class="card-body p-3">
                                 <div class="row">
                                     <div class="col-md-6 mb-2">
-                                        <p class="mb-1 small" style="color: #000 !important;"><strong><i class="fas fa-building me-1"></i> Nombre:</strong>
+                                        <p class="mb-1 small"><strong><i class="fas fa-building me-1"></i> Nombre:</strong>
                                             <span>{{ company.name | default('RENAVEN OAKMONT, C.A.') }}</span>
                                         </p>
-                                        <p class="mb-1 small" style="color: #000 !important;"><strong><i class="fas fa-id-card me-1"></i> RIF:</strong>
+                                        <p class="mb-1 small"><strong><i class="fas fa-id-card me-1"></i> RIF:</strong>
                                             <span>{{ company.rif | default('J-41323725-3') }}</span>
                                         </p>
-                                        <p class="mb-1 small" style="color: #000 !important;"><strong><i class="fas fa-map-marker-alt me-1"></i> Dirección:</strong>
+                                        <p class="mb-1 small"><strong><i class="fas fa-map-marker-alt me-1"></i> Dirección:</strong>
                                             <span>{{ company.address | default('CALLE 1 ANDRES BELLO N°01-06') }}</span>
                                         </p>
                                     </div>
                                     <div class="col-md-6">
-                                        <p class="mb-1 small" style="color: #000 !important;"><strong><i class="fas fa-phone-alt me-1"></i> Teléfono:</strong>
+                                        <p class="mb-1 small"><strong><i class="fas fa-phone-alt me-1"></i> Teléfono:</strong>
                                             <span>{{ company.phone | default('0412-1234567') }}</span>
                                         </p>
-                                        <p class="mb-1 small" style="color: #000 !important;"><strong><i class="fas fa-envelope me-1"></i> Email:</strong>
+                                        <p class="mb-1 small"><strong><i class="fas fa-envelope me-1"></i> Email:</strong>
                                             <span>{{ company.email | default('renaven@correo.com') }}</span>
                                         </p>
-                                        <p class="mb-1 small" style="color: #000 !important;"><strong><i class="fas fa-location-dot me-1"></i> Ubicación:</strong>
+                                        <p class="mb-1 small"><strong><i class="fas fa-location-dot me-1"></i> Ubicación:</strong>
                                             <span>{{ company.parish | default('Punta Cardon') }}, {{ company.city | default('Punto Fijo') }}</span>
                                         </p>
                                     </div>
@@ -733,27 +751,27 @@
                     <div class="col-lg-5">
                         <div class="card h-100">
                             <div class="card-header">
-                                <h4 class="mb-0 fw-semibold fs-6" style="color: #000 !important;"><i class="fas fa-lightbulb me-2"></i> Consejos Rápidos</h4>
+                                <h4 class="mb-0 fw-semibold fs-6"><i class="fas fa-lightbulb me-2"></i> Consejos Rápidos</h4>
                             </div>
                             <div class="card-body p-3">
                                 <div class="d-flex flex-column gap-2">
-                                    <div class="d-flex gap-2 align-items-start small" style="color: #000 !important;">
+                                    <div class="d-flex gap-2 align-items-start small">
                                         <i class="fas fa-cash-register"></i>
                                         <div><strong>Cierre de Caja</strong> — Al final del día, registre el cierre.</div>
                                     </div>
-                                    <div class="d-flex gap-2 align-items-start small" style="color: #000 !important;">
+                                    <div class="d-flex gap-2 align-items-start small">
                                         <i class="fas fa-door-open"></i>
                                         <div><strong>Apertura de Caja</strong> — Inicie un nuevo turno.</div>
                                     </div>
-                                    <div class="d-flex gap-2 align-items-start small" style="color: #000 !important;">
+                                    <div class="d-flex gap-2 align-items-start small">
                                         <i class="fas fa-wallet"></i>
                                         <div><strong>Saldo en Tiempo Real</strong> — Vea el saldo actualizado al instante.</div>
                                     </div>
-                                    <div class="d-flex gap-2 align-items-start small" style="color: #000 !important;">
+                                    <div class="d-flex gap-2 align-items-start small">
                                         <i class="fas fa-user-shield"></i>
                                         <div><strong>Permisos</strong> — Solo Dueño o Supervisor pueden cerrar caja.</div>
                                     </div>
-                                    <div class="d-flex gap-2 align-items-start small" style="color: #000 !important;">
+                                    <div class="d-flex gap-2 align-items-start small">
                                         <i class="fas fa-key"></i>
                                         <div><strong>Seguridad</strong> — Contraseñas mínimo 16 caracteres.</div>
                                     </div>
@@ -763,7 +781,7 @@
                     </div>
                 </div>
 
-                <div class="alert alert-secondary mt-3 d-flex align-items-center gap-2 flex-wrap small" style="color: #000 !important;">
+                <div class="alert alert-secondary mt-3 d-flex align-items-center gap-2 flex-wrap small">
                     <i class="fas fa-info-circle"></i>
                     <div class="flex-grow-1">
                         <strong>💡 Recordatorio:</strong> Tasa actualizada en tiempo real desde el BCV. El saldo de caja se actualiza automáticamente con cada venta y devolución.
