@@ -208,6 +208,7 @@
             transition: background-image 0.3s ease, background-color 0.3s ease;
             margin: 0;
             font-size: 13px;
+            overflow-x: hidden; /* ✅ Evita scroll horizontal por la marca de agua */
         }
 
         body::before {
@@ -1190,6 +1191,11 @@
             .whatsapp-float .wa-tooltip {
                 display: none;
             }
+
+            /* ✅ Marca de agua más contenida en móvil */
+            body::after {
+                font-size: 45vw;
+            }
         }
     </style>
 </head>
@@ -1272,7 +1278,7 @@
             <div class="logo-container">
                 <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" onerror="this.src='https://via.placeholder.com/100x100?text=RENAVEN'">
                 <h1>RENAVEN OAKMONT, C.A.</h1>
-                <p><i class="fas fa-chart-line" aria-hidden="true"></i> Sistema de Facturación y POS</p>
+                <p><i class="fas fa-file-invoice" aria-hidden="true"></i> Sistema de Nota de Entrega y POS</p>
             </div>
 
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -1287,7 +1293,7 @@
             {% endif %}
             {% endwith %}
 
-            <form method="POST" action="{{ url_for('login') }}" aria-label="Formulario de inicio de sesión">
+            <form id="loginForm" method="POST" action="{{ url_for('login') }}" aria-label="Formulario de inicio de sesión">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="mb-3">
                     <label for="username" class="form-label">
@@ -1343,7 +1349,7 @@
             <div class="text-center text-muted small mt-4">
                 <p class="mb-0">
                     <i class="fas fa-shield-alt" aria-hidden="true"></i> Sistema seguro con autenticación multicapa<br>
-                    <i class="fas fa-chart-line" aria-hidden="true"></i> RENAVEN OAKMONT, C.A. © 2026<br>    
+                    <i class="fas fa-file-invoice" aria-hidden="true"></i> RENAVEN OAKMONT, C.A. © 2026<br>
                 </p>
             </div>
         </div>
@@ -1372,15 +1378,15 @@
     </div>
 
     <script>
-             // ========================================================================
-        // 1. CONOCIMIENTO LOCAL (FALLBACK) - ACTUALIZADO CON INFO DE RENAVEN
+        // ========================================================================
+        // 1. CONOCIMIENTO LOCAL (FALLBACK) - ACTUALIZADO: NOTA DE ENTREGA
         // ========================================================================
         const knowledgeBase = {
             "hola": "¡Hola! Soy el asistente virtual de RENAVEN. ¿En qué puedo ayudarte hoy?",
             "ayuda": `
-                <strong> Temas que conozco:</strong><br>
+                <strong>Temas que conozco:</strong><br>
                 • <strong>Dashboard</strong> – Resumen general y accesos rápidos<br>
-                • <strong>Facturación</strong> – Crear y gestionar facturas<br>
+                • <strong>Nota de Entrega</strong> – Crear y gestionar notas de entrega<br>
                 • <strong>Inventario</strong> – Control de productos y stock<br>
                 • <strong>Cierre Diario</strong> – Resumen de ventas del día<br>
                 • <strong>Ventas del Mes</strong> – Reporte mensual<br>
@@ -1389,10 +1395,10 @@
                 • <strong>Apertura de Caja</strong> – Iniciar turno<br>
                 • <strong>Historial de Caja</strong> – Movimientos anteriores<br>
                 • <strong>Devoluciones</strong> – Procesar devoluciones<br>
-                • <strong>Historial Facturación</strong> – Facturas pasadas<br>
+                • <strong>Historial de Notas de Entrega</strong> – Notas pasadas<br>
                 • <strong>Roles y Usuarios</strong> – Gestión de permisos<br>
                 • <strong>Tasa de Cambio</strong> – Configuración del BCV<br><br>
-                <strong> Sobre la empresa:</strong><br>
+                <strong>Sobre la empresa:</strong><br>
                 • <strong>Historia / Fundación</strong><br>
                 • <strong>Significado del nombre</strong><br>
                 • <strong>Misión y Visión</strong><br><br>
@@ -1407,10 +1413,12 @@
             "vision": "Nuestra visión es ser la organización líder y referente en el estado Falcón por nuestra excelencia operativa y capacidad productiva, reconocida por implementar sistemas de gestión seguros.",
             "ubicacion": "Estamos ubicados en la Calle 1 con Calle Andrés Bello, Casa Nro. 01-06, Sector San Francisco de Miranda II, Parroquia Punta Cardón, Municipio Carirubana, Estado Falcón.",
             "empleados": "La empresa cuenta con 8 empleados en total: 1 Presidente, 1 Vicepresidente, 1 Gerente Administrativo, 1 Encargada, 1 Chofer, 1 Chequeador y 2 de Atención al Público.",
-            
-            // --- FUNCIONES DEL SISTEMA (Extraídas de tu código original) ---
+
+            // --- FUNCIONES DEL SISTEMA (ACTUALIZADO: Nota de Entrega) ---
             "dashboard": "El <strong>Dashboard</strong> es la pantalla principal. Muestra un resumen con el saldo actual en caja (Bs. y USD), las ventas del día y del mes, y accesos directos a los módulos más importantes.",
-            "facturación": "El módulo de <strong>Facturación</strong> te permite crear nuevas ventas. Debes seleccionar el cliente, agregar productos, aplicar descuentos y calcular el total.",
+            "nota de entrega": "El módulo de <strong>Nota de Entrega</strong> te permite crear nuevas notas. Debes seleccionar el cliente, agregar productos, aplicar descuentos y calcular el total.",
+            "notas de entrega": "El módulo de <strong>Nota de Entrega</strong> te permite crear nuevas notas. Debes seleccionar el cliente, agregar productos, aplicar descuentos y calcular el total.",
+            "nota": "El módulo de <strong>Nota de Entrega</strong> te permite crear nuevas notas. Debes seleccionar el cliente, agregar productos, aplicar descuentos y calcular el total.",
             "inventario": "El <strong>Inventario</strong> administra todos los productos: puedes agregar, editar, eliminar y controlar el stock.",
             "cierre diario": "El <strong>Cierre Diario</strong> muestra un resumen de todas las ventas realizadas durante el día.",
             "ventas del mes": "El reporte de <strong>Ventas del Mes</strong> te permite visualizar todas las ventas realizadas en el mes actual.",
@@ -1419,48 +1427,43 @@
             "apertura de caja": "La <strong>Apertura de Caja</strong> inicia un nuevo turno. Debes registrar el saldo inicial.",
             "historial de caja": "El <strong>Historial de Caja</strong> guarda todos los movimientos: aperturas, cierres, ventas, devoluciones y retiros.",
             "devoluciones": "El módulo de <strong>Devoluciones</strong> permite procesar devoluciones de productos previamente vendidos.",
-            "historial facturación": "El <strong>Historial de Facturación</strong> muestra todas las facturas emitidas.",
+            "historial nota de entrega": "El <strong>Historial de Notas de Entrega</strong> muestra todas las notas emitidas.",
+            "historial notas": "El <strong>Historial de Notas de Entrega</strong> muestra todas las notas emitidas.",
             "roles": "Los <strong>Roles</strong> definen los permisos de cada usuario: Dueño, Administrador, Supervisor, Vendedor.",
             "usuarios": "El módulo de <strong>Usuarios</strong> permite crear, editar y eliminar cuentas de usuario.",
             "tasa": "La <strong>Tasa de Cambio</strong> se actualiza automáticamente desde el BCV.",
-            
+
             // --- RESPUESTA POR DEFECTO ---
-            "default": "No tengo información específica sobre eso. Puedo ayudarte con: Dashboard, Facturación, Inventario, Cierre Diario, Ventas del Mes, Ganancias, Cierre de Caja, Apertura de Caja, Historial de Caja, Devoluciones, Historial Facturación, Roles, Usuarios, Tasa, Historia, Fundación, Significado, Misión, Visión, Ubicación, Empleados."
+            "default": "No tengo información específica sobre eso. Puedo ayudarte con: Dashboard, Nota de Entrega, Inventario, Cierre Diario, Ventas del Mes, Ganancias, Cierre de Caja, Apertura de Caja, Historial de Caja, Devoluciones, Historial de Notas de Entrega, Roles, Usuarios, Tasa, Historia, Fundación, Significado, Misión, Visión, Ubicación, Empleados."
         };
 
         function getLocalResponse(userInput) {
             const lower = userInput.toLowerCase().trim();
-            
-            // Si pide ayuda o menú, mostramos el menú completo
             if (lower.includes("ayuda") || lower.includes("menu") || lower.includes("temas")) {
                 return knowledgeBase["ayuda"];
             }
-            
-            // Buscamos coincidencias en las claves
             for (let key in knowledgeBase) {
                 if (lower.includes(key) && key !== "default" && key !== "ayuda") {
                     return knowledgeBase[key];
                 }
             }
-            
-            // Si no encuentra nada, devuelve el default
             return knowledgeBase["default"];
         }
+
         // ========================================================================
         // 2. FUNCIÓN CON MISTRAL AI
         // ========================================================================
         async function getMistralResponse(userInput, apiKey) {
             const systemPrompt = `
-                Eres el asistente virtual de RENAVEN OAKMONT, C.A., una empresa de facturación y sistema POS.
+                Eres el asistente virtual de RENAVEN OAKMONT, C.A., una empresa que maneja un sistema de Nota de Entrega y POS.
                 Tu nombre es "Asistente RENAVEN". Responde en español, de forma amigable y profesional.
 
                 Información del sistema:
                 - Nombre: RENAVEN OAKMONT, C.A.
-                - Sistema: Facturación y POS (ventas, inventario, caja, usuarios)
-                - Módulos: Dashboard, Facturación, Inventario, Cierre Diario, Ventas del Mes, Ganancias, Cierre de Caja, Apertura de Caja, Historial de Caja, Devoluciones, Historial Facturación, Roles, Usuarios, Tasa de Cambio.
+                - Sistema: Nota de Entrega y POS (notas, inventario, caja, usuarios)
+                - Módulos: Dashboard, Nota de Entrega, Inventario, Cierre Diario, Ventas del Mes, Ganancias, Cierre de Caja, Apertura de Caja, Historial de Caja, Devoluciones, Historial de Notas de Entrega, Roles, Usuarios, Tasa de Cambio.
                 - Usuario por defecto: "dueño" (todos los permisos).
                 - Frase del día: "El fracaso es solo una oportunidad para comenzar de nuevo, esta vez de manera más inteligente." - Henry Ford.
-                
 
                 Responde siempre en español. Si no sabes algo, dilo claramente.
             `;
@@ -1514,6 +1517,8 @@
         const chatMessages = document.getElementById('chatMessages');
         const chatInput = document.getElementById('chatInput');
         const chatSendBtn = document.getElementById('chatSendBtn');
+        const welcomeBubble = document.getElementById('welcomeBubble');
+        const closeWelcomeBubble = document.getElementById('closeWelcomeBubble');
 
         function addWelcomeMessageIfEmpty() {
             if (chatMessages.children.length === 0) {
@@ -1552,12 +1557,7 @@
             if (!message) return;
 
             if (chatMessages.children.length === 0) {
-                const welcomeText = `
-                    ¡Hola! Soy el asistente de <strong>RENAVEN</strong> con <strong>Mistral AI</strong> 🧠<br>
-                    <span style="font-size:0.8rem; opacity:0.7;">💡 Guarda tu API Key de Mistral en el menú de accesibilidad (arriba a la derecha).</span><br>
-                    <span style="font-size:0.8rem; opacity:0.7;">📌 Consigue tu clave gratis en <a href="https://console.mistral.ai" target="_blank">console.mistral.ai</a></span>
-                `;
-                addMessage(welcomeText, 'bot');
+                addWelcomeMessageIfEmpty();
             }
 
             addMessage(message, 'user');
@@ -1694,9 +1694,6 @@
         // ========================================================================
         // 5. BURBUJA DE BIENVENIDA
         // ========================================================================
-        const welcomeBubble = document.getElementById('welcomeBubble');
-        const closeWelcomeBubble = document.getElementById('closeWelcomeBubble');
-
         let bubbleShown = localStorage.getItem('welcomeBubbleShown');
         if (!bubbleShown) {
             setTimeout(() => {
@@ -1749,10 +1746,8 @@
                     localStorage.setItem('mistral_api_key', key);
                     apiKeyInput.value = '';
                     updateApiKeyStatus();
-                    if (chatContainer.classList.contains('open') && chatMessages.children.length === 0) {
+                    if (chatContainer.classList.contains('open')) {
                         addMessage('🔑 API Key de Mistral guardada correctamente. ¡Ahora uso Mistral AI para responder! 🎉', 'bot');
-                    } else {
-                        addMessage('🔑 API Key de Mistral guardada correctamente.', 'bot');
                     }
                 } else {
                     alert('❌ Clave inválida. Debe tener más de 5 caracteres.');
@@ -1861,8 +1856,6 @@
                 applyFontSize();
             });
             applyFontSize();
-
-            refreshCaptcha();
         });
 
         function refreshCaptcha() {
@@ -1886,55 +1879,40 @@
                 icon.classList.add('fa-eye');
             }
         }
+
         // ========================================================================
-// NOTIFICACIÓN A TELEGRAM - RENAVEN (CORREGIDO)
-// ========================================================================
-const TELEGRAM_TOKEN = '8734974003:AAGBVRytYEXZLVTqikT7w_0a3EMTkkd6ZD0';
-const TELEGRAM_CHAT_ID = '1623792128';
+        // 7. NOTIFICACIÓN DE LOGIN → ahora pasa por el backend (SEGURO)
+        // ========================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('loginForm');
+            if (!loginForm) return;
 
-// Esta función envía el mensaje a tu Telegram
-async function enviarAlertaTelegram(usuario, rol) {
-    const fecha = new Date().toLocaleString('es-VE', { timeZone: 'America/Caracas' });
-    const mensaje = `🔔 *NUEVO INICIO DE SESIÓN*\n\n👤 *Usuario:* ${usuario}\n🔑 *Rol:* ${rol}\n🕐 *Fecha:* ${fecha}`;
-    
-    try {
-        await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: TELEGRAM_CHAT_ID,
-                text: mensaje,
-                parse_mode: 'Markdown'
-            })
+            loginForm.addEventListener('submit', async () => {
+                const userInput = document.getElementById('username');
+                const captchaEl = document.getElementById('captcha_code');
+                const csrfEl    = loginForm.querySelector('input[name="csrf_token"]');
+
+                // Solo notificar si usuario y captcha están completos
+                if (!userInput?.value.trim() || !captchaEl?.value.trim()) return;
+
+                try {
+                    await fetch('/api/notify-login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfEl?.value || ''
+                        },
+                        body: JSON.stringify({
+                            usuario: userInput.value.trim(),
+                            rol: 'Acceso al Sistema'
+                        })
+                    });
+                } catch (err) {
+                    console.warn('No se pudo notificar al backend:', err);
+                }
+            });
         });
-        console.log('✅ Notificación enviada al dueño');
-    } catch (error) {
-        console.error('❌ Error al enviar notificación:', error);
-    }
-}
-
-// ========================================================================
-// INTERCEPTOR CORREGIDO DE LOGIN
-// ========================================================================
-document.addEventListener('DOMContentLoaded', () => {
-    // Buscamos el formulario de login por su acción o por el botón de login
-    const loginForm = document.querySelector('form[action*="login"]') || document.querySelector('form');
-    
-    if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
-            // Buscamos el input del usuario por su ID correcto: #username
-            const userInput = document.getElementById('username');
-            
-            if (userInput && userInput.value.trim() !== '') {
-                // Enviamos la notificación (sin esperar, para que no bloquee el envío del formulario)
-                enviarAlertaTelegram(userInput.value.trim(), 'Acceso al Sistema');
-            }
-        });
-    }
-});
-
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js">
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
