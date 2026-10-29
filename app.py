@@ -2677,7 +2677,6 @@ def presupuesto():
 @app.route('/presupuesto', methods=['POST'])
 def presupuesto_route():
     return presupuesto()
-
 # ==================== APERTURA DE CAJA ====================
 @app.route('/opening_balance', methods=['GET', 'POST'])
 @login_required
@@ -2692,10 +2691,19 @@ def opening_balance():
             flash('[ERROR] Se requiere contraseña de supervisor', 'danger')
             return redirect(url_for('opening_balance'))
         try:
-            autorizado = execute_query("SELECT * FROM users WHERE role IN ('Dueño', 'Supervisor')", fetch_one=True)
-            if not autorizado or not bcrypt.checkpw(password.encode(), autorizado['password'].encode()):
+            # --- INICIO DE LA CORRECCIÓN ---
+            autorizados = execute_query("SELECT * FROM users WHERE role IN ('Dueño', 'Supervisor')", fetch_all=True)
+            autorizado = None
+            if autorizados:
+                for user in autorizados:
+                    if bcrypt.checkpw(password.encode(), user['password'].encode()):
+                        autorizado = user
+                        break
+            if not autorizado:
                 flash('Contraseña incorrecta. Solo Dueño o Supervisor pueden abrir caja', 'danger')
                 return redirect(url_for('opening_balance'))
+            # --- FIN DE LA CORRECCIÓN ---
+            
             today = datetime.now().strftime('%Y-%m-%d')
             cierre_hoy = execute_query("SELECT id FROM cash_closures WHERE closure_date LIKE %s LIMIT 1", (today+'%',), fetch_one=True)
             opening_result = execute_query("SELECT value FROM config WHERE key_name = 'opening_balance'", fetch_one=True)
@@ -2739,7 +2747,6 @@ def opening_balance():
 @login_required
 def cash_closure():
     return redirect(url_for('daily_closure'))
-
 # ==================== REPORTE UNIFICADO ====================
 @app.route('/daily_closure', methods=['GET', 'POST'])
 @login_required
