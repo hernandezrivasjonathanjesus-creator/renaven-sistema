@@ -158,6 +158,7 @@ DB_CONFIG = {
     'user': 'renaven_db_user',
     'password': 'EkVMqTsSuFqsoEjltgtLx6yBGmFVVEGY',
     'connect_timeout': 30,
+    'sslmode': 'disable',  
 }
 
 connection_pool = None
