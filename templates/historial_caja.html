@@ -447,19 +447,19 @@
             <!-- SIDEBAR -->
             <div class="col-md-2 sidebar p-2 no-print">
                 <div class="text-center mb-3">
-                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN - Sistema de Facturación" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/60x60?text=R'">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN - Sistema de Nota de Entrega" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/60x60?text=R'">
                     <h6 class="mt-1">RENAVEN</h6>
                     <small>{{ session.get('role', 'Usuario') }}</small>
                 </div>
                 <nav class="nav flex-column" aria-label="Menú principal">
                     <a class="nav-link" href="{{ url_for('dashboard') }}" aria-label="Ir al Dashboard"><i class="fas fa-tachometer-alt me-2" aria-hidden="true"></i> Dashboard</a>
-                    <a class="nav-link" href="{{ url_for('facturacion') }}" aria-label="Ir a Facturación"><i class="fas fa-shopping-cart me-2" aria-hidden="true"></i> Facturación</a>
+                    <a class="nav-link" href="{{ url_for('nota_entrega') }}" aria-label="Ir a Nota de Entrega"><i class="fas fa-shopping-cart me-2" aria-hidden="true"></i> Nota de Entrega</a>
                     <a class="nav-link" href="{{ url_for('inventory') }}" aria-label="Ir a Inventario"><i class="fas fa-boxes me-2" aria-hidden="true"></i> Inventario</a>
                     <a class="nav-link" href="{{ url_for('cash_closure') }}" aria-label="Ir a Cierre de Caja"><i class="fas fa-cash-register me-2" aria-hidden="true"></i> Cierre de Caja</a>
                     <a class="nav-link" href="{{ url_for('opening_balance') }}" aria-label="Ir a Apertura de Caja"><i class="fas fa-money-bill-wave me-2" aria-hidden="true"></i> Apertura de Caja</a>
                     <a class="nav-link active" href="{{ url_for('historial_caja') }}" aria-label="Ver Historial de Caja"><i class="fas fa-wallet me-2" aria-hidden="true"></i> Historial Caja</a>
                     <a class="nav-link" href="{{ url_for('historial_devoluciones') }}" aria-label="Ver Historial de Devoluciones"><i class="fas fa-undo-alt me-2" aria-hidden="true"></i> Devoluciones</a>
-                    <a class="nav-link" href="{{ url_for('historial_facturacion') }}" aria-label="Ver Historial de Facturación"><i class="fas fa-file-invoice me-2" aria-hidden="true"></i> Historial Facturación</a>
+                    <a class="nav-link" href="{{ url_for('historial_facturacion') }}" aria-label="Ver Historial de Notas"><i class="fas fa-file-invoice me-2" aria-hidden="true"></i> Historial Notas</a>
                     <hr>
                     <a class="nav-link" href="{{ url_for('logout') }}" aria-label="Cerrar Sesión"><i class="fas fa-sign-out-alt me-2" aria-hidden="true"></i> Salir</a>
                 </nav>
