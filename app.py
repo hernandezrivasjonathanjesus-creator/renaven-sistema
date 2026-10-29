@@ -3409,20 +3409,31 @@ def corregir_stocks_negativos():
         flash(f'[ERROR] Error: {str(e)}', 'danger')
     return redirect(url_for('inventory'))
 
-@app.route('/reset_caja')
+@app.route('/borrar_todo_absoluto')
 @login_required
-def reset_caja():
+def borrar_todo_absoluto():
     if session.get('role') != 'Dueño':
         flash('No autorizado', 'danger')
         return redirect(url_for('dashboard'))
+    
     try:
-        execute_query("UPDATE config SET value = '0' WHERE key_name = 'opening_balance'", commit=True)
-        execute_query("UPDATE saldo_caja SET saldo_bs = 0, saldo_usd = 0 WHERE id = 1", commit=True)
-        flash('[OK] Fondo de caja reiniciado a CERO exitosamente', 'success')
+        # 1. Borrar todas las tablas y datos
+        conn, cursor = get_db()
+        cursor.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO public;")
+        conn.commit()
+        cursor.close()
+        connection_pool.putconn(conn)
+        
+        # 2. Volver a crear las tablas vacías
+        global _db_initialized
+        _db_initialized = False
+        init_db()
+        
+        flash('[OK] Sistema en 0 absoluto. Se ha borrado todo el inventario, ventas y facturación. Los usuarios por defecto han sido creados.', 'success')
     except Exception as e:
-        logger.error(f"Error en reset_caja: {e}")
-        flash(f'[ERROR] Error: {e}', 'danger')
-    return redirect(url_for('opening_balance'))
+        flash(f'[ERROR] Error al borrar: {str(e)}', 'danger')
+    
+    return redirect(url_for('dashboard'))
 
 # ==================== HISTORIAL DE CAJA ====================
 @app.route('/historial_caja')
