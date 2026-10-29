@@ -3540,6 +3540,26 @@ with app.app_context():
     except Exception as e:
         print(f"Error al inicializar la base de datos: {e}")
 # ==============================================================================
+@app.route('/bitacora')
+@login_required
+@permission_required('users')
+def bitacora():
+    try:
+        logs = execute_query("""
+            SELECT id, username, action, details, ip_address, date 
+            FROM user_logs 
+            ORDER BY created_at DESC 
+            LIMIT 500
+        """, fetch_all=True)
+        company = execute_query("SELECT * FROM company WHERE id = 1", fetch_one=True)
+    except Exception as e:
+        logger.error(f"Error en bitacora: {e}")
+        flash(f'Error al cargar la bitácora: {str(e)}', 'danger')
+        logs = []
+        company = None
+        
+    return render_template('bitacora.html', logs=logs, company=company, datetime=datetime)
+
 
 # ==================== INICIO ====================
 if __name__ == '__main__':
