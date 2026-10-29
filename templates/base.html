@@ -206,7 +206,6 @@
 
         /* ========== ESTILOS BASE ========== */
 
-        /* Forzar todos los textos a negro */
         body, p, span, div, h1, h2, h3, h4, h5, h6, .card-header,
         .navbar-text, .nav-link, .navbar-brand, .alert, .table,
         .text-muted, small, strong, b, label, .card-title, .card-text,
@@ -215,7 +214,6 @@
             color: var(--renaven-texto) !important;
         }
 
-        /* Excepción para placeholders */
         ::placeholder, input::placeholder, textarea::placeholder {
             color: #9ca3af !important;
             opacity: 1;
@@ -230,7 +228,6 @@
             transition: background-color 0.3s, color 0.3s;
         }
 
-        /* ========== NAVEGACIÓN POR TECLADO ========== */
         *:focus {
             outline: 3px solid #FFD700 !important;
             outline-offset: 2px !important;
@@ -253,7 +250,6 @@
             top: 0;
         }
 
-        /* ========== BOTÓN ACCESIBILIDAD ========== */
         .accessibility-btn {
             background: var(--renaven-azul-fuerte);
             color: #000 !important;
@@ -279,7 +275,6 @@
             color: #000 !important;
         }
 
-        /* ========== MENÚ DE ACCESIBILIDAD (DROPDOWN) ========== */
         .accessibility-dropdown {
             position: relative;
             display: inline-block;
@@ -335,7 +330,6 @@
             border-color: var(--renaven-azul-cielo);
         }
 
-        /* ========== NAVBAR ========== */
         .navbar.bg-dark {
             background: linear-gradient(135deg, var(--renaven-azul-fuerte), var(--renaven-azul-cielo)) !important;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
@@ -432,7 +426,6 @@
             border-color: var(--renaven-borde) !important;
         }
 
-        /* ========== ALERTAS ========== */
         .alert {
             border-radius: 20px;
             border: 2px solid var(--renaven-borde) !important;
@@ -440,35 +433,14 @@
             transition: border-color 0.3s, background 0.3s;
         }
 
-        .alert-success {
-            background: #d4edda;
-            border-left: 5px solid var(--renaven-verde) !important;
-        }
+        .alert-success { background: #d4edda; border-left: 5px solid var(--renaven-verde) !important; }
+        .alert-danger { background: #f8d7da; border-left: 5px solid #DC3545 !important; }
+        .alert-warning { background: #fff3e0; border-left: 5px solid var(--renaven-oro) !important; }
+        .alert-info { background: #e3f2fd; border-left: 5px solid var(--renaven-azul-cielo) !important; }
 
-        .alert-danger {
-            background: #f8d7da;
-            border-left: 5px solid #DC3545 !important;
-        }
+        .btn-close { filter: brightness(0.3); }
+        .btn-close:hover { filter: brightness(0.1); }
 
-        .alert-warning {
-            background: #fff3e0;
-            border-left: 5px solid var(--renaven-oro) !important;
-        }
-
-        .alert-info {
-            background: #e3f2fd;
-            border-left: 5px solid var(--renaven-azul-cielo) !important;
-        }
-
-        .btn-close {
-            filter: brightness(0.3);
-        }
-
-        .btn-close:hover {
-            filter: brightness(0.1);
-        }
-
-        /* ========== TARJETAS ========== */
         .card {
             background: var(--renaven-blanco);
             border: 2px solid var(--renaven-borde) !important;
@@ -488,7 +460,6 @@
             transition: background 0.3s, border-color 0.3s;
         }
 
-        /* ========== TABLAS ========== */
         .table {
             color: var(--renaven-texto) !important;
             border: 1px solid var(--renaven-borde);
@@ -503,98 +474,33 @@
             transition: background 0.3s, border-color 0.3s;
         }
 
-        .table tbody tr:hover {
-            background: var(--renaven-gris-claro);
-        }
+        .table tbody tr:hover { background: var(--renaven-gris-claro); }
+        .table, .table td, .table th { border-color: var(--renaven-borde) !important; }
 
-        .table, .table td, .table th {
-            border-color: var(--renaven-borde) !important;
-        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--renaven-gris-fondo); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--renaven-azul-cielo); border-radius: 10px; border: 1px solid var(--renaven-borde); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--renaven-azul-fuerte); }
 
-        /* ========== SCROLLBAR ========== */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--renaven-gris-fondo);
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--renaven-azul-cielo);
-            border-radius: 10px;
-            border: 1px solid var(--renaven-borde);
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--renaven-azul-fuerte);
-        }
-
-        /* ========== ANIMACIÓN ========== */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .container { animation: fadeIn 0.4s ease-out; }
 
-        .container {
-            animation: fadeIn 0.4s ease-out;
-        }
+        a { color: var(--renaven-texto) !important; text-decoration: none; font-weight: 500; }
+        a:hover { color: var(--renaven-azul-fuerte) !important; text-decoration: underline; }
 
-        /* ========== ENLACES ========== */
-        a {
-            color: var(--renaven-texto) !important;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        a:hover {
-            color: var(--renaven-azul-fuerte) !important;
-            text-decoration: underline;
-        }
-
-        /* ========== BOTONES GENERALES ========== */
-        .btn {
-            border-radius: 50px !important;
-            border: 2px solid var(--renaven-borde) !important;
-            font-weight: 600;
-        }
-
-        .btn-primary {
-            background: var(--renaven-azul-fuerte) !important;
-            color: var(--renaven-texto) !important;
-        }
-
-        .btn-primary:hover {
-            background: var(--renaven-azul-cielo) !important;
-            color: var(--renaven-texto) !important;
-        }
-
-        .btn-success {
-            background: var(--renaven-verde) !important;
-            color: var(--renaven-texto) !important;
-        }
-
-        .btn-info {
-            background: var(--renaven-azul-cielo) !important;
-            color: var(--renaven-texto) !important;
-        }
-
-        .btn-warning {
-            background: var(--renaven-oro) !important;
-            color: var(--renaven-texto) !important;
-        }
+        .btn { border-radius: 50px !important; border: 2px solid var(--renaven-borde) !important; font-weight: 600; }
+        .btn-primary { background: var(--renaven-azul-fuerte) !important; color: var(--renaven-texto) !important; }
+        .btn-primary:hover { background: var(--renaven-azul-cielo) !important; color: var(--renaven-texto) !important; }
+        .btn-success { background: var(--renaven-verde) !important; color: var(--renaven-texto) !important; }
+        .btn-info { background: var(--renaven-azul-cielo) !important; color: var(--renaven-texto) !important; }
+        .btn-warning { background: var(--renaven-oro) !important; color: var(--renaven-texto) !important; }
 
         @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-            .accessibility-dropdown-content {
-                right: auto;
-                left: 0;
-                min-width: 170px;
-            }
+            .container { padding: 10px; }
+            .accessibility-dropdown-content { right: auto; left: 0; min-width: 170px; }
         }
     </style>
 </head>
@@ -617,11 +523,12 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('inventory') }}" aria-label="Ir a Inventario">📦 Inventario</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('facturacion') }}" aria-label="Ir a Facturación">🛒 Facturar</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('nota_entrega') }}" aria-label="Ir a Facturación">🛒 Facturar</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('cash_closure') }}" aria-label="Ir a Cierre de Caja">💰 Cierre de Caja</a></li>
                     {% if session.get('role') == 'Dueño' %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('manage_users') }}" aria-label="Gestionar Usuarios">👥 Usuarios</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('manage_roles') }}" aria-label="Gestionar Roles">🔐 Roles</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('bitacora') }}" aria-label="Ver Bitácora">📝 Bitácora</a></li>
                     {% endif %}
                     {% if session.get('role') in ['Supervisor', 'Dueño'] %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('daily_closure') }}" aria-label="Ver Reportes">📊 Reportes</a></li>
