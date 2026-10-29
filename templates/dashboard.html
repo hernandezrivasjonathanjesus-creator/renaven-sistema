@@ -389,7 +389,7 @@
                     <a class="nav-link" href="{{ url_for('opening_balance') }}"><i class="fas fa-money-bill-wave me-2"></i> <span>Apertura de Caja</span></a>
                     <a class="nav-link" href="{{ url_for('historial_caja') }}"><i class="fas fa-wallet me-2"></i> <span>Historial de Caja</span></a>
                     <a class="nav-link" href="{{ url_for('historial_devoluciones') }}"><i class="fas fa-undo-alt me-2"></i> <span>Devoluciones</span></a>
-                    <a class="nav-link" href="{{ url_for('historial_nota_entrega') }}"><i class="fas fa-file-invoice me-2"></i> <span>Historial Facturación</span></a>
+                    <a class="nav-link" href="{{ url_for('historial_facturacion') }}"><i class="fas fa-file-invoice me-2"></i> <span>Historial Notas</span></a>
                     {% if session.get('role') == 'Dueño' %}
                     <hr>
                     <a class="nav-link" href="{{ url_for('manage_roles') }}"><i class="fas fa-users-cog me-2"></i> <span>Roles</span></a>
@@ -685,7 +685,7 @@
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
                                             <h3 class="fw-bold mb-0 fs-6" style="color: #000 !important;"><i class="fas fa-file-invoice me-1"></i>Historial</h3>
-                                            <p class="mb-0 small" style="color: #000 !important;">Ver facturas</p>
+                                            <p class="mb-0 small" style="color: #000 !important;">Ver notas</p>
                                         </div>
                                         <i class="fas fa-print fa-1x opacity-50"></i>
                                     </div>
