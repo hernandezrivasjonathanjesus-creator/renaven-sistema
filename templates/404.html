@@ -2,8 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Página no encontrada - RENAVEN</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="theme-color" content="#84b6f4">
+    <title>404 - Página no encontrada | RENAVEN</title>
     <style>
         /* ========== PALETA PREDETERMINADA (ORIGINAL LOGIN) ========== */
         :root {
@@ -17,8 +18,7 @@
             --transition-base: all 0.25s ease-in-out;
         }
 
-        /* ========== TEMAS PASTEL INDIVIDUALES (SIN ALTO CONTRASTE) ========== */
-        /* 1. Rosa pastel */
+        /* ========== TEMAS PASTEL INDIVIDUALES ========== */
         body.theme-rosa {
             --renaven-azul-fuerte: #fbc4d5;
             --renaven-azul-cielo: #fce4ec;
@@ -31,8 +31,8 @@
         body.theme-rosa .btn:hover { background: #fdd0b5 !important; }
         body.theme-rosa .logo { border-color: #fbc4d5 !important; }
         body.theme-rosa .error-container:hover { box-shadow: 0 12px 40px rgba(251,196,213,0.25) !important; }
+        body.theme-rosa .accessibility-btn { background: #fbc4d5 !important; border-color: #fdd0b5 !important; }
 
-        /* 2. Celeste pastel */
         body.theme-celeste {
             --renaven-azul-fuerte: #b5d8eb;
             --renaven-azul-cielo: #d6ecf5;
@@ -45,8 +45,8 @@
         body.theme-celeste .btn:hover { background: #a8d0e6 !important; }
         body.theme-celeste .logo { border-color: #b5d8eb !important; }
         body.theme-celeste .error-container:hover { box-shadow: 0 12px 40px rgba(181,216,235,0.25) !important; }
+        body.theme-celeste .accessibility-btn { background: #b5d8eb !important; border-color: #a8d0e6 !important; }
 
-        /* 3. Menta pastel */
         body.theme-menta {
             --renaven-azul-fuerte: #b5e6c3;
             --renaven-azul-cielo: #d8f0e0;
@@ -59,8 +59,8 @@
         body.theme-menta .btn:hover { background: #a8dbb8 !important; }
         body.theme-menta .logo { border-color: #b5e6c3 !important; }
         body.theme-menta .error-container:hover { box-shadow: 0 12px 40px rgba(181,230,195,0.25) !important; }
+        body.theme-menta .accessibility-btn { background: #b5e6c3 !important; border-color: #a8dbb8 !important; }
 
-        /* 4. Amarillo pastel */
         body.theme-amarillo {
             --renaven-azul-fuerte: #f9e7b2;
             --renaven-azul-cielo: #fdf3d5;
@@ -73,8 +73,8 @@
         body.theme-amarillo .btn:hover { background: #f5dc9a !important; }
         body.theme-amarillo .logo { border-color: #f9e7b2 !important; }
         body.theme-amarillo .error-container:hover { box-shadow: 0 12px 40px rgba(249,231,178,0.25) !important; }
+        body.theme-amarillo .accessibility-btn { background: #f9e7b2 !important; border-color: #f5dc9a !important; }
 
-        /* 5. Lila pastel */
         body.theme-lila {
             --renaven-azul-fuerte: #d4c4f0;
             --renaven-azul-cielo: #e8defa;
@@ -87,8 +87,8 @@
         body.theme-lila .btn:hover { background: #c9b7e8 !important; }
         body.theme-lila .logo { border-color: #d4c4f0 !important; }
         body.theme-lila .error-container:hover { box-shadow: 0 12px 40px rgba(212,196,240,0.25) !important; }
+        body.theme-lila .accessibility-btn { background: #d4c4f0 !important; border-color: #c9b7e8 !important; }
 
-        /* 6. Durazno pastel */
         body.theme-durazno {
             --renaven-azul-fuerte: #fdd0b5;
             --renaven-azul-cielo: #fee5d0;
@@ -101,43 +101,90 @@
         body.theme-durazno .btn:hover { background: #f5c2a4 !important; }
         body.theme-durazno .logo { border-color: #fdd0b5 !important; }
         body.theme-durazno .error-container:hover { box-shadow: 0 12px 40px rgba(253,208,181,0.25) !important; }
+        body.theme-durazno .accessibility-btn { background: #fdd0b5 !important; border-color: #f5c2a4 !important; }
 
-        /* ========== TODAS LAS LETRAS EN NEGRITA (excepto iconos) ========== */
-        *:not([class*="fa-"]) {
-            font-weight: bold !important;
+        /* ========== FUENTES EN NEGRITA (respetando jerarquía) ========== */
+        /* Aplicamos negrita solo a textos planos, NO a headings ni elementos con clase propia */
+        p, span, div:not(.error-container), a.btn, .accessibility-btn {
+            font-weight: 700;
         }
+        h1 { font-weight: 900 !important; }
+        h2 { font-weight: 800 !important; }
         .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
             font-weight: 400 !important;
         }
-        .fas, .fa-solid {
-            font-weight: 900 !important;
-        }
+        .fas, .fa-solid { font-weight: 900 !important; }
 
+        /* ========== BODY ========== */
+        html, body {
+            height: 100%;
+        }
         body {
             background: var(--renaven-gris-fondo);
             font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            min-height: 100dvh; /* Mejor en móviles */
             margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
             text-align: center;
             font-size: 13px;
             color: var(--renaven-texto);
             transition: background-color 0.3s, color 0.3s;
+            overflow-x: hidden;
         }
 
+        /* Fondo: imagen / negro / blanco */
+        body.bg-black-solid {
+            background: #000000 !important;
+        }
+        body.bg-black-solid .error-container {
+            background: #1a1a1a !important;
+            border-color: #333 !important;
+            color: #ffffff;
+        }
+        body.bg-black-solid h1,
+        body.bg-black-solid h2,
+        body.bg-black-solid p {
+            color: #ffffff !important;
+        }
+        body.bg-white-solid {
+            background: #FFFFFF !important;
+        }
+        body.bg-image-default {
+            background: url("{{ url_for('static', filename='img/fereteria.jpeg') }}") center/cover no-repeat fixed !important;
+        }
+        body.bg-image-default::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: rgba(255,255,255,0.4);
+            z-index: 0;
+            pointer-events: none;
+        }
+        body.bg-image-default .error-container {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ========== CONTENEDOR 404 ========== */
         .error-container {
             background: var(--renaven-blanco);
-            padding: 50px;
+            padding: 50px 40px;
             border-radius: 24px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             max-width: 550px;
+            width: 100%;
             border: 2px solid var(--renaven-azul-cielo);
             transition: all 0.3s ease;
             color: var(--renaven-texto);
+            position: relative;
+            z-index: 1;
+            box-sizing: border-box;
         }
-
         .error-container:hover {
             transform: translateY(-5px);
             box-shadow: 0 12px 40px rgba(132,182,244,0.15);
@@ -145,6 +192,8 @@
 
         .logo {
             max-width: 80px;
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
             margin-bottom: 20px;
             display: inline-block;
@@ -152,25 +201,30 @@
             background: var(--renaven-blanco);
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             transition: border-color 0.3s;
+            object-fit: cover;
         }
 
-        h1 { 
-            color: var(--renaven-texto); 
-            font-size: 100px; 
-            margin: 0; 
-            font-weight: 800;
+        h1 {
+            color: var(--renaven-texto);
+            font-size: 100px;
+            line-height: 1;
+            margin: 0;
+            font-weight: 900;
+            letter-spacing: -2px;
         }
 
-        h2 { 
-            color: var(--renaven-texto); 
+        h2 {
+            color: var(--renaven-texto);
             font-size: 28px;
             margin: 10px 0 0 0;
+            line-height: 1.3;
         }
 
-        p { 
-            color: var(--renaven-texto); 
-            margin: 20px 0; 
+        p {
+            color: var(--renaven-texto);
+            margin: 20px 0;
             font-size: 16px;
+            line-height: 1.6;
         }
 
         .btn {
@@ -181,37 +235,63 @@
             text-decoration: none;
             border-radius: 50px;
             margin-top: 20px;
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 16px;
             transition: all 0.3s ease;
             border: 2px solid var(--renaven-borde);
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
-        .btn:hover { 
+        .btn:hover {
             background: var(--renaven-azul-cielo);
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(132,182,244,0.25);
             color: #000 !important;
         }
-
         .btn:active {
             transform: translateY(0);
         }
 
+        /* ========== ANIMACIÓN (respetando prefers-reduced-motion) ========== */
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         .error-container {
             animation: fadeInUp 0.6s ease-out;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            .error-container:hover { transform: none; }
+        }
+
+        /* ========== BOTÓN DE ACCESIBILIDAD (consistente con login) ========== */
+        .accessibility-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 999;
+            background: var(--renaven-azul-fuerte);
+            color: #000 !important;
+            border: 2px solid var(--renaven-azul-cielo);
+            border-radius: 50px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+        .accessibility-btn:hover {
+            background: var(--renaven-azul-cielo);
+            transform: scale(1.05);
         }
 
         /* ========== NAVEGACIÓN POR TECLADO ========== */
@@ -219,21 +299,42 @@
             outline: 3px solid #FFD700 !important;
             outline-offset: 2px !important;
         }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 600px) {
+            body { padding: 16px; }
+            .error-container { padding: 35px 24px; }
+            h1 { font-size: 72px; }
+            h2 { font-size: 22px; }
+            p { font-size: 15px; }
+            .btn { font-size: 15px; padding: 11px 22px; }
+            .accessibility-btn { top: 10px; right: 10px; padding: 6px 12px; font-size: 10px; }
+        }
     </style>
 </head>
 <body>
-    <div class="error-container">
-        <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" class="logo" alt="RENAVEN" onerror="this.src='https://via.placeholder.com/80x80?text=R'">
+    <!-- ========== BOTÓN ACCESIBILIDAD ========== -->
+    <button class="accessibility-btn" id="accessibilityToggle" aria-label="Abrir menú de accesibilidad">
+        🌓 Accesibilidad
+    </button>
+
+    <div class="error-container" role="alert" aria-live="polite">
+        <img src="{{ url_for('static', filename='img/renaven.jpeg') }}"
+             class="logo"
+             alt="Logo RENAVEN"
+             onerror="this.onerror=null;this.style.display='none';">
         <h1>404</h1>
         <h2>¡Página no encontrada!</h2>
         <p>Lo sentimos, la página que buscas no existe o fue movida.</p>
-        <a href="{{ url_for('index') }}" class="btn">🏠 Volver al inicio</a>
+        <a href="{{ url_for('login') }}" class="btn" aria-label="Volver al inicio de sesión">
+            🏠 Volver al inicio
+        </a>
     </div>
 
     <script>
-        // ========== CARGA DE TEMA GUARDADO Y CONFIGURACIÓN DE FUENTE ==========
+        // ========== CONFIGURACIÓN GLOBAL (tema, fuente, fondo) ==========
         document.addEventListener('DOMContentLoaded', function() {
-            // ---- Temas pastel ----
+            // ---- 1. Temas pastel ----
             function applyTheme(themeClass) {
                 document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
                 if (themeClass) {
@@ -247,13 +348,38 @@
                 applyTheme(savedTheme);
             }
 
-            // ---- Tamaño de fuente (base 13px) ----
-            let currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
-            function applyFontSize() {
-                document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
-                localStorage.setItem('fontSize', currentFontSize);
+            // ---- 2. Fondo (imagen / negro / blanco) ----
+            const savedBg = localStorage.getItem('backgroundMode');
+            if (savedBg === 'black') document.body.classList.add('bg-black-solid');
+            else if (savedBg === 'white') document.body.classList.add('bg-white-solid');
+            else if (savedBg === 'image') document.body.classList.add('bg-image-default');
+
+            // ---- 3. Tamaño de fuente global ----
+            const fontSizePercent = parseInt(localStorage.getItem('fontSize') || '100');
+            // Aplicamos escala a TODOS los textos importantes (no solo al body)
+            document.body.style.fontSize = (13 * fontSizePercent / 100) + 'px';
+
+            // Escalar h1, h2, p, .btn proporcionalmente
+            const h1 = document.querySelector('h1');
+            const h2 = document.querySelector('h2');
+            const p  = document.querySelector('.error-container > p');
+            const btn = document.querySelector('.btn');
+            const factor = fontSizePercent / 100;
+
+            if (h1) h1.style.fontSize = (100 * factor) + 'px';
+            if (h2) h2.style.fontSize = (28 * factor) + 'px';
+            if (p)  p.style.fontSize  = (16 * factor) + 'px';
+            if (btn) btn.style.fontSize = (16 * factor) + 'px';
+
+            // ---- 4. Botón accesibilidad: te devuelve al login para configurar ----
+            const accessibilityBtn = document.getElementById('accessibilityToggle');
+            if (accessibilityBtn) {
+                accessibilityBtn.addEventListener('click', function() {
+                    // En el 404 no hay menú completo, así que redirige al login
+                    // donde SÍ está el menú de accesibilidad
+                    window.location.href = "{{ url_for('login') }}";
+                });
             }
-            applyFontSize();
         });
     </script>
 </body>
