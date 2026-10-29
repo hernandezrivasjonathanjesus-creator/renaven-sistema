@@ -2529,7 +2529,7 @@ def checkout():
     cart = session.get('cart', [])
     if not cart:
         flash('Carrito vacío', 'warning')
-        return redirect(url_for('facturacion'))
+        return redirect(url_for('nota_entrega'))
     client_id = request.form['client_id'].strip()
     client_name = request.form['client_name'].strip().upper()
     client_phone = request.form.get('client_phone', '')
@@ -2538,7 +2538,7 @@ def checkout():
     pagos = json.loads(pagos_json) if pagos_json else {}
     if not client_id or not client_name or not client_address:
         flash('Cédula, nombre y dirección son obligatorios', 'danger')
-        return redirect(url_for('facturacion'))
+        return redirect(url_for('nota_entrega'))
     try:
         for item in cart:
             product = execute_query("SELECT stock FROM products WHERE id = %s AND activo = 1", (item['id'],), fetch_one=True)
