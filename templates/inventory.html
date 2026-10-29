@@ -627,7 +627,7 @@
             <!-- Sidebar -->
             <div class="col-md-2 p-0 sidebar no-print">
                 <div class="text-center py-4">
-                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN - Sistema de Facturación" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/80x80?text=R'">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN - Sistema de Nota de Entrega" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/80x80?text=R'">
                     <h5 class="mt-2">RENAVEN</h5>
                     <small>{{ session.get('role', 'Usuario') }}</small>
                 </div>
@@ -635,8 +635,8 @@
                     <a class="nav-link" href="{{ url_for('dashboard') }}" aria-label="Ir al Dashboard">
                         <i class="fas fa-tachometer-alt me-2" aria-hidden="true"></i> Dashboard
                     </a>
-                    <a class="nav-link" href="{{ url_for('facturacion') }}" aria-label="Ir a Facturación">
-                        <i class="fas fa-shopping-cart me-2" aria-hidden="true"></i> Facturación
+                    <a class="nav-link" href="{{ url_for('nota_entrega') }}" aria-label="Ir a Nota de Entrega">
+                        <i class="fas fa-shopping-cart me-2" aria-hidden="true"></i> Nota de Entrega
                     </a>
                     <a class="nav-link active" href="{{ url_for('inventory') }}" aria-label="Ir a Inventario">
                         <i class="fas fa-boxes me-2" aria-hidden="true"></i> Inventario
@@ -644,8 +644,8 @@
                     <a class="nav-link" href="{{ url_for('historial_devoluciones') }}" aria-label="Ver Historial de Devoluciones">
                         <i class="fas fa-undo-alt me-2" aria-hidden="true"></i> Devoluciones
                     </a>
-                    <a class="nav-link" href="{{ url_for('historial_facturacion') }}" aria-label="Ver Historial de Facturación">
-                        <i class="fas fa-file-invoice me-2" aria-hidden="true"></i> Historial Facturación
+                    <a class="nav-link" href="{{ url_for('historial_facturacion') }}" aria-label="Ver Historial de Notas">
+                        <i class="fas fa-file-invoice me-2" aria-hidden="true"></i> Historial Notas
                     </a>
                     {% if session.get('role') == 'Dueño' %}
                     <a class="nav-link" href="{{ url_for('deleted_products') }}" aria-label="Ver Productos Eliminados">
