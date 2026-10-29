@@ -139,8 +139,6 @@
         }
 
         body.bg-black-solid { background-color: #000000 !important; }
-        body.bg-black-solid .card,
-        body.bg-black-solid .saldo-card { background: #1a1a1a !important; color: #fff !important; }
         body.bg-white-solid { background-color: #FFFFFF !important; }
 
         *:focus { outline: 3px solid #FFD700 !important; outline-offset: 2px !important; }
@@ -363,6 +361,47 @@
         @media (max-width: 576px) {
             .top-bar { flex-direction: column; align-items: stretch !important; }
             .top-bar .d-flex { justify-content: space-between; flex-wrap: wrap; }
+        }
+
+        /* ========== ARREGLO PARA EL FONDO NEGRO (LETRAS BLANCAS) ========== */
+        body.bg-black-solid,
+        body.bg-black-solid h1,
+        body.bg-black-solid h2,
+        body.bg-black-solid h3,
+        body.bg-black-solid h4,
+        body.bg-black-solid h5,
+        body.bg-black-solid h6,
+        body.bg-black-solid p,
+        body.bg-black-solid span,
+        body.bg-black-solid small,
+        body.bg-black-solid strong,
+        body.bg-black-solid i:not(.text-warning):not(.text-danger),
+        body.bg-black-solid .stat-number,
+        body.bg-black-solid .saldo-monto,
+        body.bg-black-solid .saldo-label,
+        body.bg-black-solid .saldo-sub,
+        body.bg-black-solid .card-header h4,
+        body.bg-black-solid .top-product-name,
+        body.bg-black-solid .top-product-meta {
+            color: #ffffff !important;
+        }
+
+        /* Arreglar las tarjetas en modo oscuro */
+        body.bg-black-solid .card,
+        body.bg-black-solid .saldo-card,
+        body.bg-black-solid .sidebar {
+            background-color: #1a1a1a !important;
+            border-color: #444444 !important;
+        }
+
+        /* Arreglar el menú lateral en modo oscuro */
+        body.bg-black-solid .sidebar .nav-link {
+            color: #ffffff !important;
+        }
+        body.bg-black-solid .sidebar .nav-link:hover,
+        body.bg-black-solid .sidebar .nav-link.active {
+            background-color: #333333 !important;
+            color: #ffffff !important;
         }
     </style>
 </head>
