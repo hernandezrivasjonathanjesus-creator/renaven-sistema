@@ -1,63 +1,293 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Bitácora - RENAVEN | Sistema de Gestión</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ========== PALETA PREDETERMINADA ========== */
+        :root {
+            --renaven-azul-fuerte: #84b6f4;
+            --renaven-azul-cielo: #c4dafa;
+            --renaven-blanco: #fcffff;
+            --renaven-gris-fondo: #f0f6fe;
+            --renaven-texto: #000000;
+            --renaven-borde: #84b6f4;
+            --shadow-color: rgba(132,182,244,0.2);
+            --transition-base: all 0.25s ease-in-out;
+        }
 
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fs-4 fw-bold"><i class="fas fa-history"></i> Bitácora de Usuario</h2>
-        <a href="{{ url_for('dashboard') }}" class="btn btn-primary"><i class="fas fa-arrow-left"></i> Volver al Dashboard</a>
-    </div>
+        /* ========== TEMAS PASTEL ========== */
+        body.theme-rosa { --renaven-azul-fuerte: #fbc4d5; --renaven-azul-cielo: #fce4ec; --renaven-blanco: #fef9f0; --renaven-gris-fondo: #fdf6f8; --renaven-borde: #fbc4d5; }
+        body.theme-rosa .sidebar { background: #fdd0b5; border-right-color: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link.active { background: #fbc4d5; }
+        body.theme-rosa .sidebar .nav-link:hover { background: #fce4ec; }
+        body.theme-rosa .card-header { background: #fbc4d5 !important; }
+        body.theme-rosa .user-badge { background: #fbc4d5 !important; }
+        body.theme-rosa .btn-primary, body.theme-rosa .btn-dark { background: #fbc4d5 !important; }
+        body.theme-rosa .btn-primary:hover, body.theme-rosa .btn-dark:hover { background: #fdd0b5 !important; }
+        body.theme-rosa .table-dark { background: #fbc4d5 !important; }
+        body.theme-rosa .table-dark th { border-color: #fdd0b5; }
+        body.theme-rosa .badge-custom { background: #fbc4d5 !important; color: #000; }
 
-    <div class="card shadow-sm">
-        <div class="card-header">
-            <i class="fas fa-list"></i> Historial de Actividad (Últimos 500 registros)
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped mb-0">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Fecha y Hora</th>
-                            <th>Usuario</th>
-                            <th>Acción</th>
-                            <th>Detalles</th>
-                            <th>IP</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for log in logs %}
-                        <tr>
-                            <td>{{ log.id }}</td>
-                            <td>{{ log.date | datetimeformat('%d/%m/%Y %H:%M:%S') if log.date else 'N/A' }}</td>
-                            <td class="fw-bold">{{ log.username }}</td>
-                            <td>
-                                {% set accion = log.action | upper %}
-                                {% if 'LOGIN' in accion or 'LOGOUT' in accion %}
-                                    <span class="badge bg-success">{{ log.action }}</span>
-                                {% elif 'SALE' in accion %}
-                                    <span class="badge bg-primary">{{ log.action }}</span>
-                                {% elif 'DELETE' in accion %}
-                                    <span class="badge bg-danger">{{ log.action }}</span>
-                                {% elif 'EDIT' in accion or 'UPDATE' in accion %}
-                                    <span class="badge bg-warning text-dark">{{ log.action }}</span>
-                                {% elif 'CAJA' in accion or 'CLOSURE' in accion or 'BALANCE' in accion %}
-                                    <span class="badge bg-info text-dark">{{ log.action }}</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">{{ log.action }}</span>
-                                {% endif %}
-                            </td>
-                            <td><small>{{ log.details }}</small></td>
-                            <td><small class="text-muted">{{ log.ip_address }}</small></td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="6" class="text-center py-4">No hay registros en la bitácora.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        body.theme-celeste { --renaven-azul-fuerte: #b5d8eb; --renaven-azul-cielo: #d6ecf5; --renaven-blanco: #f9fdff; --renaven-gris-fondo: #f4faff; --renaven-borde: #b5d8eb; }
+        body.theme-celeste .sidebar { background: #a8d0e6; border-right-color: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link.active { background: #b5d8eb; }
+        body.theme-celeste .sidebar .nav-link:hover { background: #d6ecf5; }
+        body.theme-celeste .card-header { background: #b5d8eb !important; }
+        body.theme-celeste .user-badge { background: #b5d8eb !important; }
+        body.theme-celeste .btn-primary, body.theme-celeste .btn-dark { background: #b5d8eb !important; }
+        body.theme-celeste .btn-primary:hover, body.theme-celeste .btn-dark:hover { background: #a8d0e6 !important; }
+        body.theme-celeste .table-dark { background: #b5d8eb !important; }
+        body.theme-celeste .table-dark th { border-color: #a8d0e6; }
+        body.theme-celeste .badge-custom { background: #b5d8eb !important; color: #000; }
+
+        body.theme-menta { --renaven-azul-fuerte: #b5e6c3; --renaven-azul-cielo: #d8f0e0; --renaven-blanco: #f6fcf8; --renaven-gris-fondo: #f2faf5; --renaven-borde: #b5e6c3; }
+        body.theme-menta .sidebar { background: #a8dbb8; border-right-color: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link.active { background: #b5e6c3; }
+        body.theme-menta .sidebar .nav-link:hover { background: #d8f0e0; }
+        body.theme-menta .card-header { background: #b5e6c3 !important; }
+        body.theme-menta .user-badge { background: #b5e6c3 !important; }
+        body.theme-menta .btn-primary, body.theme-menta .btn-dark { background: #b5e6c3 !important; }
+        body.theme-menta .btn-primary:hover, body.theme-menta .btn-dark:hover { background: #a8dbb8 !important; }
+        body.theme-menta .table-dark { background: #b5e6c3 !important; }
+        body.theme-menta .table-dark th { border-color: #a8dbb8; }
+        body.theme-menta .badge-custom { background: #b5e6c3 !important; color: #000; }
+
+        body.theme-amarillo { --renaven-azul-fuerte: #f9e7b2; --renaven-azul-cielo: #fdf3d5; --renaven-blanco: #fffef9; --renaven-gris-fondo: #fefcf5; --renaven-borde: #f9e7b2; }
+        body.theme-amarillo .sidebar { background: #f5dc9a; border-right-color: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link.active { background: #f9e7b2; }
+        body.theme-amarillo .sidebar .nav-link:hover { background: #fdf3d5; }
+        body.theme-amarillo .card-header { background: #f9e7b2 !important; }
+        body.theme-amarillo .user-badge { background: #f9e7b2 !important; }
+        body.theme-amarillo .btn-primary, body.theme-amarillo .btn-dark { background: #f9e7b2 !important; }
+        body.theme-amarillo .btn-primary:hover, body.theme-amarillo .btn-dark:hover { background: #f5dc9a !important; }
+        body.theme-amarillo .table-dark { background: #f9e7b2 !important; }
+        body.theme-amarillo .table-dark th { border-color: #f5dc9a; }
+        body.theme-amarillo .badge-custom { background: #f9e7b2 !important; color: #000; }
+
+        body.theme-lila { --renaven-azul-fuerte: #d4c4f0; --renaven-azul-cielo: #e8defa; --renaven-blanco: #fcfaff; --renaven-gris-fondo: #f8f5fe; --renaven-borde: #d4c4f0; }
+        body.theme-lila .sidebar { background: #c9b7e8; border-right-color: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link.active { background: #d4c4f0; }
+        body.theme-lila .sidebar .nav-link:hover { background: #e8defa; }
+        body.theme-lila .card-header { background: #d4c4f0 !important; }
+        body.theme-lila .user-badge { background: #d4c4f0 !important; }
+        body.theme-lila .btn-primary, body.theme-lila .btn-dark { background: #d4c4f0 !important; }
+        body.theme-lila .btn-primary:hover, body.theme-lila .btn-dark:hover { background: #c9b7e8 !important; }
+        body.theme-lila .table-dark { background: #d4c4f0 !important; }
+        body.theme-lila .table-dark th { border-color: #c9b7e8; }
+        body.theme-lila .badge-custom { background: #d4c4f0 !important; color: #000; }
+
+        body.theme-durazno { --renaven-azul-fuerte: #fdd0b5; --renaven-azul-cielo: #fee5d0; --renaven-blanco: #fffcf9; --renaven-gris-fondo: #fef8f3; --renaven-borde: #fdd0b5; }
+        body.theme-durazno .sidebar { background: #f5c2a4; border-right-color: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link.active { background: #fdd0b5; }
+        body.theme-durazno .sidebar .nav-link:hover { background: #fee5d0; }
+        body.theme-durazno .card-header { background: #fdd0b5 !important; }
+        body.theme-durazno .user-badge { background: #fdd0b5 !important; }
+        body.theme-durazno .btn-primary, body.theme-durazno .btn-dark { background: #fdd0b5 !important; }
+        body.theme-durazno .btn-primary:hover, body.theme-durazno .btn-dark:hover { background: #f5c2a4 !important; }
+        body.theme-durazno .table-dark { background: #fdd0b5 !important; }
+        body.theme-durazno .table-dark th { border-color: #f5c2a4; }
+        body.theme-durazno .badge-custom { background: #fdd0b5 !important; color: #000; }
+
+        /* ========== RESET Y BASE ========== */
+        *:not([class*="fa-"]) { font-weight: bold !important; }
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] { font-weight: 400 !important; }
+        .fas, .fa-solid { font-weight: 900 !important; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--renaven-gris-fondo);
+            font-family: Arial, sans-serif;
+            overflow-x: hidden;
+            color: var(--renaven-texto);
+            font-size: 13px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        *:focus { outline: 3px solid #FFD700 !important; outline-offset: 2px !important; }
+
+        .logo-circle { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--renaven-azul-cielo); box-shadow: 0 2px 8px rgba(0,0,0,0.10); transition: all 0.3s ease; background: var(--renaven-blanco); display: block; margin-left: auto; margin-right: auto; }
+        .logo-circle:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+
+        /* ========== SIDEBAR ========== */
+        .sidebar { min-height: 100vh; background: var(--renaven-azul-fuerte); border-right: 2px solid var(--renaven-azul-cielo); box-shadow: 2px 0 15px rgba(0,0,0,0.04); transition: background 0.3s, border-color 0.3s; }
+        .sidebar .nav-link { margin: 5px 0; border-radius: 40px; transition: var(--transition-base); padding: 8px 16px; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; color: #000 !important; }
+        .sidebar .nav-link i { color: #000 !important; }
+        .sidebar .nav-link:hover { background: var(--renaven-azul-cielo); transform: translateX(6px); color: #000 !important; }
+        .sidebar .nav-link.active { background: var(--renaven-azul-cielo); box-shadow: 0 6px 14px rgba(0,0,0,0.08); color: #000 !important; }
+        .sidebar .nav-link.active i { color: #000 !important; }
+        .sidebar-logo { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; border: 3px solid var(--renaven-azul-cielo); background: var(--renaven-blanco); display: block; margin-left: auto; margin-right: auto; }
+        .sidebar h5, .sidebar small { color: #000 !important; }
+        .sidebar hr { border-color: var(--renaven-azul-cielo); }
+
+        /* ========== CARDS ========== */
+        .card { border: 1px solid var(--renaven-azul-cielo) !important; border-radius: 20px; background: var(--renaven-blanco); box-shadow: 0 8px 20px -10px rgba(0,0,0,0.06); transition: all 0.2s ease; color: #000 !important; }
+        .card-header { background: var(--renaven-azul-fuerte) !important; border: none; border-radius: 20px 20px 0 0 !important; padding: 12px 20px; transition: background 0.3s; }
+        .card-header h4, .card-header h5, .card-header h6 { color: #000 !important; font-size: 1rem; }
+        .card-header i { color: #000 !important; }
+
+        .btn-primary, .btn-dark { background: var(--renaven-azul-fuerte) !important; border: none !important; border-radius: 50px !important; padding: 8px 18px !important; font-weight: 600; font-size: 0.85rem; transition: all 0.3s ease; color: #000 !important; }
+        .btn-primary:hover, .btn-dark:hover { background: var(--renaven-azul-cielo) !important; color: #000 !important; transform: translateY(-2px); }
+
+        .user-badge { background: var(--renaven-azul-fuerte) !important; padding: 5px 14px !important; font-size: 1rem !important; border-radius: 50px !important; font-weight: 500 !important; box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important; color: #000 !important; border: 1px solid var(--renaven-azul-cielo); }
+        .user-badge i { font-size: 0.8rem; margin-right: 4px; color: #000 !important; }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--renaven-gris-fondo); }
+        ::-webkit-scrollbar-thumb { background: var(--renaven-azul-cielo); border-radius: 10px; }
+        hr { border-color: var(--renaven-azul-cielo); }
+
+        .table { background: var(--renaven-blanco); border-radius: 10px; overflow: hidden; color: #000 !important; }
+        .table-dark { background: var(--renaven-azul-fuerte) !important; }
+        .table-dark th { color: #000 !important; border-color: var(--renaven-azul-cielo) !important; }
+        
+        .badge-login { background: #28a745; color: white; }
+        .badge-sale { background: #007bff; color: white; }
+        .badge-delete { background: #dc3545; color: white; }
+        .badge-edit { background: #ffc107; color: black; }
+        .badge-cash { background: #17a2b8; color: white; }
+
+        @media (max-width: 768px) {
+            .sidebar { min-height: auto; margin-bottom: 1rem; }
+            .logo-circle, .sidebar-logo { width: 50px; height: 50px; }
+            .user-badge { padding: 4px 10px !important; font-size: 0.7rem !important; }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <!-- SIDEBAR (Menú lateral idéntico al Dashboard) -->
+            <div class="col-md-2 p-0 sidebar">
+                <div class="text-center py-4 px-2">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/70x70?text=R'">
+                    <h5 class="mt-2 fw-bold" style="font-size: 1rem;">RENAVEN</h5>
+                    <small style="font-size: 0.7rem;">{{ session.get('role', 'Administrador') }}</small>
+                </div>
+                <nav class="nav flex-column px-3 pb-4">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i> <span>Dashboard</span></a>
+                    <a class="nav-link" href="{{ url_for('nota_entrega') }}"><i class="fas fa-shopping-cart me-2"></i> <span>Nota de Entrega</span></a>
+                    <a class="nav-link" href="{{ url_for('inventory') }}"><i class="fas fa-boxes me-2"></i> <span>Inventario</span></a>
+                    <a class="nav-link" href="{{ url_for('cash_closure') }}"><i class="fas fa-chart-line me-2"></i> <span>Cierre Diario</span></a>
+                    <a class="nav-link" href="{{ url_for('ventas_mes') }}"><i class="fas fa-calendar-alt me-2"></i> <span>Ventas del Mes</span></a>
+                    <a class="nav-link" href="{{ url_for('monthly_profit') }}"><i class="fas fa-chart-pie me-2"></i> <span>Ganancias</span></a>
+                    <a class="nav-link" href="{{ url_for('cash_closure') }}"><i class="fas fa-cash-register me-2"></i> <span>Cierre de Caja</span></a>
+                    <a class="nav-link" href="{{ url_for('opening_balance') }}"><i class="fas fa-money-bill-wave me-2"></i> <span>Apertura de Caja</span></a>
+                    <a class="nav-link" href="{{ url_for('historial_caja') }}"><i class="fas fa-wallet me-2"></i> <span>Historial de Caja</span></a>
+                    <a class="nav-link" href="{{ url_for('historial_devoluciones') }}"><i class="fas fa-undo-alt me-2"></i> <span>Devoluciones</span></a>
+                    <a class="nav-link" href="{{ url_for('historial_facturacion') }}"><i class="fas fa-file-invoice me-2"></i> <span>Historial Notas</span></a>
+                    {% if session.get('role') == 'Dueño' %}
+                    <hr>
+                    <a class="nav-link" href="{{ url_for('manage_roles') }}"><i class="fas fa-users-cog me-2"></i> <span>Roles</span></a>
+                    <a class="nav-link" href="{{ url_for('manage_users') }}"><i class="fas fa-user-plus me-2"></i> <span>Usuarios</span></a>
+                    <a class="nav-link active" href="{{ url_for('bitacora') }}"><i class="fas fa-history me-2"></i> <span>Bitácora</span></a>
+                    <a class="nav-link" href="{{ url_for('exchange_rate') }}"><i class="fas fa-dollar-sign me-2"></i> <span>Tasa</span></a>
+                    {% endif %}
+                    <hr>
+                    <a class="nav-link" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i> <span>Salir</span></a>
+                </nav>
+            </div>
+
+            <!-- CONTENIDO PRINCIPAL -->
+            <div class="col-md-10 p-md-4 p-3" id="main-content">
+                <div class="top-bar d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="logo-circle">
+                        <h1 class="m-0 d-flex align-items-center gap-2 fs-4">
+                            <i class="fas fa-history"></i>
+                            <span>Bitácora de Usuario</span>
+                        </h1>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <!-- SOLO EL BADGE DE USUARIO (SIN ACCESIBILIDAD) -->
+                        <div class="user-badge shadow-sm">
+                            <i class="fas fa-user-circle"></i>
+                            <strong>{{ session.get('username', 'Invitado') }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fs-5 fw-bold">Historial de Actividad (Últimos 500 registros)</h2>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary fw-bold"><i class="fas fa-arrow-left"></i> Volver al Dashboard</a>
+                </div>
+
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Fecha y Hora</th>
+                                        <th>Usuario</th>
+                                        <th>Acción</th>
+                                        <th>Detalles</th>
+                                        <th>IP</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in logs %}
+                                    <tr>
+                                        <td>{{ log.id }}</td>
+                                        <td>{{ log.date | datetimeformat('%d/%m/%Y %H:%M:%S') if log.date else 'N/A' }}</td>
+                                        <td class="fw-bold">{{ log.username }}</td>
+                                        <td>
+                                            {% set accion = log.action | upper %}
+                                            {% if 'LOGIN' in accion or 'LOGOUT' in accion %}
+                                                <span class="badge badge-login">{{ log.action }}</span>
+                                            {% elif 'SALE' in accion %}
+                                                <span class="badge badge-sale">{{ log.action }}</span>
+                                            {% elif 'DELETE' in accion %}
+                                                <span class="badge badge-delete">{{ log.action }}</span>
+                                            {% elif 'EDIT' in accion or 'UPDATE' in accion %}
+                                                <span class="badge badge-edit">{{ log.action }}</span>
+                                            {% elif 'CAJA' in accion or 'CLOSURE' in accion or 'BALANCE' in accion %}
+                                                <span class="badge badge-cash">{{ log.action }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ log.action }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><small>{{ log.details }}</small></td>
+                                        <td><small class="text-muted">{{ log.ip_address }}</small></td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4">No hay registros en la bitácora.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
+
+    <!-- SCRIPT PARA LEER EL TEMA GUARDADO (SIN BOTONES DE ACCESIBILIDAD) -->
+    <script>
+        (function() {
+            var savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                document.body.classList.add(savedTheme);
+                document.documentElement.classList.add(savedTheme);
+            }
+            var savedBg = localStorage.getItem('backgroundMode');
+            if (savedBg === 'black') document.body.classList.add('bg-black-solid');
+            if (savedBg === 'white') document.body.classList.add('bg-white-solid');
+            var savedFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            document.body.style.fontSize = (13 * savedFontSize / 100) + 'px';
+            document.documentElement.style.fontSize = (13 * savedFontSize / 100) + 'px';
+        })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
