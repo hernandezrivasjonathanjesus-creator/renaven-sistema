@@ -158,7 +158,7 @@ DB_CONFIG = {
     'user': 'renaven_db_user',
     'password': 'EkVMqTsSuFqsoEjltgtLx6yBGmFVVEGY',
     'connect_timeout': 30,
-    'sslmode': 'disable',  
+    'sslmode': 'disable',
 }
 
 connection_pool = None
@@ -2678,6 +2678,7 @@ def presupuesto():
 @app.route('/presupuesto', methods=['POST'])
 def presupuesto_route():
     return presupuesto()
+
 # ==================== APERTURA DE CAJA ====================
 @app.route('/opening_balance', methods=['GET', 'POST'])
 @login_required
@@ -2748,6 +2749,7 @@ def opening_balance():
 @login_required
 def cash_closure():
     return redirect(url_for('daily_closure'))
+
 # ==================== REPORTE UNIFICADO ====================
 @app.route('/daily_closure', methods=['GET', 'POST'])
 @login_required
@@ -2769,12 +2771,21 @@ def daily_closure():
         if not password:
             flash('[ERROR] Se requiere contraseña para cerrar caja', 'danger')
             return redirect(url_for('daily_closure'))
-        autorizado = execute_query(
-            "SELECT * FROM users WHERE role IN ('Dueño', 'Supervisor')", fetch_one=True
+        # --- INICIO DE LA CORRECCIÓN ---
+        autorizados = execute_query(
+            "SELECT * FROM users WHERE role IN ('Dueño', 'Supervisor')", fetch_all=True
         )
-        if not autorizado or not bcrypt.checkpw(password.encode(), autorizado['password'].encode()):
+        autorizado = None
+        if autorizados:
+            for user in autorizados:
+                if bcrypt.checkpw(password.encode(), user['password'].encode()):
+                    autorizado = user
+                    break
+        if not autorizado:
             flash('Contraseña incorrecta. Solo Dueño o Supervisor pueden cerrar caja', 'danger')
             return redirect(url_for('daily_closure'))
+        # --- FIN DE LA CORRECCIÓN ---
+        
         rate = get_cached_exchange_rate()
         opening_row = execute_query("SELECT value FROM config WHERE key_name = 'opening_balance'", fetch_one=True)
         opening_balance = float(opening_row['value']) if opening_row else 0
@@ -2922,12 +2933,15 @@ def daily_closure():
         saldo = {'bs': 0, 'usd': 0}
         opening_balance_cero = total_bs_cero = total_usd_cero = 0
         total_efectivo_bs_cero = total_efectivo_usd_cero = total_zelle_cero = total_pago_movil_cero = total_transferencia_cero = total_tarjeta_cero = 0
+    
     return render_template('daily_closure_unified.html',
-        sales=sales, total_ventas=len(sales), total_usd=total_usd, total_bs=total_bs,
-        total_efectivo_bs=total_efectivo_bs, total_efectivo_usd=total_efectivo_usd,
-        total_zelle=total_zelle, total_pago_movil=total_pago_movil,
-        total_transferencia=total_transferencia, total_tarjeta=total_tarjeta,
-        opening_balance=opening_balance, cierre_realizado=cierre_realizado,
+        sales=sales if not cierre_realizado else [], 
+        total_ventas=len(sales) if not cierre_realizado else 0, 
+        total_usd=total_usd_cero, total_bs=total_bs_cero,
+        total_efectivo_bs=total_efectivo_bs_cero, total_efectivo_usd=total_efectivo_usd_cero,
+        total_zelle=total_zelle_cero, total_pago_movil=total_pago_movil_cero,
+        total_transferencia=total_transferencia_cero, total_tarjeta=total_tarjeta_cero,
+        opening_balance=opening_balance_cero, cierre_realizado=cierre_realizado,
         cashier_name=cashier_name, rate=rate, saldo_bs=saldo['bs'], saldo_usd=saldo['usd'],
         company=company, today=today, opening_balance_cero=opening_balance_cero,
         total_bs_cero=total_bs_cero, total_usd_cero=total_usd_cero,
