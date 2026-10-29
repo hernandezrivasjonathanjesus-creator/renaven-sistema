@@ -556,10 +556,10 @@
         <div class="invoice-header">
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
                 <div style="width: 80px;">
-                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN - Sistema de Facturación" class="company-logo" onerror="this.src='https://via.placeholder.com/65x65?text=R'">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN - Sistema de Nota de Entrega" class="company-logo" onerror="this.src='https://via.placeholder.com/65x65?text=R'">
                 </div>
                 <div style="text-align: center; flex: 1;">
-                    <div class="invoice-title">FACTURA</div>
+                    <div class="invoice-title">NOTA DE ENTREGA</div>
                     <div class="invoice-subtitle">N° {{ "{:04d}".format(invoice_number|int) if invoice_number else "0000" }}</div>
                 </div>
                 <div style="text-align: right; width: 130px;">
@@ -601,7 +601,7 @@
 
         <!-- TABLA DE PRODUCTOS -->
         <div class="table-responsive">
-            <table class="table" aria-label="Tabla de productos de la factura">
+            <table class="table" aria-label="Tabla de productos de la nota de entrega">
                 <thead>
                     <tr>
                         <th scope="col" style="width: 10%">Cant</th>
@@ -624,7 +624,7 @@
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="5" class="text-center">No hay productos en esta factura</td>
+                            <td colspan="5" class="text-center">No hay productos en esta nota de entrega</td>
                         </tr>
                     {% endif %}
                 </tbody>
@@ -785,10 +785,10 @@
 
         <!-- BOTONES (solo pantalla) -->
         <div class="text-center no-print" style="padding: 15px;">
-            <button class="btn btn-primary" onclick="window.print()" aria-label="Imprimir factura">
-                🖨️ Imprimir Factura
+            <button class="btn btn-primary" onclick="window.print()" aria-label="Imprimir nota de entrega">
+                🖨️ Imprimir Nota
             </button>
-            <a href="{{ url_for('facturacion') }}" class="btn btn-success" style="text-decoration: none;" aria-label="Ir a nueva venta">
+            <a href="{{ url_for('nota_entrega') }}" class="btn btn-success" style="text-decoration: none;" aria-label="Ir a nueva venta">
                 ➕ Nueva Venta
             </a>
             <a href="{{ url_for('dashboard') }}" class="btn btn-secondary" style="text-decoration: none;" aria-label="Ir al Dashboard">
