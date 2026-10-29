@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Historial de nota_entrega - RENAVEN</title>
+    <title>Historial de Nota de Entrega - RENAVEN</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -505,7 +505,7 @@
             <div class="col-md-2 sidebar p-2 no-print">
                 <div class="text-center mb-3">
                     <img src="{{ url_for('static', filename='img/renaven.jpeg') }}"
-                        alt="Logo RENAVEN - Sistema de Facturación" class="sidebar-logo"
+                        alt="Logo RENAVEN - Sistema de Nota de Entrega" class="sidebar-logo"
                         onerror="this.src='https://via.placeholder.com/60x60?text=R'">
                     <h6 class="mt-1">RENAVEN</h6>
                     <small>{{ session.get('role', 'Usuario') }}</small>
@@ -513,8 +513,8 @@
                 <nav class="nav flex-column" aria-label="Menú principal">
                     <a class="nav-link" href="{{ url_for('dashboard') }}" aria-label="Ir al Dashboard"><i
                             class="fas fa-tachometer-alt me-2" aria-hidden="true"></i> Dashboard</a>
-                    <a class="nav-link" href="{{ url_for('facturacion') }}" aria-label="Ir a Facturación"><i
-                            class="fas fa-shopping-cart me-2" aria-hidden="true"></i> Facturación</a>
+                    <a class="nav-link" href="{{ url_for('nota_entrega') }}" aria-label="Ir a Nota de Entrega"><i
+                            class="fas fa-shopping-cart me-2" aria-hidden="true"></i> Nota de Entrega</a>
                     <a class="nav-link" href="{{ url_for('inventory') }}" aria-label="Ir a Inventario"><i
                             class="fas fa-boxes me-2" aria-hidden="true"></i> Inventario</a>
                     <a class="nav-link" href="{{ url_for('cash_closure') }}" aria-label="Ir a Cierre de Caja"><i
@@ -525,8 +525,8 @@
                         aria-label="Ver Historial de Devoluciones"><i class="fas fa-undo-alt me-2"
                             aria-hidden="true"></i> Devoluciones</a>
                     <a class="nav-link active" href="{{ url_for('historial_facturacion') }}"
-                        aria-label="Ver Historial de Facturación"><i class="fas fa-file-invoice me-2"
-                            aria-hidden="true"></i> Historial Facturación</a>
+                        aria-label="Ver Historial de Nota de Entrega"><i class="fas fa-file-invoice me-2"
+                            aria-hidden="true"></i> Historial Notas</a>
                     <hr>
                     <a class="nav-link" href="{{ url_for('logout') }}" aria-label="Cerrar Sesión"><i
                             class="fas fa-sign-out-alt me-2" aria-hidden="true"></i> Salir</a>
@@ -536,7 +536,7 @@
             <!-- CONTENIDO PRINCIPAL -->
             <div class="col-md-10 p-3">
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-                    <h1 class="fs-2"><i class="fas fa-file-invoice" aria-hidden="true"></i> Historial de Facturación
+                    <h1 class="fs-2"><i class="fas fa-file-invoice" aria-hidden="true"></i> Historial de Nota de Entrega
                     </h1>
                     <div class="no-print">
                         <i class="fas fa-calendar-alt" aria-hidden="true"></i>
@@ -549,7 +549,7 @@
                     <div class="col-md-4 col-sm-6 mb-2">
                         <div class="summary-card">
                             <i class="fas fa-receipt fa-2x" aria-hidden="true"></i>
-                            <p>TOTAL FACTURAS</p>
+                            <p>TOTAL NOTAS</p>
                             <h3 id="totalFacturas" aria-live="polite">0</h3>
                         </div>
                     </div>
@@ -574,8 +574,8 @@
                     <div class="row align-items-end">
                         <div class="col-md-3 mb-2">
                             <label for="searchInput"><i class="fas fa-search" aria-hidden="true"></i> Buscar:</label>
-                            <input type="text" id="searchInput" class="form-control" placeholder="Factura, cliente..."
-                                aria-label="Buscar facturas">
+                            <input type="text" id="searchInput" class="form-control" placeholder="Nota, cliente..."
+                                aria-label="Buscar notas de entrega">
                         </div>
                         <div class="col-md-3 mb-2">
                             <label for="fechaDesde"><i class="fas fa-calendar-alt" aria-hidden="true"></i>
@@ -591,7 +591,7 @@
                             <label>&nbsp;</label>
                             <div class="d-flex gap-2">
                                 <button class="btn-buscar w-100" onclick="filtrarTabla()"
-                                    aria-label="Filtrar facturas por criterios">
+                                    aria-label="Filtrar notas de entrega por criterios">
                                     <i class="fas fa-filter" aria-hidden="true"></i> Filtrar
                                 </button>
                                 <button class="btn-limpiar" onclick="limpiarFiltros()"
@@ -603,12 +603,12 @@
                     </div>
                 </div>
 
-                <!-- TABLA DE FACTURAS -->
+                <!-- TABLA DE NOTAS -->
                 <div class="table-responsive">
-                    <table class="table table-custom" aria-label="Tabla de facturas">
+                    <table class="table table-custom" aria-label="Tabla de notas de entrega">
                         <thead>
                             <tr>
-                                <th scope="col">N° Factura</th>
+                                <th scope="col">N° Nota</th>
                                 <th scope="col">Fecha</th>
                                 <th scope="col">Cliente</th>
                                 <th scope="col">Subtotal</th>
@@ -666,7 +666,7 @@
         });
 
         // ========================================================================
-        // FUNCIONALIDAD DE LA PÁGINA (SIN CAMBIOS EN LA LÓGICA)
+        // FUNCIONALIDAD DE LA PÁGINA
         // ========================================================================
 
         let salesData = [];
@@ -681,7 +681,7 @@
                 const data = await response.json();
                 if (Array.isArray(data) && !data.error) {
                     salesData = data;
-                    console.log('Facturas cargadas:', salesData.length);
+                    console.log('Notas cargadas:', salesData.length);
                     renderizarTabla();
                     actualizarTotales();
                 } else {
@@ -689,7 +689,7 @@
                     mostrarMensajeVacio();
                 }
             } catch (error) {
-                console.error('Error al cargar facturas:', error);
+                console.error('Error al cargar notas:', error);
                 mostrarMensajeVacio();
             }
         }
@@ -719,7 +719,7 @@
 
                 html += `
                     <tr data-fecha="${fecha}" data-cliente="${clientName}" data-factura="${sale.invoice_number}">
-                        <td class="text-center"><span class="badge-venta" aria-label="Factura número ${invoiceNum}">N° ${invoiceNum}</span></td>
+                        <td class="text-center"><span class="badge-venta" aria-label="Nota número ${invoiceNum}">N° ${invoiceNum}</span></td>
                         <td class="text-center">
                             ${fecha}<br>
                             <small>${hora}</small>
@@ -736,10 +736,10 @@
                             <span class="badge-metodo" aria-label="Método de pago: ${paymentMethod}">${paymentMethod}</span>
                         </td>
                         <td class="text-center no-print">
-                            <button class="btn-ver" onclick="verDetalleFactura(${sale.invoice_number})" aria-label="Ver detalle de factura N° ${invoiceNum}">
+                            <button class="btn-ver" onclick="verDetalleFactura(${sale.invoice_number})" aria-label="Ver detalle de nota N° ${invoiceNum}">
                                 <i class="fas fa-eye" aria-hidden="true"></i> Ver
                             </button>
-                            <button class="btn-imprimir" onclick="imprimirFactura(${sale.invoice_number})" aria-label="Imprimir factura N° ${invoiceNum}">
+                            <button class="btn-imprimir" onclick="imprimirFactura(${sale.invoice_number})" aria-label="Imprimir nota N° ${invoiceNum}">
                                 <i class="fas fa-print" aria-hidden="true"></i> Imprimir
                             </button>
                         </td>
@@ -756,8 +756,8 @@
                     <tr id="sinRegistros">
                         <td colspan="9" class="sin-resultados">
                             <i class="fas fa-inbox fa-3x" aria-hidden="true"></i>
-                            <p class="mt-2">No hay facturas registradas</p>
-                            <small>Las facturas aparecerán aquí después de realizar ventas</small>
+                            <p class="mt-2">No hay notas registradas</p>
+                            <small>Las notas aparecerán aquí después de realizar ventas</small>
                         </td>
                     </tr>
                 `;
@@ -828,7 +828,7 @@
                 let tbody = document.getElementById('tablaFacturas');
                 let tr = document.createElement('tr');
                 tr.id = 'mensajeNoResultados';
-                tr.innerHTML = '<td colspan="9" class="sin-resultados"><i class="fas fa-search fa-3x" aria-hidden="true"></i><p class="mt-2">No se encontraron facturas con los filtros aplicados</p></td>';
+                tr.innerHTML = '<td colspan="9" class="sin-resultados"><i class="fas fa-search fa-3x" aria-hidden="true"></i><p class="mt-2">No se encontraron notas con los filtros aplicados</p></td>';
                 tbody.appendChild(tr);
             } else if (mensajeNoResultados && visibles > 0) {
                 mensajeNoResultados.remove();
@@ -853,9 +853,9 @@
                 } else {
                     productosLista = 'No hay productos detallados';
                 }
-                alert(`📄 FACTURA N° ${invoiceNumber}\n━━━━━━━━━━━━━━━━━━━━\n📅 Fecha: ${factura.date?.slice(0, 10) || 'N/A'}\n👤 Cliente: ${factura.client_name}\n🆔 C.I: ${factura.client_id || 'N/A'}\n━━━━━━━━━━━━━━━━━━━━\n📦 PRODUCTOS:\n${productosLista}\n━━━━━━━━━━━━━━━━━━━━\n💰 Subtotal: $${factura.subtotal}\n🧾 IVA (16%): $${factura.tax}\n💵 TOTAL USD: $${factura.total_usd}\n💴 TOTAL Bs: Bs. ${factura.total_bs}\n💳 Pago: ${factura.payment_method}`);
+                alert(`📄 NOTA DE ENTREGA N° ${invoiceNumber}\n━━━━━━━━━━━━━━━━━━━━\n📅 Fecha: ${factura.date?.slice(0, 10) || 'N/A'}\n👤 Cliente: ${factura.client_name}\n🆔 C.I: ${factura.client_id || 'N/A'}\n━━━━━━━━━━━━━━━━━━━━\n📦 PRODUCTOS:\n${productosLista}\n━━━━━━━━━━━━━━━━━━━━\n💰 Subtotal: $${factura.subtotal}\n🧾 IVA (16%): $${factura.tax}\n💵 TOTAL USD: $${factura.total_usd}\n💴 TOTAL Bs: Bs. ${factura.total_bs}\n💳 Pago: ${factura.payment_method}`);
             } else {
-                alert('❌ No se pudo cargar el detalle de la factura');
+                alert('❌ No se pudo cargar el detalle de la nota');
             }
         }
 
