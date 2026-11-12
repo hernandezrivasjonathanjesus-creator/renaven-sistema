@@ -1,0 +1,21 @@
+{
+  "name": "RENAVEN POS",
+  "short_name": "RENAVEN",
+  "description": "Sistema de Nota de Entrega y POS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fcffff",
+  "theme_color": "#84b6f4",
+  "icons": [
+    {
+      "src": "/static/icono-renaven.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icono-renaven.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

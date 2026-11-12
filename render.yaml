@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: renaven
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: DB_HOST
+        value: your-mysql-host.render.com
+      - key: DB_USER
+        value: renaven_user
+      - key: DB_PASSWORD
+        value: your_password
+      - key: DB_NAME
+        value: renaven_db
+      - key: SECRET_KEY
+        generateValue: true

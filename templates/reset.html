@@ -1,0 +1,693 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    /* ========== PALETA PREDETERMINADA (ORIGINAL LOGIN) ========== */
+    :root {
+        --renaven-azul-fuerte: #84b6f4;
+        --renaven-azul-cielo: #c4dafa;
+        --renaven-blanco: #fcffff;
+        --renaven-gris-fondo: #f0f6fe;
+        --renaven-texto: #000000;
+        --renaven-borde: #84b6f4;
+        --renaven-verde: #28a745;
+        --renaven-oro: #FFD700;
+        --shadow-color: rgba(132,182,244,0.2);
+        --transition-base: all 0.25s ease-in-out;
+    }
+
+    /* ========== TEMAS PASTEL INDIVIDUALES (SIN ALTO CONTRASTE) ========== */
+    /* 1. Rosa pastel */
+    body.theme-rosa {
+        --renaven-azul-fuerte: #fbc4d5;
+        --renaven-azul-cielo: #fce4ec;
+        --renaven-blanco: #fef9f0;
+        --renaven-gris-fondo: #fdf6f8;
+        --renaven-borde: #fbc4d5;
+    }
+    body.theme-rosa .reset-header { background: linear-gradient(135deg, #fbc4d5, #fdd0b5) !important; border-bottom-color: #fdd0b5 !important; }
+    body.theme-rosa .reset-card { border-color: #fbc4d5 !important; }
+    body.theme-rosa .btn-reset { background: #fbc4d5 !important; border-color: #fdd0b5 !important; }
+    body.theme-rosa .btn-reset:hover:not(:disabled) { background: #fdd0b5 !important; }
+    body.theme-rosa .input-group-text { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+    body.theme-rosa .input-group-text:hover { background: #fbc4d5 !important; }
+    body.theme-rosa .logo-reset { border-color: #fbc4d5 !important; }
+    body.theme-rosa .form-control-reset:focus { border-color: #fbc4d5; box-shadow: 0 0 0 0.2rem rgba(251,196,213,0.4); }
+
+    /* 2. Celeste pastel */
+    body.theme-celeste {
+        --renaven-azul-fuerte: #b5d8eb;
+        --renaven-azul-cielo: #d6ecf5;
+        --renaven-blanco: #f9fdff;
+        --renaven-gris-fondo: #f4faff;
+        --renaven-borde: #b5d8eb;
+    }
+    body.theme-celeste .reset-header { background: linear-gradient(135deg, #b5d8eb, #a8d0e6) !important; border-bottom-color: #a8d0e6 !important; }
+    body.theme-celeste .reset-card { border-color: #b5d8eb !important; }
+    body.theme-celeste .btn-reset { background: #b5d8eb !important; border-color: #a8d0e6 !important; }
+    body.theme-celeste .btn-reset:hover:not(:disabled) { background: #a8d0e6 !important; }
+    body.theme-celeste .input-group-text { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+    body.theme-celeste .input-group-text:hover { background: #b5d8eb !important; }
+    body.theme-celeste .logo-reset { border-color: #b5d8eb !important; }
+    body.theme-celeste .form-control-reset:focus { border-color: #b5d8eb; box-shadow: 0 0 0 0.2rem rgba(181,216,235,0.4); }
+
+    /* 3. Menta pastel */
+    body.theme-menta {
+        --renaven-azul-fuerte: #b5e6c3;
+        --renaven-azul-cielo: #d8f0e0;
+        --renaven-blanco: #f6fcf8;
+        --renaven-gris-fondo: #f2faf5;
+        --renaven-borde: #b5e6c3;
+    }
+    body.theme-menta .reset-header { background: linear-gradient(135deg, #b5e6c3, #a8dbb8) !important; border-bottom-color: #a8dbb8 !important; }
+    body.theme-menta .reset-card { border-color: #b5e6c3 !important; }
+    body.theme-menta .btn-reset { background: #b5e6c3 !important; border-color: #a8dbb8 !important; }
+    body.theme-menta .btn-reset:hover:not(:disabled) { background: #a8dbb8 !important; }
+    body.theme-menta .input-group-text { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+    body.theme-menta .input-group-text:hover { background: #b5e6c3 !important; }
+    body.theme-menta .logo-reset { border-color: #b5e6c3 !important; }
+    body.theme-menta .form-control-reset:focus { border-color: #b5e6c3; box-shadow: 0 0 0 0.2rem rgba(181,230,195,0.4); }
+
+    /* 4. Amarillo pastel */
+    body.theme-amarillo {
+        --renaven-azul-fuerte: #f9e7b2;
+        --renaven-azul-cielo: #fdf3d5;
+        --renaven-blanco: #fffef9;
+        --renaven-gris-fondo: #fefcf5;
+        --renaven-borde: #f9e7b2;
+    }
+    body.theme-amarillo .reset-header { background: linear-gradient(135deg, #f9e7b2, #f5dc9a) !important; border-bottom-color: #f5dc9a !important; }
+    body.theme-amarillo .reset-card { border-color: #f9e7b2 !important; }
+    body.theme-amarillo .btn-reset { background: #f9e7b2 !important; border-color: #f5dc9a !important; }
+    body.theme-amarillo .btn-reset:hover:not(:disabled) { background: #f5dc9a !important; }
+    body.theme-amarillo .input-group-text { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+    body.theme-amarillo .input-group-text:hover { background: #f9e7b2 !important; }
+    body.theme-amarillo .logo-reset { border-color: #f9e7b2 !important; }
+    body.theme-amarillo .form-control-reset:focus { border-color: #f9e7b2; box-shadow: 0 0 0 0.2rem rgba(249,231,178,0.4); }
+
+    /* 5. Lila pastel */
+    body.theme-lila {
+        --renaven-azul-fuerte: #d4c4f0;
+        --renaven-azul-cielo: #e8defa;
+        --renaven-blanco: #fcfaff;
+        --renaven-gris-fondo: #f8f5fe;
+        --renaven-borde: #d4c4f0;
+    }
+    body.theme-lila .reset-header { background: linear-gradient(135deg, #d4c4f0, #c9b7e8) !important; border-bottom-color: #c9b7e8 !important; }
+    body.theme-lila .reset-card { border-color: #d4c4f0 !important; }
+    body.theme-lila .btn-reset { background: #d4c4f0 !important; border-color: #c9b7e8 !important; }
+    body.theme-lila .btn-reset:hover:not(:disabled) { background: #c9b7e8 !important; }
+    body.theme-lila .input-group-text { background: #e8defa !important; border-color: #d4c4f0 !important; }
+    body.theme-lila .input-group-text:hover { background: #d4c4f0 !important; }
+    body.theme-lila .logo-reset { border-color: #d4c4f0 !important; }
+    body.theme-lila .form-control-reset:focus { border-color: #d4c4f0; box-shadow: 0 0 0 0.2rem rgba(212,196,240,0.4); }
+
+    /* 6. Durazno pastel */
+    body.theme-durazno {
+        --renaven-azul-fuerte: #fdd0b5;
+        --renaven-azul-cielo: #fee5d0;
+        --renaven-blanco: #fffcf9;
+        --renaven-gris-fondo: #fef8f3;
+        --renaven-borde: #fdd0b5;
+    }
+    body.theme-durazno .reset-header { background: linear-gradient(135deg, #fdd0b5, #f5c2a4) !important; border-bottom-color: #f5c2a4 !important; }
+    body.theme-durazno .reset-card { border-color: #fdd0b5 !important; }
+    body.theme-durazno .btn-reset { background: #fdd0b5 !important; border-color: #f5c2a4 !important; }
+    body.theme-durazno .btn-reset:hover:not(:disabled) { background: #f5c2a4 !important; }
+    body.theme-durazno .input-group-text { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+    body.theme-durazno .input-group-text:hover { background: #fdd0b5 !important; }
+    body.theme-durazno .logo-reset { border-color: #fdd0b5 !important; }
+    body.theme-durazno .form-control-reset:focus { border-color: #fdd0b5; box-shadow: 0 0 0 0.2rem rgba(253,208,181,0.4); }
+
+    /* ========== TODAS LAS LETRAS EN NEGRITA (excepto iconos) ========== */
+    *:not([class*="fa-"]) {
+        font-weight: bold !important;
+    }
+    .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+        font-weight: 400 !important;
+    }
+    .fas, .fa-solid {
+        font-weight: 900 !important;
+    }
+
+    /* ========== FONDO CON IMAGEN Y TRANSPARENCIA ========== */
+    body {
+        background-image: url("{{ url_for('static', filename='img/fereteria.jpeg') }}");
+        background-size: cover;
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        min-height: 100vh;
+        position: relative;
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+        color: var(--renaven-texto);
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.4);
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    body.bg-black-solid {
+        background-image: none !important;
+        background-color: #000000 !important;
+    }
+    body.bg-black-solid::before { display: none; }
+
+    body.bg-white-solid {
+        background-image: none !important;
+        background-color: #FFFFFF !important;
+    }
+    body.bg-white-solid::before { display: none; }
+
+    body.bg-image-default {
+        background-image: url("{{ url_for('static', filename='img/fereteria.jpeg') }}") !important;
+        background-size: cover !important;
+        background-position: center center !important;
+        background-repeat: no-repeat !important;
+        background-attachment: fixed !important;
+    }
+    body.bg-image-default::before { display: block; }
+
+    .reset-container {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* ========== NAVEGACIÓN POR TECLADO ========== */
+    *:focus {
+        outline: 3px solid #FFD700 !important;
+        outline-offset: 2px !important;
+    }
+    .skip-link {
+        position: absolute;
+        top: -40px;
+        left: 0;
+        background: var(--renaven-azul-fuerte);
+        color: #000;
+        padding: 8px 16px;
+        z-index: 1000;
+        text-decoration: none;
+        border-radius: 0 0 8px 0;
+        font-weight: bold;
+    }
+    .skip-link:focus {
+        top: 0;
+    }
+
+    /* ===== FORZAR TEXTOS A NEGRO ===== */
+    body, body * {
+        color: var(--renaven-texto) !important;
+    }
+    ::placeholder, input::placeholder, textarea::placeholder {
+        color: #9ca3af !important;
+        opacity: 1;
+    }
+
+    .reset-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .reset-card {
+        border: 2px solid var(--renaven-borde);
+        border-radius: 25px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+        overflow: hidden;
+        transition: transform 0.3s ease;
+        background: rgba(252, 255, 255, 0.85);
+        backdrop-filter: blur(4px);
+    }
+    .reset-card:hover {
+        transform: translateY(-5px);
+    }
+    .reset-header {
+        background: linear-gradient(135deg, var(--renaven-azul-fuerte), var(--renaven-azul-cielo));
+        text-align: center;
+        padding: 35px;
+        border-bottom: 2px solid var(--renaven-borde);
+        transition: background 0.3s, border-color 0.3s;
+    }
+    .logo-reset {
+        width: 90px;
+        height: 90px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 4px solid var(--renaven-azul-cielo);
+        margin-bottom: 15px;
+        background: var(--renaven-blanco);
+        padding: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        transition: transform 0.3s ease;
+    }
+    .logo-reset:hover {
+        transform: scale(1.05);
+    }
+    .reset-header h3 {
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #000 !important;
+    }
+    .reset-header p {
+        opacity: 0.9;
+        color: #000 !important;
+    }
+    .reset-body {
+        padding: 40px;
+        background: rgba(252, 255, 255, 0.7);
+        backdrop-filter: blur(4px);
+    }
+
+    .form-control-reset {
+        border-radius: 50px !important;
+        border: 2px solid var(--renaven-borde);
+        padding: 12px 20px;
+        transition: all 0.3s ease;
+        background: var(--renaven-blanco);
+        color: #000 !important;
+    }
+    .form-control-reset:focus {
+        border-color: var(--renaven-azul-fuerte);
+        box-shadow: 0 0 0 0.2rem rgba(132,182,244,0.25);
+        outline: none;
+    }
+    .form-control-reset.is-valid {
+        border-color: var(--renaven-verde);
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 1rem;
+        padding-right: 2.5rem;
+    }
+    .form-control-reset.is-invalid {
+        border-color: #DC3545;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23DC3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='0.6' fill='%23DC3545' stroke='none'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 1rem;
+        padding-right: 2.5rem;
+    }
+
+    .btn-reset {
+        background: var(--renaven-azul-fuerte);
+        border: 2px solid var(--renaven-borde);
+        border-radius: 50px !important;
+        padding: 12px;
+        font-weight: bold;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        width: 100%;
+        color: #000 !important;
+    }
+    .btn-reset:hover:not(:disabled) {
+        background: var(--renaven-azul-cielo);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        color: #000 !important;
+    }
+    .btn-reset:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .input-group-text {
+        background: var(--renaven-azul-cielo);
+        border: 2px solid var(--renaven-borde);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: #000 !important;
+    }
+    .input-group-text:first-child {
+        border-radius: 50px 0 0 50px !important;
+        border-right: none;
+    }
+    .input-group-text:last-child {
+        border-radius: 0 50px 50px 0 !important;
+        border-left: none;
+    }
+    .input-group-text:hover {
+        background: var(--renaven-azul-fuerte);
+        color: #000 !important;
+    }
+
+    .requirements {
+        list-style: none;
+        padding-left: 0;
+        margin-top: 10px;
+    }
+    .requirements li {
+        font-size: 0.75rem;
+        padding: 4px 0;
+        opacity: 0.7;
+        color: #000 !important;
+    }
+    .requirements li.valid {
+        color: var(--renaven-verde) !important;
+        text-decoration: line-through;
+        opacity: 1;
+    }
+    .requirements li.invalid {
+        color: #DC3545 !important;
+        opacity: 1;
+    }
+
+    .password-strength {
+        height: 5px;
+        margin-top: 10px;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        background-color: var(--renaven-gris-claro);
+        border: 1px solid var(--renaven-borde);
+    }
+    .strength-weak { width: 25%; background: #DC3545; border-radius: 5px; }
+    .strength-medium { width: 50%; background: #fd7e14; border-radius: 5px; }
+    .strength-strong { width: 75%; background: var(--renaven-verde); border-radius: 5px; }
+    .strength-very-strong { width: 100%; background: var(--renaven-verde); border-radius: 5px; }
+
+    .alert {
+        border-radius: 15px;
+        border: 2px solid var(--renaven-borde);
+        margin-bottom: 15px;
+        color: #000 !important;
+    }
+    .alert-success { background: #d4edda; border-left: 5px solid var(--renaven-verde); }
+    .alert-danger { background: #f8d7da; border-left: 5px solid #DC3545; }
+    .alert-warning { background: #fff3e0; border-left: 5px solid var(--renaven-oro); }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .reset-card { animation: fadeInUp 0.6s ease-out; }
+
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #000 !important;
+    }
+    .form-label i {
+        color: var(--renaven-azul-fuerte);
+    }
+    .text-center a {
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        color: var(--renaven-azul-fuerte) !important;
+    }
+    .text-center a:hover {
+        text-decoration: underline;
+        color: var(--renaven-azul-cielo) !important;
+    }
+    #match-message {
+        margin-top: 8px;
+        font-size: 0.75rem;
+        color: #000 !important;
+    }
+    .text-muted { opacity: 0.7; color: #000 !important; }
+    .btn-close { filter: brightness(0.3); }
+    .btn-close:hover { filter: brightness(0.1); }
+
+    @media (max-width: 768px) {
+        .reset-body { padding: 25px; }
+        .logo-reset { width: 70px; height: 70px; }
+        .requirements li { font-size: 0.65rem; }
+    }
+</style>
+
+<!-- ========== SKIP LINK ========== -->
+<a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+<div class="container reset-container" id="main-content" role="main">
+    <div class="col-md-5 col-sm-9">
+        <!-- Mostrar mensajes flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}info-circle{% endif %} me-2" aria-hidden="true"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar mensaje"></button>
+                </div>
+            {% endfor %}
+        {% endwith %}
+
+        <div class="card reset-card">
+            <div class="reset-header">
+                <img src="{{ url_for('static', filename='img/renaven.jpeg') }}"
+                     alt="Logo RENAVEN - Sistema de Facturación"
+                     class="logo-reset"
+                     onerror="this.src='https://via.placeholder.com/90?text=R'">
+                <h1 class="h3"><i class="fas fa-lock" aria-hidden="true"></i> Nueva Contraseña</h1>
+                <p class="mb-0 mt-2">Establece una contraseña segura</p>
+            </div>
+
+            <div class="reset-body">
+                <form method="POST" id="resetForm" aria-label="Formulario para restablecer contraseña">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="token" value="{{ token }}">
+
+                    <!-- Nueva Contraseña -->
+                    <div class="mb-3">
+                        <label for="password" class="form-label"><i class="fas fa-key" aria-hidden="true"></i> Nueva Contraseña</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock" aria-hidden="true"></i></span>
+                            <input type="password" name="password" id="password"
+                                   class="form-control form-control-reset"
+                                   placeholder="Mínimo 16 caracteres" required
+                                   autocomplete="new-password"
+                                   aria-label="Nueva contraseña">
+                            <span class="input-group-text toggle-password" data-target="password" aria-label="Mostrar u ocultar contraseña">
+                                <i class="fas fa-eye" aria-hidden="true"></i>
+                            </span>
+                        </div>
+
+                        <!-- Barra de fortaleza -->
+                        <div class="password-strength" id="passwordStrength" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Fortaleza de la contraseña"></div>
+
+                        <!-- Requisitos -->
+                        <ul class="requirements" aria-label="Requisitos de contraseña">
+                            <li id="req-length"><i class="fas fa-ruler" aria-hidden="true"></i> Mínimo 16 caracteres</li>
+                            <li id="req-number"><i class="fas fa-hashtag" aria-hidden="true"></i> Al menos un número</li>
+                            <li id="req-upper"><i class="fas fa-arrow-up" aria-hidden="true"></i> Al menos una mayúscula</li>
+                            <li id="req-lower"><i class="fas fa-arrow-down" aria-hidden="true"></i> Al menos una minúscula</li>
+                            <li id="req-special"><i class="fas fa-star" aria-hidden="true"></i> Al menos un carácter especial (!@#$%^&*()_+-=[]{}|;:,.<>?/)</li>
+                        </ul>
+                    </div>
+
+                    <!-- Confirmar Contraseña -->
+                    <div class="mb-4">
+                        <label for="confirm" class="form-label"><i class="fas fa-shield-alt" aria-hidden="true"></i> Confirmar Contraseña</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-check-circle" aria-hidden="true"></i></span>
+                            <input type="password" name="confirm" id="confirm"
+                                   class="form-control form-control-reset"
+                                   placeholder="Repite la contraseña" required
+                                   autocomplete="new-password"
+                                   aria-label="Confirmar contraseña">
+                            <span class="input-group-text toggle-password" data-target="confirm" aria-label="Mostrar u ocultar contraseña">
+                                <i class="fas fa-eye" aria-hidden="true"></i>
+                            </span>
+                        </div>
+                        <div id="match-message" class="small mt-1" aria-live="polite"></div>
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="btn btn-reset w-100" disabled aria-label="Actualizar contraseña">
+                        <i class="fas fa-sync-alt me-2" aria-hidden="true"></i> Actualizar Contraseña
+                    </button>
+                </form>
+
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('login') }}" aria-label="Volver al inicio de sesión">
+                        <i class="fas fa-arrow-left me-1" aria-hidden="true"></i> Volver a Iniciar Sesión
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <small class="text-muted">
+                <i class="fas fa-shield-alt" aria-hidden="true"></i> Tu seguridad es importante para nosotros<br>
+                Esta contraseña será utilizada para acceder al sistema de facturación.
+            </small>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== CARGA DE TEMA GUARDADO Y CONFIGURACIÓN DE FUENTE ==========
+    document.addEventListener('DOMContentLoaded', function() {
+        // ---- Temas pastel ----
+        function applyTheme(themeClass) {
+            document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+            if (themeClass) {
+                document.body.classList.add(themeClass);
+            }
+            localStorage.setItem('selectedTheme', themeClass || '');
+        }
+
+        const savedTheme = localStorage.getItem('selectedTheme');
+        if (savedTheme) {
+            applyTheme(savedTheme);
+        }
+
+        // ---- Fondo de pantalla ----
+        const savedBg = localStorage.getItem('backgroundMode');
+        if (savedBg === 'black') {
+            document.body.className = 'bg-black-solid';
+        } else if (savedBg === 'white') {
+            document.body.className = 'bg-white-solid';
+        } else {
+            document.body.className = 'bg-image-default';
+        }
+
+        // ---- Tamaño de fuente (base 13px) ----
+        let currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+        function applyFontSize() {
+            document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+            localStorage.setItem('fontSize', currentFontSize);
+        }
+        // Aplicar el tamaño guardado
+        applyFontSize();
+    });
+
+    // Mostrar/ocultar contraseña
+    document.querySelectorAll('.toggle-password').forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.dataset.target;
+            const input = document.getElementById(targetId);
+            const icon = this.querySelector('i');
+            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+            input.setAttribute('type', type);
+            icon.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+        });
+    });
+
+    // Validaciones en tiempo real
+    const password = document.getElementById('password');
+    const confirm = document.getElementById('confirm');
+    const submitBtn = document.getElementById('submitBtn');
+    const matchMessage = document.getElementById('match-message');
+
+    const reqLength = document.getElementById('req-length');
+    const reqNumber = document.getElementById('req-number');
+    const reqUpper = document.getElementById('req-upper');
+    const reqLower = document.getElementById('req-lower');
+    const reqSpecial = document.getElementById('req-special');
+    const strengthBar = document.getElementById('passwordStrength');
+
+    const specialRegex = /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?/]/;
+
+    function validatePassword() {
+        const pwd = password.value;
+        let isValid = true;
+
+        if (pwd.length >= 16) {
+            reqLength.classList.add('valid');
+            reqLength.classList.remove('invalid');
+        } else {
+            reqLength.classList.remove('valid');
+            reqLength.classList.add('invalid');
+            isValid = false;
+        }
+
+        if (/\d/.test(pwd)) {
+            reqNumber.classList.add('valid');
+            reqNumber.classList.remove('invalid');
+        } else {
+            reqNumber.classList.remove('valid');
+            reqNumber.classList.add('invalid');
+            isValid = false;
+        }
+
+        if (/[A-Z]/.test(pwd)) {
+            reqUpper.classList.add('valid');
+            reqUpper.classList.remove('invalid');
+        } else {
+            reqUpper.classList.remove('valid');
+            reqUpper.classList.add('invalid');
+            isValid = false;
+        }
+
+        if (/[a-z]/.test(pwd)) {
+            reqLower.classList.add('valid');
+            reqLower.classList.remove('invalid');
+        } else {
+            reqLower.classList.remove('valid');
+            reqLower.classList.add('invalid');
+            isValid = false;
+        }
+
+        if (specialRegex.test(pwd)) {
+            reqSpecial.classList.add('valid');
+            reqSpecial.classList.remove('invalid');
+        } else {
+            reqSpecial.classList.remove('valid');
+            reqSpecial.classList.add('invalid');
+            isValid = false;
+        }
+
+        let strength = 0;
+        if (pwd.length >= 16) strength++;
+        if (/\d/.test(pwd)) strength++;
+        if (/[A-Z]/.test(pwd)) strength++;
+        if (/[a-z]/.test(pwd)) strength++;
+        if (specialRegex.test(pwd)) strength++;
+
+        strengthBar.className = 'password-strength';
+        const classes = { 0: '', 1: 'strength-weak', 2: 'strength-weak', 3: 'strength-medium', 4: 'strength-strong', 5: 'strength-very-strong' };
+        const percentages = { 0: '0%', 1: '25%', 2: '25%', 3: '50%', 4: '75%', 5: '100%' };
+        strengthBar.style.width = percentages[strength] || '0%';
+        if (classes[strength]) strengthBar.classList.add(classes[strength]);
+        strengthBar.setAttribute('aria-valuenow', strength * 20);
+
+        return isValid;
+    }
+
+    function validateConfirm() {
+        const pwd = password.value;
+        const conf = confirm.value;
+
+        if (pwd === conf && pwd !== '') {
+            matchMessage.innerHTML = '✅ Las contraseñas coinciden';
+            matchMessage.style.color = 'var(--renaven-verde)';
+            return true;
+        } else if (conf !== '') {
+            matchMessage.innerHTML = '❌ Las contraseñas no coinciden';
+            matchMessage.style.color = '#DC3545';
+            return false;
+        } else {
+            matchMessage.innerHTML = '';
+            return false;
+        }
+    }
+
+    function enableSubmit() {
+        const isPasswordValid = validatePassword();
+        const isConfirmValid = validateConfirm();
+        const isFormValid = isPasswordValid && isConfirmValid && password.value !== '';
+        submitBtn.disabled = !isFormValid;
+    }
+
+    password.addEventListener('input', enableSubmit);
+    confirm.addEventListener('input', enableSubmit);
+
+    document.getElementById('resetForm').addEventListener('submit', function(e) {
+        if (!validatePassword() || !validateConfirm()) {
+            e.preventDefault();
+            alert('⚠️ Por favor, cumple con todos los requisitos de seguridad antes de continuar.');
+        }
+    });
+</script>
+
+{% endblock %}

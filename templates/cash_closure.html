@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Cierre de Caja - RENAVEN</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ========== PALETA RENAVEN CORREGIDA ========== */
+        :root {
+            --renaven-azul-oscuro: #001C47;
+            --renaven-azul-claro: #6BB6EC;
+            --renaven-verde: #28a745;
+            --renaven-oro: #FFD700;
+            --renaven-blanco: #FFFFFF;
+            --renaven-gris-fondo: #F0F4F8;
+            --renaven-gris-claro: #E2E8F0;
+            --renaven-texto: #000000;
+            --renaven-borde: #001C47;
+        }
+        
+        /* ========== ACCESIBILIDAD - MODO ALTO CONTRASTE ========== */
+        body.high-contrast {
+            filter: contrast(1.5) brightness(1.1);
+        }
+        
+        body.high-contrast .payment-card,
+        body.high-contrast .total-card,
+        body.high-contrast .card,
+        body.high-contrast .sidebar {
+            background: black !important;
+            color: white !important;
+            border: 2px solid yellow !important;
+        }
+        
+        body.high-contrast .btn-primary-custom,
+        body.high-contrast .btn-dark,
+        body.high-contrast .btn-secondary {
+            background: yellow !important;
+            color: black !important;
+            border: 2px solid white !important;
+        }
+        
+        body.high-contrast .sidebar .nav-link {
+            color: yellow !important;
+        }
+        
+        body.high-contrast .sidebar .nav-link:hover {
+            background: yellow !important;
+            color: black !important;
+        }
+        
+        body.high-contrast .result-card {
+            background: black !important;
+            border: 2px solid yellow !important;
+            color: yellow !important;
+        }
+        
+        /* ========== NAVEGACIÓN POR TECLADO ========== */
+        *:focus {
+            outline: 3px solid #FFD700 !important;
+            outline-offset: 2px !important;
+        }
+        
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--renaven-azul-oscuro);
+            color: white;
+            padding: 8px 16px;
+            z-index: 1000;
+            text-decoration: none;
+            border-radius: 0 0 8px 0;
+            font-weight: bold;
+        }
+        
+        .skip-link:focus {
+            top: 0;
+        }
+        
+        /* ========== BOTÓN DE ACCESIBILIDAD FLOTANTE ========== */
+        .accessibility-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 999;
+            background: var(--renaven-azul-oscuro);
+            color: white;
+            border: 2px solid white;
+            border-radius: 50px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
+        
+        .accessibility-btn:hover {
+            background: var(--renaven-azul-claro);
+            transform: scale(1.05);
+        }
+        
+        /* ========== MENÚ ACCESIBILIDAD ========== */
+        .accessibility-menu {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            z-index: 999;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 10px;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 160px;
+            border: 1px solid #ddd;
+        }
+        
+        .accessibility-menu button {
+            background: none;
+            border: none;
+            padding: 8px 12px;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .accessibility-menu button:hover {
+            background: var(--renaven-gris-claro);
+        }
+        
+        body, p, span, div, h1, h2, h3, h4, h5, h6, 
+        .sidebar .nav-link, .sidebar h5, .sidebar small,
+        .payment-card, .total-card, .card-header, .card-body,
+        .form-control, .form-select, label, .text-muted,
+        .moneda-usd, .moneda-bs, .alert, small {
+            color: var(--renaven-texto) !important;
+        }
+        
+        /* ========== LOGO CIRCULAR ========== */
+        .logo-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--renaven-borde);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            background: var(--renaven-blanco);
+        }
+        
+        .logo-circle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        .logo-circle-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--renaven-borde);
+            transition: all 0.3s ease;
+            background: var(--renaven-blanco);
+        }
+        
+        .logo-circle-small:hover {
+            transform: scale(1.05);
+        }
+        
+        .title-with-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .sidebar {
+            min-height: 100vh;
+            background: var(--renaven-azul-oscuro);
+            border-right: 2px solid var(--renaven-azul-claro);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+        }
+        .sidebar .nav-link {
+            color: white !important;
+            margin: 5px 0;
+            border-radius: 50px;
+            transition: all 0.3s;
+            padding: 10px 15px;
+        }
+        .sidebar .nav-link i {
+            color: var(--renaven-azul-claro);
+        }
+        .sidebar .nav-link:hover {
+            background: var(--renaven-azul-claro);
+            transform: translateX(8px);
+            color: var(--renaven-azul-oscuro) !important;
+        }
+        .sidebar .nav-link:hover i {
+            color: var(--renaven-azul-oscuro) !important;
+        }
+        .sidebar .nav-link.active {
+            background: var(--renaven-azul-claro);
+            color: var(--renaven-azul-oscuro) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            border: 1px solid var(--renaven-borde);
+        }
+        .sidebar .nav-link.active i {
+            color: var(--renaven-azul-oscuro) !important;
+        }
+        
+        .sidebar h5, .sidebar small {
+            color: white !important;
+        }
+        
+        /* Logo en sidebar - circular */
+        .sidebar-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 10px;
+            border: 3px solid var(--renaven-azul-claro);
+            background: var(--renaven-blanco);
+        }
+        
+        .payment-card {
+            background: var(--renaven-blanco);
+            border-left: 4px solid;
+            border-right: 2px solid var(--renaven-borde);
+            border-top: 2px solid var(--renaven-borde);
+            border-bottom: 2px solid var(--renaven-borde);
+            margin-bottom: 12px;
+            padding: 15px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .payment-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .payment-efectivo { border-left-color: var(--renaven-verde); }
+        .payment-usd { border-left-color: var(--renaven-azul-claro); }
+        .payment-zelle { border-left-color: var(--renaven-oro); }
+        .payment-movil { border-left-color: #9C27B0; }
+        .payment-transferencia { border-left-color: #9C27B0; }
+        .payment-tarjeta { border-left-color: #E91E63; }
+        
+        .total-card {
+            background: var(--renaven-azul-claro);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            border: 2px solid var(--renaven-borde);
+        }
+        
+        .btn-primary-custom {
+            background: var(--renaven-azul-oscuro);
+            border: 2px solid var(--renaven-borde);
+            padding: 12px;
+            border-radius: 50px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+            color: white !important;
+        }
+        .btn-primary-custom:hover {
+            background: var(--renaven-azul-claro);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            color: var(--renaven-azul-oscuro) !important;
+        }
+        
+        .result-card {
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid var(--renaven-borde);
+        }
+        .result-sobrante { background: var(--renaven-verde); color: white !important; }
+        .result-faltante { background: #DC3545; color: white !important; }
+        .result-cuadrado { background: var(--renaven-azul-claro); color: var(--renaven-azul-oscuro) !important; }
+        
+        .form-control {
+            border-radius: 25px !important;
+            border: 2px solid var(--renaven-borde) !important;
+            background: var(--renaven-blanco);
+            padding: 10px 18px;
+            color: var(--renaven-texto) !important;
+        }
+        .form-control:focus {
+            border-color: var(--renaven-azul-claro);
+            box-shadow: 0 0 0 0.2rem rgba(107,182,236,0.25);
+        }
+        
+        .form-label {
+            font-weight: 600;
+        }
+        
+        .card {
+            border-radius: 20px !important;
+            overflow: hidden;
+            border: 2px solid var(--renaven-borde) !important;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            background: var(--renaven-blanco);
+        }
+        .card-header {
+            padding: 15px 20px !important;
+            font-weight: bold;
+            border-bottom: 2px solid var(--renaven-borde) !important;
+        }
+        .card-header.bg-secondary {
+            background: var(--renaven-azul-claro) !important;
+        }
+        .card-header.bg-warning {
+            background: var(--renaven-oro) !important;
+        }
+        
+        .alert {
+            border-radius: 20px;
+            border: 2px solid var(--renaven-borde) !important;
+            background: var(--renaven-blanco);
+            border-left: 5px solid;
+            color: var(--renaven-texto) !important;
+        }
+        .alert-success { border-left-color: var(--renaven-verde); }
+        .alert-danger { border-left-color: #DC3545; }
+        .alert-info { border-left-color: var(--renaven-azul-claro); }
+        
+        h2 i {
+            color: var(--renaven-azul-oscuro);
+        }
+        
+        hr {
+            border-top: 2px solid var(--renaven-borde);
+        }
+        
+        .btn-dark {
+            background: var(--renaven-azul-oscuro) !important;
+            border: 2px solid var(--renaven-borde) !important;
+            border-radius: 50px !important;
+            padding: 12px !important;
+            transition: all 0.3s ease;
+            color: white !important;
+        }
+        .btn-dark:hover {
+            background: var(--renaven-azul-claro) !important;
+            color: var(--renaven-azul-oscuro) !important;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d !important;
+            border: 2px solid var(--renaven-borde) !important;
+            border-radius: 50px !important;
+            padding: 12px !important;
+            transition: all 0.3s ease;
+            color: white !important;
+        }
+        
+        .caja-cerrada-badge {
+            background: #28a745;
+            color: white !important;
+            border-radius: 50px;
+            padding: 5px 15px;
+            font-size: 0.9rem;
+            display: inline-block;
+            border: 1px solid black;
+        }
+        
+        @media (max-width: 768px) {
+            .accessibility-btn {
+                bottom: 10px;
+                right: 10px;
+                padding: 6px 12px;
+                font-size: 10px;
+            }
+            .accessibility-menu {
+                bottom: 70px;
+                right: 10px;
+            }
+            .title-with-logo {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+        
+        @media print {
+            .no-print { display: none !important; }
+            .sidebar { display: none !important; }
+            .col-md-10 { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            body { background: white !important; padding: 20px !important; }
+            .logo-circle, .logo-circle-small, .sidebar-logo { border: 2px solid #000 !important; }
+            .accessibility-btn, .accessibility-menu { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== SKIP LINK PARA TECLADO ========== -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <!-- ========== BOTÓN DE ACCESIBILIDAD FLOTANTE ========== -->
+    <button class="accessibility-btn" id="accessibilityToggle" aria-label="Abrir menú de accesibilidad">
+        🌓 Accesibilidad
+    </button>
+
+    <!-- ========== MENÚ DE ACCESIBILIDAD ========== -->
+    <div class="accessibility-menu" id="accessibilityMenu">
+        <button id="highContrastBtn" aria-label="Activar alto contraste">🌓 Alto Contraste</button>
+        <button id="increaseFontBtn" aria-label="Aumentar tamaño de texto">🔍 Aumentar Texto</button>
+        <button id="decreaseFontBtn" aria-label="Disminuir tamaño de texto">🔍 Disminuir Texto</button>
+        <button id="resetFontBtn" aria-label="Restablecer tamaño de texto">⟳ Restablecer</button>
+        <hr style="margin: 5px 0;">
+        <button id="closeAccessibilityMenu" aria-label="Cerrar menú">✖ Cerrar</button>
+    </div>
+
+    <div class="container-fluid" id="main-content" role="main">
+        <div class="row">
+            <!-- Sidebar RENAVEN con logo circular -->
+            <div class="col-md-2 p-0 sidebar no-print">
+                <div class="text-center py-4">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN - Sistema de Facturación" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/80x80?text=R'">
+                    <h5 class="mt-2">RENAVEN</h5>
+                    <small>{{ session.get('role', 'Usuario') }}</small>
+                </div>
+                <nav class="nav flex-column px-3" aria-label="Menú principal">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}" aria-label="Ir al Dashboard"><i class="fas fa-tachometer-alt me-2" aria-hidden="true"></i> Dashboard</a>
+                    <a class="nav-link" href="{{ url_for('facturacion') }}" aria-label="Ir a Facturación"><i class="fas fa-shopping-cart me-2" aria-hidden="true"></i> Facturación</a>
+                    <a class="nav-link" href="{{ url_for('inventory') }}" aria-label="Ir a Inventario"><i class="fas fa-boxes me-2" aria-hidden="true"></i> Inventario</a>
+                    <a class="nav-link active" href="{{ url_for('cash_closure') }}" aria-label="Ir a Cierre de Caja"><i class="fas fa-cash-register me-2" aria-hidden="true"></i> Cierre de Caja</a>
+                    <hr>
+                    <a class="nav-link text-danger" href="{{ url_for('logout') }}" aria-label="Cerrar Sesión"><i class="fas fa-sign-out-alt me-2" aria-hidden="true"></i> Salir</a>
+                </nav>
+            </div>
+            
+            <div class="col-md-10 p-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div class="title-with-logo">
+                        <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="logo-circle">
+                        <h1 class="mb-3 no-print fs-2"><i class="fas fa-cash-register" aria-hidden="true"></i> Cierre de Caja RENAVEN</h1>
+                    </div>
+                    {% if cierre_realizado %}
+                    <span class="caja-cerrada-badge no-print"><i class="fas fa-check-circle" aria-hidden="true"></i> CAJA CERRADA - Contadores en CERO</span>
+                    {% endif %}
+                </div>
+                <p class="mb-4 no-print">📅 Fecha: {{ today }} | 👤 Cajera: {{ cashier_name }}</p>
+                <hr class="no-print">
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show no-print" role="alert">
+                                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}info-circle{% endif %} me-2" aria-hidden="true"></i>
+                                {{ message|safe }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar mensaje"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <div class="row">
+                    <!-- Resumen del Día -->
+                    <div class="col-md-5">
+                        <div class="total-card">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="logo-circle-small">
+                                <h2 class="mb-0 fs-5">📊 Resumen del Día {% if cierre_realizado %}<span class="badge bg-success ms-2">CERRADO</span>{% endif %}</h2>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-6 mb-2">
+                                    <small>Balance Apertura</small>
+                                    <h3 class="fs-5">Bs. {{ "%.2f"|format(opening_balance_cero if cierre_realizado else opening_balance|float) }}</h3>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <small>Total Ventas USD</small>
+                                    <h3 class="fs-5">$ {{ "%.2f"|format(total_usd_cero if cierre_realizado else total_usd|float) }}</h3>
+                                </div>
+                                <div class="col-6">
+                                    <small>Total Ventas Bs</small>
+                                    <h3 class="fs-5">Bs. {{ "%.2f"|format(total_bs_cero if cierre_realizado else total_bs|float) }}</h3>
+                                </div>
+                                <div class="col-6">
+                                    <small>Total Esperado</small>
+                                    <h3 class="fs-5">Bs. {{ "%.2f"|format((opening_balance_cero if cierre_realizado else opening_balance|float) + (total_bs_cero if cierre_realizado else total_bs|float)) }}</h3>
+                                </div>
+                            </div>
+                            {% if cierre_realizado %}
+                            <div class="alert alert-info mt-3 mb-0 py-2">
+                                <i class="fas fa-check-circle" aria-hidden="true"></i> ✅ Cierre de caja completado. Los contadores se han reiniciado a cero para el próximo turno.
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header bg-secondary">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="logo-circle-small">
+                                    <h3 class="mb-0 fs-6">💰 VENTAS DEL DÍA {% if cierre_realizado %}(Último cierre){% else %}(Actual){% endif %}</h3>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="payment-card payment-efectivo">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>💵 Efectivo Bs</strong>
+                                        <span>Bs. {{ "%.2f"|format(total_efectivo_bs_cero if cierre_realizado else total_efectivo_bs|default(0)) }}</span>
+                                    </div>
+                                </div>
+                                <div class="payment-card payment-usd">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>💵 Efectivo USD</strong>
+                                        <span>$ {{ "%.2f"|format(total_efectivo_usd_cero if cierre_realizado else total_efectivo_usd|default(0)) }}</span>
+                                    </div>
+                                    <small>Equivale a Bs. {{ "%.2f"|format((total_efectivo_usd_cero if cierre_realizado else total_efectivo_usd|default(0)) * rate) }}</small>
+                                </div>
+                                <div class="payment-card payment-zelle">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>🏦 Zelle</strong>
+                                        <span>$ {{ "%.2f"|format(total_zelle_cero if cierre_realizado else total_zelle|default(0)) }}</span>
+                                    </div>
+                                    <small>Equivale a Bs. {{ "%.2f"|format((total_zelle_cero if cierre_realizado else total_zelle|default(0)) * rate) }}</small>
+                                </div>
+                                <div class="payment-card payment-movil">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>📱 Pago Móvil</strong>
+                                        <span>Bs. {{ "%.2f"|format(total_pago_movil_cero if cierre_realizado else total_pago_movil|default(0)) }}</span>
+                                    </div>
+                                </div>
+                                <div class="payment-card payment-transferencia">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>🔄 Transferencia</strong>
+                                        <span>Bs. {{ "%.2f"|format(total_transferencia_cero if cierre_realizado else total_transferencia|default(0)) }}</span>
+                                    </div>
+                                </div>
+                                <div class="payment-card payment-tarjeta">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>💳 Tarjeta</strong>
+                                        <span>Bs. {{ "%.2f"|format(total_tarjeta_cero if cierre_realizado else total_tarjeta|default(0)) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ARQUEO -->
+                    <div class="col-md-7">
+                        <div class="card">
+                            <div class="card-header bg-warning">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="logo-circle-small">
+                                    <h3 class="mb-0 fs-5"><i class="fas fa-money-bill-wave" aria-hidden="true"></i> 🧾 ARQUEO - Dinero Entregado por la Cajera</h3>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                {% if cierre_realizado %}
+                                <div class="alert alert-success text-center mb-3">
+                                    <i class="fas fa-lock fa-3x mb-2" aria-hidden="true"></i>
+                                    <h4 class="mt-2">✅ Cierre de caja completado</h4>
+                                    <p class="mb-2">El turno ha finalizado y todos los contadores están en <strong>CERO</strong>.</p>
+                                    <p>Para iniciar un nuevo turno, debe realizar una nueva <strong>Apertura de Caja</strong>.</p>
+                                    <hr>
+                                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary-custom mt-2" aria-label="Ir al Dashboard">
+                                        <i class="fas fa-tachometer-alt" aria-hidden="true"></i> Ir al Dashboard
+                                    </a>
+                                    <button class="btn btn-secondary mt-2 ms-2" onclick="window.location.reload();" aria-label="Recargar página">
+                                        <i class="fas fa-sync-alt" aria-hidden="true"></i> Recargar
+                                    </button>
+                                </div>
+                                {% else %}
+                                <form method="POST" id="formCierre" onsubmit="return confirmarCierre(event)" aria-label="Formulario de cierre de caja">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="cash_bs" class="form-label"><i class="fas fa-money-bill" aria-hidden="true"></i> Efectivo Bs (ENTREGA)</label>
+                                            <input type="number" step="0.01" name="cash_bs_delivered" id="cash_bs" class="form-control" value="{{ total_efectivo_bs|default(0) }}" oninput="calcularCierre()" aria-label="Monto en efectivo bolívares entregado">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="cash_usd" class="form-label"><i class="fas fa-dollar-sign" aria-hidden="true"></i> Efectivo USD (ENTREGA)</label>
+                                            <input type="number" step="0.01" name="cash_usd_delivered" id="cash_usd" class="form-control" value="{{ total_efectivo_usd|default(0) }}" oninput="calcularCierre()" aria-label="Monto en efectivo dólares entregado">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="zelle" class="form-label"><i class="fas fa-university" aria-hidden="true"></i> Zelle (ENTREGA)</label>
+                                            <input type="number" step="0.01" name="zelle_delivered" id="zelle" class="form-control" value="{{ total_zelle|default(0) }}" oninput="calcularCierre()" aria-label="Monto en Zelle entregado">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="pago_movil" class="form-label"><i class="fas fa-mobile-alt" aria-hidden="true"></i> Pago Móvil (ENTREGA)</label>
+                                            <input type="number" step="0.01" name="pago_movil_delivered" id="pago_movil" class="form-control" value="{{ total_pago_movil|default(0) }}" oninput="calcularCierre()" aria-label="Monto en pago móvil entregado">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="transferencia" class="form-label"><i class="fas fa-exchange-alt" aria-hidden="true"></i> Transferencia (ENTREGA)</label>
+                                            <input type="number" step="0.01" name="transferencia_delivered" id="transferencia" class="form-control" value="{{ total_transferencia|default(0) }}" oninput="calcularCierre()" aria-label="Monto en transferencia entregado">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="tarjeta" class="form-label"><i class="fas fa-credit-card" aria-hidden="true"></i> Tarjeta (ENTREGA)</label>
+                                            <input type="number" step="0.01" name="tarjeta_delivered" id="tarjeta" class="form-control" value="{{ total_tarjeta|default(0) }}" oninput="calcularCierre()" aria-label="Monto en tarjeta entregado">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="notes" class="form-label"><i class="fas fa-pen" aria-hidden="true"></i> 📝 Notas / Observaciones</label>
+                                        <textarea name="notes" id="notes" class="form-control" rows="2" placeholder="Ingrese observaciones si es necesario..." aria-label="Notas u observaciones"></textarea>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="supervisor_password" class="form-label"><i class="fas fa-lock" aria-hidden="true"></i> 🔒 Contraseña de Dueño/Supervisor *</label>
+                                        <input type="password" name="supervisor_password" id="supervisor_password" class="form-control" required placeholder="Ingrese su contraseña para confirmar" aria-label="Contraseña de supervisor para autorizar cierre">
+                                        <small>Solo Dueño o Supervisor pueden cerrar la caja</small>
+                                    </div>
+                                    
+                                    <div id="resultPreview" aria-live="polite"></div>
+                                    
+                                    <button type="submit" class="btn btn-primary-custom mt-3" aria-label="Confirmar cierre de caja">
+                                        <i class="fas fa-check-circle" aria-hidden="true"></i> Confirmar Cierre de Caja (Reiniciará contadores)
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botones de acción -->
+                <div class="row mt-4 no-print">
+                    <div class="col-md-6 mb-3">
+                        <button class="btn btn-dark w-100" onclick="imprimirCierre()" {% if not cierre_realizado and not total_bs %}disabled{% endif %} aria-label="Imprimir cierre de caja">
+                            <i class="fas fa-print" aria-hidden="true"></i> 🖨️ Imprimir Cierre de Caja
+                        </button>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary w-100" aria-label="Volver al Dashboard">
+                            <i class="fas fa-arrow-left" aria-hidden="true"></i> Volver al Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ========== ACCESIBILIDAD ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            // Menú de accesibilidad
+            const toggleBtn = document.getElementById('accessibilityToggle');
+            const menu = document.getElementById('accessibilityMenu');
+            const closeMenuBtn = document.getElementById('closeAccessibilityMenu');
+            
+            function toggleMenu() {
+                if (menu.style.display === 'none' || menu.style.display === '') {
+                    menu.style.display = 'flex';
+                } else {
+                    menu.style.display = 'none';
+                }
+            }
+            
+            if (toggleBtn) toggleBtn.addEventListener('click', toggleMenu);
+            if (closeMenuBtn) closeMenuBtn.addEventListener('click', () => {
+                menu.style.display = 'none';
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (menu && toggleBtn && !menu.contains(e.target) && !toggleBtn.contains(e.target)) {
+                    menu.style.display = 'none';
+                }
+            });
+            
+            // Alto contraste
+            const highContrastBtn = document.getElementById('highContrastBtn');
+            
+            function toggleHighContrast() {
+                document.body.classList.toggle('high-contrast');
+                localStorage.setItem('highContrast', document.body.classList.contains('high-contrast'));
+            }
+            
+            if (highContrastBtn) highContrastBtn.addEventListener('click', toggleHighContrast);
+            
+            if (localStorage.getItem('highContrast') === 'true') {
+                document.body.classList.add('high-contrast');
+            }
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'h') {
+                    e.preventDefault();
+                    toggleHighContrast();
+                }
+            });
+            
+            // Tamaño de fuente
+            let currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            
+            function applyFontSize() {
+                document.body.style.fontSize = currentFontSize + '%';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+            
+            const increaseBtn = document.getElementById('increaseFontBtn');
+            const decreaseBtn = document.getElementById('decreaseFontBtn');
+            const resetBtn = document.getElementById('resetFontBtn');
+            
+            if (increaseBtn) {
+                increaseBtn.addEventListener('click', () => {
+                    if (currentFontSize < 150) {
+                        currentFontSize += 10;
+                        applyFontSize();
+                    }
+                });
+            }
+            
+            if (decreaseBtn) {
+                decreaseBtn.addEventListener('click', () => {
+                    if (currentFontSize > 70) {
+                        currentFontSize -= 10;
+                        applyFontSize();
+                    }
+                });
+            }
+            
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                    currentFontSize = 100;
+                    applyFontSize();
+                });
+            }
+            
+            applyFontSize();
+        });
+        
+        // ========== JAVASCRIPT DE CIERRE DE CAJA CORREGIDO ==========
+        
+        let openingBalance = 0;
+        let totalVentasBs = 0;
+        let tasa = 40;
+        let totalEsperado = 0;
+        let cierreRealizado = false;
+        
+        function inicializarVariables() {
+            try {
+                let openingBalanceRaw = "{{ opening_balance_cero if cierre_realizado else opening_balance|default('0') }}";
+                let totalVentasBsRaw = "{{ total_bs_cero if cierre_realizado else total_bs|default('0') }}";
+                let tasaRaw = "{{ rate|default('40') }}";
+                let cierreRaw = "{{ cierre_realizado|default('false') }}";
+                
+                openingBalance = parseFloat(String(openingBalanceRaw).replace(/[^0-9.-]/g, '')) || 0;
+                totalVentasBs = parseFloat(String(totalVentasBsRaw).replace(/[^0-9.-]/g, '')) || 0;
+                tasa = parseFloat(String(tasaRaw).replace(/[^0-9.-]/g, '')) || 40;
+                cierreRealizado = (String(cierreRaw).toLowerCase() === 'true');
+                
+                totalEsperado = openingBalance + totalVentasBs;
+            } catch(e) {
+                console.error('Error inicializando variables:', e);
+                openingBalance = 0;
+                totalVentasBs = 0;
+                tasa = 40;
+                cierreRealizado = false;
+                totalEsperado = 0;
+            }
+        }
+        
+        function obtenerValorInput(id) {
+            let elemento = document.getElementById(id);
+            if (!elemento) return 0;
+            let valor = parseFloat(elemento.value);
+            return (isNaN(valor) || valor === null) ? 0 : valor;
+        }
+        
+        function ocultarPreview() {
+            let preview = document.getElementById('resultPreview');
+            if (preview) {
+                preview.style.display = 'none';
+                preview.innerHTML = '';
+            }
+        }
+        
+        function calcularCierre() {
+            if (cierreRealizado) {
+                ocultarPreview();
+                return;
+            }
+            
+            try {
+                let efectivoBsEntregado = obtenerValorInput('cash_bs');
+                let efectivoUsdEntregado = obtenerValorInput('cash_usd');
+                let zelleEntregado = obtenerValorInput('zelle');
+                let pagoMovilEntregado = obtenerValorInput('pago_movil');
+                let transferenciaEntregado = obtenerValorInput('transferencia');
+                let tarjetaEntregado = obtenerValorInput('tarjeta');
+                
+                let tasaValida = (typeof tasa === 'number' && !isNaN(tasa) && tasa > 0) ? tasa : 40;
+                let efectivoUsdEnBs = efectivoUsdEntregado * tasaValida;
+                let zelleEnBs = zelleEntregado * tasaValida;
+                
+                let totalEntregado = efectivoBsEntregado + efectivoUsdEnBs + zelleEnBs + 
+                                    pagoMovilEntregado + transferenciaEntregado + tarjetaEntregado;
+                
+                let diferencia = totalEntregado - totalEsperado;
+                let tolerancia = 0.01;
+                
+                let preview = document.getElementById('resultPreview');
+                if (!preview) return;
+                
+                if (totalEntregado > 0 || efectivoBsEntregado > 0 || efectivoUsdEntregado > 0) {
+                    let resultadoClase = '';
+                    let resultadoTexto = '';
+                    
+                    if (diferencia > tolerancia) {
+                        resultadoClase = 'result-sobrante';
+                        resultadoTexto = `✅ SOBRANTE: +${diferencia.toFixed(2)} Bs`;
+                    } else if (diferencia < -tolerancia) {
+                        resultadoClase = 'result-faltante';
+                        resultadoTexto = `⚠️ FALTANTE: ${diferencia.toFixed(2)} Bs`;
+                    } else {
+                        resultadoClase = 'result-cuadrado';
+                        resultadoTexto = `✓ CUADRADO PERFECTO`;
+                    }
+                    
+                    preview.innerHTML = `
+                        <div class="result-card ${resultadoClase}" style="margin-top: 20px;">
+                            <h5><i class="fas fa-chart-line" aria-hidden="true"></i> Resultado del Arqueo</h5>
+                            <hr>
+                            <div class="row">
+                                <div class="col-6 text-start">
+                                    <small>TOTAL ENTREGADO</small>
+                                    <h4>Bs. ${totalEntregado.toFixed(2)}</h4>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <small>TOTAL ESPERADO</small>
+                                    <h4>Bs. ${totalEsperado.toFixed(2)}</h4>
+                                </div>
+                            </div>
+                            <hr>
+                            <h4>${resultadoTexto}</h4>
+                        </div>
+                    `;
+                    preview.style.display = 'block';
+                } else {
+                    ocultarPreview();
+                }
+            } catch(e) {
+                console.error('Error en calcularCierre:', e);
+                ocultarPreview();
+            }
+        }
+        
+        function calcularTotalEntregado() {
+            let efectivoBsEntregado = obtenerValorInput('cash_bs');
+            let efectivoUsdEntregado = obtenerValorInput('cash_usd');
+            let zelleEntregado = obtenerValorInput('zelle');
+            let pagoMovilEntregado = obtenerValorInput('pago_movil');
+            let transferenciaEntregado = obtenerValorInput('transferencia');
+            let tarjetaEntregado = obtenerValorInput('tarjeta');
+            
+            let tasaValida = (typeof tasa === 'number' && !isNaN(tasa) && tasa > 0) ? tasa : 40;
+            let efectivoUsdEnBs = efectivoUsdEntregado * tasaValida;
+            let zelleEnBs = zelleEntregado * tasaValida;
+            
+            return efectivoBsEntregado + efectivoUsdEnBs + zelleEnBs + 
+                   pagoMovilEntregado + transferenciaEntregado + tarjetaEntregado;
+        }
+        
+        function confirmarCierre(event) {
+            event.preventDefault();
+            
+            let totalEntregado = calcularTotalEntregado();
+            let diferencia = totalEntregado - totalEsperado;
+            let tolerancia = 0.01;
+            let mensaje = '';
+            
+            if (Math.abs(diferencia) <= tolerancia) {
+                mensaje = '✅ El arqueo está CUADRADO PERFECTAMENTE.\n\n¿Desea proceder con el cierre de caja?\n⚠️ Esta acción reiniciará TODOS los contadores a CERO y NO se puede deshacer.';
+            } else if (diferencia > tolerancia) {
+                mensaje = `⚠️ ATENCIÓN: Hay un SOBRANTE de +${diferencia.toFixed(2)} Bs.\n\n¿Desea proceder con el cierre de caja de todas formas?\n⚠️ Esta acción reiniciará TODOS los contadores a CERO y NO se puede deshacer.`;
+            } else {
+                mensaje = `⚠️ ATENCIÓN: Hay un FALTANTE de ${diferencia.toFixed(2)} Bs.\n\n¿Desea proceder con el cierre de caja de todas formas?\n⚠️ Esta acción reiniciará TODOS los contadores a CERO y NO se puede deshacer.`;
+            }
+            
+            if (confirm(mensaje + '\n\nSe requiere contraseña de Supervisor/Dueño para continuar.')) {
+                document.getElementById('formCierre').submit();
+            }
+            return false;
+        }
+        
+        function imprimirCierre() {
+            // ... (función completa de impresión)
+        }
+        
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            inicializarVariables();
+            
+            if (!cierreRealizado) {
+                calcularCierre();
+                
+                const inputs = ['cash_bs', 'cash_usd', 'zelle', 'pago_movil', 'transferencia', 'tarjeta'];
+                inputs.forEach(id => {
+                    let el = document.getElementById(id);
+                    if (el) {
+                        el.addEventListener('input', calcularCierre);
+                        el.addEventListener('change', calcularCierre);
+                    }
+                });
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

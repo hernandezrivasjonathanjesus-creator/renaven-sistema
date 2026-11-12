@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Cierre Diario - RENAVEN</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ========== PALETA RENAVEN CORREGIDA ========== */
+        :root {
+            --renaven-azul-oscuro: #001C47;
+            --renaven-azul-claro: #6BB6EC;
+            --renaven-verde: #28a745;
+            --renaven-oro: #FFD700;
+            --renaven-blanco: #FFFFFF;
+            --renaven-gris-fondo: #F0F4F8;
+            --renaven-gris-claro: #E2E8F0;
+            --renaven-texto: #000000;
+            --renaven-borde: #001C47;
+        }
+        
+        /* ========== ACCESIBILIDAD - MODO ALTO CONTRASTE ========== */
+        body.high-contrast {
+            filter: contrast(1.5) brightness(1.1);
+        }
+        
+        body.high-contrast .card,
+        body.high-contrast .sidebar,
+        body.high-contrast .table,
+        body.high-contrast .alert {
+            background: black !important;
+            color: white !important;
+            border: 2px solid yellow !important;
+        }
+        
+        body.high-contrast .btn-primary,
+        body.high-contrast .btn-secondary {
+            background: yellow !important;
+            color: black !important;
+            border: 2px solid white !important;
+        }
+        
+        body.high-contrast .sidebar .nav-link {
+            color: yellow !important;
+        }
+        
+        body.high-contrast .sidebar .nav-link:hover {
+            background: yellow !important;
+            color: black !important;
+        }
+        
+        body.high-contrast .badge {
+            background: black !important;
+            color: yellow !important;
+            border: 1px solid yellow !important;
+        }
+        
+        body.high-contrast .table-dark th {
+            background: black !important;
+            color: yellow !important;
+        }
+        
+        /* ========== NAVEGACIÓN POR TECLADO ========== */
+        *:focus {
+            outline: 3px solid #FFD700 !important;
+            outline-offset: 2px !important;
+        }
+        
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--renaven-azul-oscuro);
+            color: white;
+            padding: 8px 16px;
+            z-index: 1000;
+            text-decoration: none;
+            border-radius: 0 0 8px 0;
+            font-weight: bold;
+        }
+        
+        .skip-link:focus {
+            top: 0;
+        }
+        
+        /* ========== BOTÓN DE ACCESIBILIDAD FLOTANTE ========== */
+        .accessibility-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 999;
+            background: var(--renaven-azul-oscuro);
+            color: white;
+            border: 2px solid white;
+            border-radius: 50px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
+        
+        .accessibility-btn:hover {
+            background: var(--renaven-azul-claro);
+            transform: scale(1.05);
+        }
+        
+        /* ========== MENÚ ACCESIBILIDAD ========== */
+        .accessibility-menu {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            z-index: 999;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 10px;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 160px;
+            border: 1px solid #ddd;
+        }
+        
+        .accessibility-menu button {
+            background: none;
+            border: none;
+            padding: 8px 12px;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .accessibility-menu button:hover {
+            background: var(--renaven-gris-claro);
+        }
+        
+        /* ===== FORZAR TODOS LOS TEXTOS A NEGRO ===== */
+        body, p, span, div, h1, h2, h3, h4, h5, h6, 
+        .sidebar .nav-link, .sidebar h5, .sidebar small,
+        .card, .card-body, .table, .alert, .badge,
+        .text-muted, .text-success, .text-primary,
+        .table-dark th, tfoot td {
+            color: var(--renaven-texto) !important;
+        }
+        
+        /* Excepción para placeholders */
+        ::placeholder, input::placeholder, textarea::placeholder {
+            color: #9ca3af !important;
+            opacity: 1;
+        }
+        
+        /* ========== LOGO CIRCULAR ========== */
+        .logo-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--renaven-borde);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            background: var(--renaven-blanco);
+        }
+        
+        .logo-circle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        .logo-circle-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--renaven-borde);
+            transition: all 0.3s ease;
+            background: var(--renaven-blanco);
+        }
+        
+        .logo-circle-small:hover {
+            transform: scale(1.05);
+        }
+        
+        .title-with-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        /* ========== SIDEBAR ========== */
+        .sidebar {
+            min-height: 100vh;
+            background: var(--renaven-azul-oscuro);
+            border-right: 2px solid var(--renaven-azul-claro);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+        }
+        .sidebar .nav-link {
+            color: white !important;
+            margin: 5px 0;
+            border-radius: 50px;
+            transition: all 0.3s;
+            padding: 10px 15px;
+        }
+        .sidebar .nav-link i {
+            color: var(--renaven-azul-claro);
+        }
+        .sidebar .nav-link:hover {
+            background: var(--renaven-azul-claro);
+            transform: translateX(8px);
+            color: var(--renaven-azul-oscuro) !important;
+        }
+        .sidebar .nav-link:hover i {
+            color: var(--renaven-azul-oscuro) !important;
+        }
+        .sidebar .nav-link.active {
+            background: var(--renaven-azul-claro);
+            color: var(--renaven-azul-oscuro) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            border: 1px solid var(--renaven-borde);
+        }
+        .sidebar .nav-link.active i {
+            color: var(--renaven-azul-oscuro) !important;
+        }
+        .sidebar h5 {
+            color: white !important;
+        }
+        .sidebar small {
+            color: white !important;
+        }
+        
+        /* Logo en sidebar - circular */
+        .sidebar-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 10px;
+            border: 3px solid var(--renaven-azul-claro);
+            background: var(--renaven-blanco);
+        }
+        
+        /* ========== TARJETAS CON BORDE NEGRO ========== */
+        .card {
+            border-radius: 20px !important;
+            border: 2px solid var(--renaven-borde) !important;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+            overflow: hidden;
+            background: var(--renaven-blanco);
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card.bg-success {
+            background: var(--renaven-verde) !important;
+        }
+        .card.bg-primary {
+            background: var(--renaven-azul-claro) !important;
+        }
+        .card.bg-warning {
+            background: var(--renaven-oro) !important;
+        }
+        
+        .card .card-body h5,
+        .card .card-body h2,
+        .card .card-body small {
+            color: var(--renaven-texto) !important;
+        }
+        
+        /* ========== TABLA CON BORDES NEGROS ========== */
+        .table {
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            background: var(--renaven-blanco);
+            color: var(--renaven-texto) !important;
+            border: 1px solid var(--renaven-borde);
+        }
+        .table-dark {
+            background: var(--renaven-azul-claro) !important;
+        }
+        .table-dark th {
+            background: transparent;
+            border-bottom: 2px solid var(--renaven-borde);
+            padding: 12px;
+            font-weight: 600;
+            color: var(--renaven-texto) !important;
+        }
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: var(--renaven-gris-fondo);
+        }
+        .table tbody tr:hover {
+            background-color: rgba(107,182,236,0.1);
+        }
+        .table td, .table th {
+            border-color: var(--renaven-borde) !important;
+        }
+        
+        /* ========== CARD HEADER CON BORDE NEGRO ========== */
+        .card-header {
+            background: var(--renaven-azul-claro) !important;
+            border-radius: 20px 20px 0 0 !important;
+            padding: 15px 20px;
+            border-bottom: 2px solid var(--renaven-borde) !important;
+        }
+        .card-header h5 {
+            color: var(--renaven-texto) !important;
+            margin: 0;
+        }
+        
+        /* ========== ALERTAS CON BORDE NEGRO ========== */
+        .alert-warning {
+            background: #FFF5F5;
+            border: 2px solid var(--renaven-borde);
+            border-radius: 20px;
+            color: var(--renaven-texto) !important;
+            border-left: 5px solid var(--renaven-azul-claro);
+        }
+        
+        /* ========== BOTONES CON BORDE NEGRO ========== */
+        .btn-primary {
+            background: var(--renaven-azul-oscuro) !important;
+            border: 2px solid var(--renaven-borde) !important;
+            border-radius: 50px !important;
+            padding: 10px 25px !important;
+            transition: all 0.3s ease;
+            color: white !important;
+        }
+        .btn-primary:hover {
+            background: var(--renaven-azul-claro) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            color: var(--renaven-azul-oscuro) !important;
+        }
+        
+        .btn-secondary {
+            border-radius: 50px !important;
+            padding: 10px 25px !important;
+            transition: all 0.3s ease;
+            background: #6c757d !important;
+            border: 2px solid var(--renaven-borde) !important;
+            color: white !important;
+        }
+        .btn-secondary:hover {
+            background: #5a6268 !important;
+            transform: translateY(-2px);
+        }
+        
+        /* ========== TÍTULOS ========== */
+        h2 {
+            color: var(--renaven-texto) !important;
+            font-weight: bold;
+        }
+        h2 i {
+            color: var(--renaven-azul-oscuro);
+        }
+        
+        hr {
+            border-top: 2px solid var(--renaven-borde);
+        }
+        
+        .text-muted {
+            color: var(--renaven-texto) !important;
+            opacity: 0.7;
+        }
+        
+        /* ========== BADGES CON BORDE NEGRO ========== */
+        .badge {
+            border-radius: 50px;
+            padding: 5px 12px;
+            font-weight: 500;
+            border: 1px solid var(--renaven-borde);
+        }
+        
+        /* ========== PIE DE TABLA ========== */
+        tfoot {
+            background: var(--renaven-azul-claro) !important;
+            border-top: 2px solid var(--renaven-borde) !important;
+        }
+        tfoot td {
+            color: var(--renaven-texto) !important;
+        }
+        
+        /* ========== SCROLLBAR ========== */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--renaven-gris-fondo);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--renaven-azul-claro);
+            border-radius: 10px;
+            border: 1px solid var(--renaven-borde);
+        }
+        
+        /* ========== IMPRESIÓN ========== */
+        @media print {
+            .no-print { display: none !important; }
+            .sidebar { display: none !important; }
+            .col-md-10 { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            body { background: white !important; padding: 20px !important; }
+            .card { box-shadow: none; border: 2px solid #000 !important; }
+            .table { background: white !important; border: 1px solid #000 !important; }
+            .logo-circle, .logo-circle-small, .sidebar-logo { border: 2px solid #000 !important; }
+            .accessibility-btn, .accessibility-menu { display: none !important; }
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--renaven-texto) !important;
+        }
+        
+        .opacity-50 {
+            opacity: 0.3;
+        }
+        
+        /* Números con formato */
+        .numero-bs {
+            font-family: monospace;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .accessibility-btn {
+                bottom: 10px;
+                right: 10px;
+                padding: 6px 12px;
+                font-size: 10px;
+            }
+            .accessibility-menu {
+                bottom: 70px;
+                right: 10px;
+            }
+            .title-with-logo {
+                flex-direction: column;
+                text-align: center;
+            }
+            .stat-number {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== SKIP LINK PARA TECLADO ========== -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <!-- ========== BOTÓN DE ACCESIBILIDAD FLOTANTE ========== -->
+    <button class="accessibility-btn" id="accessibilityToggle" aria-label="Abrir menú de accesibilidad">
+        🌓 Accesibilidad
+    </button>
+
+    <!-- ========== MENÚ DE ACCESIBILIDAD ========== -->
+    <div class="accessibility-menu" id="accessibilityMenu">
+        <button id="highContrastBtn" aria-label="Activar alto contraste">🌓 Alto Contraste</button>
+        <button id="increaseFontBtn" aria-label="Aumentar tamaño de texto">🔍 Aumentar Texto</button>
+        <button id="decreaseFontBtn" aria-label="Disminuir tamaño de texto">🔍 Disminuir Texto</button>
+        <button id="resetFontBtn" aria-label="Restablecer tamaño de texto">⟳ Restablecer</button>
+        <hr style="margin: 5px 0;">
+        <button id="closeAccessibilityMenu" aria-label="Cerrar menú">✖ Cerrar</button>
+    </div>
+
+    <div class="container-fluid" id="main-content" role="main">
+        <div class="row">
+            <!-- Sidebar RENAVEN con logo circular -->
+            <div class="col-md-2 p-0 sidebar no-print">
+                <div class="text-center py-4">
+                    <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN - Sistema de Facturación" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/80x80?text=R'">
+                    <h5 class="mt-2">RENAVEN</h5>
+                    <small>{{ session.get('role', 'Usuario') }}</small>
+                </div>
+                <nav class="nav flex-column px-3" aria-label="Menú principal">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}" aria-label="Ir al Dashboard"><i class="fas fa-tachometer-alt me-2" aria-hidden="true"></i> Dashboard</a>
+                    <a class="nav-link" href="{{ url_for('facturacion') }}" aria-label="Ir a Facturación"><i class="fas fa-shopping-cart me-2" aria-hidden="true"></i> Facturación</a>
+                    <a class="nav-link" href="{{ url_for('inventory') }}" aria-label="Ir a Inventario"><i class="fas fa-boxes me-2" aria-hidden="true"></i> Inventario</a>
+                    <a class="nav-link active" href="{{ url_for('daily_closure') }}" aria-label="Ver Cierre Diario"><i class="fas fa-chart-line me-2" aria-hidden="true"></i> Cierre Diario</a>
+                    <a class="nav-link" href="{{ url_for('ventas_mes') }}" aria-label="Ver Ventas del Mes"><i class="fas fa-calendar-alt me-2" aria-hidden="true"></i> Ventas Mes</a>
+                    <a class="nav-link" href="{{ url_for('monthly_profit') }}" aria-label="Ver Ganancias"><i class="fas fa-chart-pie me-2" aria-hidden="true"></i> Ganancias</a>
+                    <a class="nav-link" href="{{ url_for('cash_closure') }}" aria-label="Ir a Cierre de Caja"><i class="fas fa-cash-register me-2" aria-hidden="true"></i> Cierre Caja</a>
+                    <hr>
+                    <a class="nav-link text-danger" href="{{ url_for('logout') }}" aria-label="Cerrar Sesión"><i class="fas fa-sign-out-alt me-2" aria-hidden="true"></i> Salir</a>
+                </nav>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+                    <div class="title-with-logo">
+                        <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="logo-circle">
+                        <h1 class="fs-2"><i class="fas fa-chart-line" aria-hidden="true"></i> Cierre del Día - RENAVEN</h1>
+                    </div>
+                    <div class="mt-2 mt-md-0 no-print">
+                        <span class="badge" style="background: var(--renaven-azul-claro); border: 1px solid var(--renaven-borde);">
+                            <i class="fas fa-calendar-alt" aria-hidden="true"></i> {{ today }}
+                        </span>
+                    </div>
+                </div>
+                
+                <hr class="no-print">
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show no-print" role="alert">
+                                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}info-circle{% endif %} me-2" aria-hidden="true"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar mensaje"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <!-- Función para formatear números en el template -->
+                {% macro format_bs(valor) %}
+                    {% if valor %}
+                        {% set partes = "{:,.2f}".format(valor).split('.') %}
+                        {% set entero = partes[0].replace(',', '.') %}
+                        {{ entero }},{{ partes[1] }}
+                    {% else %}
+                        0,00
+                    {% endif %}
+                {% endmacro %}
+                
+                {% macro format_usd(valor) %}
+                    {% if valor %}
+                        {{ "{:,.2f}".format(valor) }}
+                    {% else %}
+                        0.00
+                    {% endif %}
+                {% endmacro %}
+                
+                {% macro format_int(valor) %}
+                    {% if valor %}
+                        {{ "{:,}".format(valor|int).replace(',', '.') }}
+                    {% else %}
+                        0
+                    {% endif %}
+                {% endmacro %}
+                
+                <!-- Tarjetas de estadísticas -->
+                <div class="row mb-4">
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-success h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h2 class="h5">Total Ventas</h2>
+                                        <p class="stat-number mb-1">{{ format_int(total_ventas|default(0)) }}</p>
+                                        <small>Transacciones realizadas</small>
+                                    </div>
+                                    <i class="fas fa-chart-line fa-3x opacity-50" aria-hidden="true"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-primary h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h2 class="h5">Total USD</h2>
+                                        <p class="stat-number mb-1">$ {{ format_usd(total_usd|default(0)) }}</p>
+                                        <small>Ventas en dólares</small>
+                                    </div>
+                                    <i class="fas fa-dollar-sign fa-3x opacity-50" aria-hidden="true"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-warning h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h2 class="h5">Total Bs</h2>
+                                        <p class="stat-number mb-1">Bs. {{ format_bs(total_bs|default(0)) }}</p>
+                                        <small>Ventas en bolívares</small>
+                                    </div>
+                                    <i class="fas fa-chart-bar fa-3x opacity-50" aria-hidden="true"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabla de detalle -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <div class="d-flex align-items-center gap-2">
+                            <img src="{{ url_for('static', filename='img/renaven.jpeg') }}" alt="Logo RENAVEN" class="logo-circle-small">
+                            <h3 class="mb-0 fs-5"><i class="fas fa-list" aria-hidden="true"></i> Detalle de Ventas</h3>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if sales %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped mb-0" aria-label="Tabla de ventas del día">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th scope="col"># Factura</th>
+                                        <th scope="col">Cliente</th>
+                                        <th scope="col">Total USD</th>
+                                        <th scope="col">Total Bs</th>
+                                        <th scope="col">Método Pago</th>
+                                        <th scope="col">Hora</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sale in sales %}
+                                    <tr>
+                                        <td class="text-center">
+                                            <span class="badge" style="background: var(--renaven-azul-claro); border: 1px solid var(--renaven-borde);" aria-label="Factura número {{ "%04d"|format(sale.invoice_number) }}">
+                                                {{ "%04d"|format(sale.invoice_number) }}
+                                            </span>
+                                        </td>
+                                        <td><strong>{{ sale.client_name|default('CLIENTE')|upper }}</strong></td>
+                                        <td class="fw-bold">$ {{ format_usd(sale.total_usd|default(0)) }}</td>
+                                        <td class="fw-bold">Bs. {{ format_bs(sale.total_bs|default(0)) }}</td>
+                                        <td>
+                                            {% set method = sale.payment_method|default('Efectivo USD') %}
+                                            {% if 'USD' in method or 'usd' in method|lower %}
+                                                <span class="badge" style="background: var(--renaven-azul-claro); border: 1px solid var(--renaven-borde);" aria-label="Método de pago: {{ method }}">💵 {{ method }}</span>
+                                            {% elif 'Bs' in method or 'EFECTIVO BS' in method|upper %}
+                                                <span class="badge" style="background: var(--renaven-verde); border: 1px solid var(--renaven-borde);" aria-label="Método de pago: {{ method }}">💵 {{ method }}</span>
+                                            {% elif 'Zelle' in method %}
+                                                <span class="badge" style="background: var(--renaven-oro); border: 1px solid var(--renaven-borde);" aria-label="Método de pago: {{ method }}">🏦 {{ method }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary" style="border: 1px solid var(--renaven-borde);" aria-label="Método de pago: {{ method }}">{{ method }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><small>{{ sale.date.split(' ')[1] if sale.date and ' ' in sale.date else sale.date[:16] if sale.date else 'N/A' }}</small></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot style="background: var(--renaven-azul-claro); border-top: 2px solid var(--renaven-borde);">
+                                    <tr>
+                                        <td colspan="2" class="text-end"><strong>TOTALES:</strong></td>
+                                        <td class="text-end"><strong>$ {{ format_usd(total_usd|default(0)) }}</strong></td>
+                                        <td class="text-end"><strong>Bs. {{ format_bs(total_bs|default(0)) }}</strong></td>
+                                        <td colspan="2"><strong>{{ sales|length }} ventas</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning text-center m-3" role="alert">
+                            <i class="fas fa-info-circle" aria-hidden="true"></i> No hay ventas registradas hoy.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Botones de acción -->
+                <div class="text-center no-print mt-4">
+                    <button class="btn btn-primary" onclick="window.print()" aria-label="Imprimir reporte de cierre diario">
+                        <i class="fas fa-print" aria-hidden="true"></i> Imprimir Reporte
+                    </button>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary" aria-label="Volver al Dashboard">
+                        <i class="fas fa-arrow-left" aria-hidden="true"></i> Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== ACCESIBILIDAD ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            // Menú de accesibilidad
+            const toggleBtn = document.getElementById('accessibilityToggle');
+            const menu = document.getElementById('accessibilityMenu');
+            const closeMenuBtn = document.getElementById('closeAccessibilityMenu');
+            
+            function toggleMenu() {
+                if (menu.style.display === 'none' || menu.style.display === '') {
+                    menu.style.display = 'flex';
+                } else {
+                    menu.style.display = 'none';
+                }
+            }
+            
+            if (toggleBtn) toggleBtn.addEventListener('click', toggleMenu);
+            if (closeMenuBtn) closeMenuBtn.addEventListener('click', () => {
+                menu.style.display = 'none';
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (menu && toggleBtn && !menu.contains(e.target) && !toggleBtn.contains(e.target)) {
+                    menu.style.display = 'none';
+                }
+            });
+            
+            // Alto contraste
+            const highContrastBtn = document.getElementById('highContrastBtn');
+            
+            function toggleHighContrast() {
+                document.body.classList.toggle('high-contrast');
+                localStorage.setItem('highContrast', document.body.classList.contains('high-contrast'));
+            }
+            
+            if (highContrastBtn) highContrastBtn.addEventListener('click', toggleHighContrast);
+            
+            if (localStorage.getItem('highContrast') === 'true') {
+                document.body.classList.add('high-contrast');
+            }
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'h') {
+                    e.preventDefault();
+                    toggleHighContrast();
+                }
+            });
+            
+            // Tamaño de fuente
+            let currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+            
+            function applyFontSize() {
+                document.body.style.fontSize = currentFontSize + '%';
+                localStorage.setItem('fontSize', currentFontSize);
+            }
+            
+            const increaseBtn = document.getElementById('increaseFontBtn');
+            const decreaseBtn = document.getElementById('decreaseFontBtn');
+            const resetBtn = document.getElementById('resetFontBtn');
+            
+            if (increaseBtn) {
+                increaseBtn.addEventListener('click', () => {
+                    if (currentFontSize < 150) {
+                        currentFontSize += 10;
+                        applyFontSize();
+                    }
+                });
+            }
+            
+            if (decreaseBtn) {
+                decreaseBtn.addEventListener('click', () => {
+                    if (currentFontSize > 70) {
+                        currentFontSize -= 10;
+                        applyFontSize();
+                    }
+                });
+            }
+            
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                    currentFontSize = 100;
+                    applyFontSize();
+                });
+            }
+            
+            applyFontSize();
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,555 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    /* ========== PALETA PREDETERMINADA (ORIGINAL LOGIN) ========== */
+    :root {
+        --renaven-azul-fuerte: #84b6f4;
+        --renaven-azul-cielo: #c4dafa;
+        --renaven-blanco: #fcffff;
+        --renaven-gris-fondo: #f0f6fe;
+        --renaven-gris-claro: #e2e8f0;
+        --renaven-texto: #000000;
+        --renaven-borde: #84b6f4;
+        --shadow-color: rgba(132,182,244,0.2);
+        --transition-base: all 0.25s ease-in-out;
+    }
+
+    /* ========== TEMAS PASTEL INDIVIDUALES (SIN ALTO CONTRASTE) ========== */
+    /* 1. Rosa pastel */
+    body.theme-rosa {
+        --renaven-azul-fuerte: #fbc4d5;
+        --renaven-azul-cielo: #fce4ec;
+        --renaven-blanco: #fef9f0;
+        --renaven-gris-fondo: #fdf6f8;
+        --renaven-borde: #fbc4d5;
+    }
+    body.theme-rosa .recover-header { background: linear-gradient(135deg, #fbc4d5, #fdd0b5) !important; border-bottom-color: #fdd0b5 !important; }
+    body.theme-rosa .recover-card { border-color: #fbc4d5 !important; }
+    body.theme-rosa .btn-recover { background: #fbc4d5 !important; border-color: #fdd0b5 !important; }
+    body.theme-rosa .btn-recover:hover { background: #fdd0b5 !important; }
+    body.theme-rosa .input-group-text { background: #fce4ec !important; border-color: #fbc4d5 !important; }
+    body.theme-rosa .logo-recover { border-color: #fbc4d5 !important; }
+    body.theme-rosa .form-control-recover:focus { border-color: #fbc4d5; box-shadow: 0 0 0 0.2rem rgba(251,196,213,0.4); }
+    body.theme-rosa .info-box { background: #fce4ec !important; border-color: #fbc4d5 !important; border-left-color: #fdd0b5 !important; }
+
+    /* 2. Celeste pastel */
+    body.theme-celeste {
+        --renaven-azul-fuerte: #b5d8eb;
+        --renaven-azul-cielo: #d6ecf5;
+        --renaven-blanco: #f9fdff;
+        --renaven-gris-fondo: #f4faff;
+        --renaven-borde: #b5d8eb;
+    }
+    body.theme-celeste .recover-header { background: linear-gradient(135deg, #b5d8eb, #a8d0e6) !important; border-bottom-color: #a8d0e6 !important; }
+    body.theme-celeste .recover-card { border-color: #b5d8eb !important; }
+    body.theme-celeste .btn-recover { background: #b5d8eb !important; border-color: #a8d0e6 !important; }
+    body.theme-celeste .btn-recover:hover { background: #a8d0e6 !important; }
+    body.theme-celeste .input-group-text { background: #d6ecf5 !important; border-color: #b5d8eb !important; }
+    body.theme-celeste .logo-recover { border-color: #b5d8eb !important; }
+    body.theme-celeste .form-control-recover:focus { border-color: #b5d8eb; box-shadow: 0 0 0 0.2rem rgba(181,216,235,0.4); }
+    body.theme-celeste .info-box { background: #d6ecf5 !important; border-color: #b5d8eb !important; border-left-color: #a8d0e6 !important; }
+
+    /* 3. Menta pastel */
+    body.theme-menta {
+        --renaven-azul-fuerte: #b5e6c3;
+        --renaven-azul-cielo: #d8f0e0;
+        --renaven-blanco: #f6fcf8;
+        --renaven-gris-fondo: #f2faf5;
+        --renaven-borde: #b5e6c3;
+    }
+    body.theme-menta .recover-header { background: linear-gradient(135deg, #b5e6c3, #a8dbb8) !important; border-bottom-color: #a8dbb8 !important; }
+    body.theme-menta .recover-card { border-color: #b5e6c3 !important; }
+    body.theme-menta .btn-recover { background: #b5e6c3 !important; border-color: #a8dbb8 !important; }
+    body.theme-menta .btn-recover:hover { background: #a8dbb8 !important; }
+    body.theme-menta .input-group-text { background: #d8f0e0 !important; border-color: #b5e6c3 !important; }
+    body.theme-menta .logo-recover { border-color: #b5e6c3 !important; }
+    body.theme-menta .form-control-recover:focus { border-color: #b5e6c3; box-shadow: 0 0 0 0.2rem rgba(181,230,195,0.4); }
+    body.theme-menta .info-box { background: #d8f0e0 !important; border-color: #b5e6c3 !important; border-left-color: #a8dbb8 !important; }
+
+    /* 4. Amarillo pastel */
+    body.theme-amarillo {
+        --renaven-azul-fuerte: #f9e7b2;
+        --renaven-azul-cielo: #fdf3d5;
+        --renaven-blanco: #fffef9;
+        --renaven-gris-fondo: #fefcf5;
+        --renaven-borde: #f9e7b2;
+    }
+    body.theme-amarillo .recover-header { background: linear-gradient(135deg, #f9e7b2, #f5dc9a) !important; border-bottom-color: #f5dc9a !important; }
+    body.theme-amarillo .recover-card { border-color: #f9e7b2 !important; }
+    body.theme-amarillo .btn-recover { background: #f9e7b2 !important; border-color: #f5dc9a !important; }
+    body.theme-amarillo .btn-recover:hover { background: #f5dc9a !important; }
+    body.theme-amarillo .input-group-text { background: #fdf3d5 !important; border-color: #f9e7b2 !important; }
+    body.theme-amarillo .logo-recover { border-color: #f9e7b2 !important; }
+    body.theme-amarillo .form-control-recover:focus { border-color: #f9e7b2; box-shadow: 0 0 0 0.2rem rgba(249,231,178,0.4); }
+    body.theme-amarillo .info-box { background: #fdf3d5 !important; border-color: #f9e7b2 !important; border-left-color: #f5dc9a !important; }
+
+    /* 5. Lila pastel */
+    body.theme-lila {
+        --renaven-azul-fuerte: #d4c4f0;
+        --renaven-azul-cielo: #e8defa;
+        --renaven-blanco: #fcfaff;
+        --renaven-gris-fondo: #f8f5fe;
+        --renaven-borde: #d4c4f0;
+    }
+    body.theme-lila .recover-header { background: linear-gradient(135deg, #d4c4f0, #c9b7e8) !important; border-bottom-color: #c9b7e8 !important; }
+    body.theme-lila .recover-card { border-color: #d4c4f0 !important; }
+    body.theme-lila .btn-recover { background: #d4c4f0 !important; border-color: #c9b7e8 !important; }
+    body.theme-lila .btn-recover:hover { background: #c9b7e8 !important; }
+    body.theme-lila .input-group-text { background: #e8defa !important; border-color: #d4c4f0 !important; }
+    body.theme-lila .logo-recover { border-color: #d4c4f0 !important; }
+    body.theme-lila .form-control-recover:focus { border-color: #d4c4f0; box-shadow: 0 0 0 0.2rem rgba(212,196,240,0.4); }
+    body.theme-lila .info-box { background: #e8defa !important; border-color: #d4c4f0 !important; border-left-color: #c9b7e8 !important; }
+
+    /* 6. Durazno pastel */
+    body.theme-durazno {
+        --renaven-azul-fuerte: #fdd0b5;
+        --renaven-azul-cielo: #fee5d0;
+        --renaven-blanco: #fffcf9;
+        --renaven-gris-fondo: #fef8f3;
+        --renaven-borde: #fdd0b5;
+    }
+    body.theme-durazno .recover-header { background: linear-gradient(135deg, #fdd0b5, #f5c2a4) !important; border-bottom-color: #f5c2a4 !important; }
+    body.theme-durazno .recover-card { border-color: #fdd0b5 !important; }
+    body.theme-durazno .btn-recover { background: #fdd0b5 !important; border-color: #f5c2a4 !important; }
+    body.theme-durazno .btn-recover:hover { background: #f5c2a4 !important; }
+    body.theme-durazno .input-group-text { background: #fee5d0 !important; border-color: #fdd0b5 !important; }
+    body.theme-durazno .logo-recover { border-color: #fdd0b5 !important; }
+    body.theme-durazno .form-control-recover:focus { border-color: #fdd0b5; box-shadow: 0 0 0 0.2rem rgba(253,208,181,0.4); }
+    body.theme-durazno .info-box { background: #fee5d0 !important; border-color: #fdd0b5 !important; border-left-color: #f5c2a4 !important; }
+
+    /* ========== TODAS LAS LETRAS EN NEGRITA (excepto iconos) ========== */
+    *:not([class*="fa-"]) {
+        font-weight: bold !important;
+    }
+    .fa, .fas, .far, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+        font-weight: 400 !important;
+    }
+    .fas, .fa-solid {
+        font-weight: 900 !important;
+    }
+
+    /* ========== FONDO CON IMAGEN Y TRANSPARENCIA ========== */
+    body {
+        background-image: url("{{ url_for('static', filename='img/fereteria.jpeg') }}");
+        background-size: cover;
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        min-height: 100vh;
+        position: relative;
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+        color: var(--renaven-texto);
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.4);
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    body.bg-black-solid {
+        background-image: none !important;
+        background-color: #000000 !important;
+    }
+    body.bg-black-solid::before { display: none; }
+
+    body.bg-white-solid {
+        background-image: none !important;
+        background-color: #FFFFFF !important;
+    }
+    body.bg-white-solid::before { display: none; }
+
+    body.bg-image-default {
+        background-image: url("{{ url_for('static', filename='img/fereteria.jpeg') }}") !important;
+        background-size: cover !important;
+        background-position: center center !important;
+        background-repeat: no-repeat !important;
+        background-attachment: fixed !important;
+    }
+    body.bg-image-default::before { display: block; }
+
+    .recover-container {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* ========== NAVEGACIÓN POR TECLADO ========== */
+    *:focus {
+        outline: 3px solid #FFD700 !important;
+        outline-offset: 2px !important;
+    }
+    .skip-link {
+        position: absolute;
+        top: -40px;
+        left: 0;
+        background: var(--renaven-azul-fuerte);
+        color: #000;
+        padding: 8px 16px;
+        z-index: 1000;
+        text-decoration: none;
+        border-radius: 0 0 8px 0;
+        font-weight: bold;
+    }
+    .skip-link:focus {
+        top: 0;
+    }
+
+    /* ===== FORZAR TODOS LOS TEXTOS A NEGRO ===== */
+    body, body * {
+        color: var(--renaven-texto) !important;
+    }
+    ::placeholder, input::placeholder, textarea::placeholder {
+        color: #9ca3af !important;
+        opacity: 1;
+    }
+
+    .recover-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .recover-card {
+        border: 2px solid var(--renaven-borde);
+        border-radius: 25px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+        overflow: hidden;
+        transition: transform 0.3s ease;
+        background: rgba(252, 255, 255, 0.85);
+        backdrop-filter: blur(4px);
+    }
+    .recover-card:hover {
+        transform: translateY(-5px);
+    }
+    .recover-header {
+        background: linear-gradient(135deg, var(--renaven-azul-fuerte), var(--renaven-azul-cielo));
+        text-align: center;
+        padding: 35px;
+        border-bottom: 2px solid var(--renaven-borde);
+        transition: background 0.3s, border-color 0.3s;
+    }
+    .logo-recover {
+        width: 90px;
+        height: 90px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 4px solid var(--renaven-azul-cielo);
+        margin-bottom: 15px;
+        background: var(--renaven-blanco);
+        padding: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        transition: transform 0.3s ease;
+    }
+    .logo-recover:hover {
+        transform: scale(1.05);
+    }
+    .recover-header h3 {
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #000 !important;
+    }
+    .recover-header p {
+        opacity: 0.9;
+        color: #000 !important;
+    }
+    .recover-body {
+        padding: 40px;
+        background: rgba(252, 255, 255, 0.7);
+        backdrop-filter: blur(4px);
+    }
+
+    .form-control-recover {
+        border-radius: 50px !important;
+        border: 2px solid var(--renaven-borde);
+        padding: 12px 20px;
+        transition: all 0.3s ease;
+        background: var(--renaven-blanco);
+        color: #000 !important;
+    }
+    .form-control-recover:focus {
+        border-color: var(--renaven-azul-fuerte);
+        box-shadow: 0 0 0 0.2rem rgba(132,182,244,0.25);
+        outline: none;
+    }
+
+    .btn-recover {
+        background: var(--renaven-azul-fuerte);
+        border: 2px solid var(--renaven-borde);
+        border-radius: 50px !important;
+        padding: 12px;
+        font-weight: bold;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        color: #000 !important;
+    }
+    .btn-recover:hover {
+        background: var(--renaven-azul-cielo);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        color: #000 !important;
+    }
+
+    .input-group-text {
+        background: var(--renaven-azul-cielo);
+        border: 2px solid var(--renaven-borde);
+        border-right: none;
+        border-radius: 50px 0 0 50px !important;
+        color: #000 !important;
+        transition: background 0.3s, border-color 0.3s;
+    }
+    .form-control {
+        border-radius: 0 50px 50px 0 !important;
+        border-left: none !important;
+        color: #000 !important;
+    }
+
+    .info-box {
+        background: var(--renaven-azul-cielo);
+        border-left: 5px solid var(--renaven-azul-fuerte);
+        padding: 15px 20px;
+        margin-bottom: 25px;
+        border-radius: 15px;
+        border: 2px solid var(--renaven-borde);
+        color: #000 !important;
+        transition: background 0.3s, border-color 0.3s;
+    }
+    .info-box i {
+        margin-right: 5px;
+    }
+
+    .back-to-login {
+        text-align: center;
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 2px solid var(--renaven-borde);
+    }
+    .back-to-login a {
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        color: var(--renaven-azul-fuerte) !important;
+    }
+    .back-to-login a:hover {
+        text-decoration: underline;
+        color: var(--renaven-azul-cielo) !important;
+    }
+
+    .alert {
+        border-radius: 15px;
+        border: 2px solid var(--renaven-borde);
+        margin-bottom: 15px;
+        color: #000 !important;
+    }
+    .alert-success {
+        background: #d4edda;
+        border-left: 5px solid #28a745;
+    }
+    .alert-danger {
+        background: #f8d7da;
+        border-left: 5px solid #DC3545;
+    }
+    .alert-warning {
+        background: #fff3e0;
+        border-left: 5px solid #FFD700;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .recover-card {
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #000 !important;
+    }
+    .form-label i {
+        margin-right: 6px;
+    }
+    .text-muted {
+        opacity: 0.7;
+        color: #000 !important;
+    }
+    .badge {
+        border-radius: 50px;
+    }
+    .btn-close {
+        filter: brightness(0.3);
+    }
+    .btn-close:hover {
+        filter: brightness(0.1);
+    }
+
+    @media (max-width: 768px) {
+        .recover-body {
+            padding: 25px;
+        }
+        .logo-recover {
+            width: 70px;
+            height: 70px;
+        }
+    }
+</style>
+
+<!-- ========== SKIP LINK ========== -->
+<a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+<div class="container recover-container" id="main-content" role="main">
+    <div class="col-md-5 col-sm-9">
+        <!-- Mostrar mensajes flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'info' %}info-circle{% else %}exclamation-triangle{% endif %} me-2" aria-hidden="true"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar mensaje"></button>
+                </div>
+            {% endfor %}
+        {% endwith %}
+
+        <div class="card recover-card">
+            <div class="recover-header">
+                <img src="{{ url_for('static', filename='img/renaven.jpeg') }}"
+                     alt="Logo RENAVEN - Sistema de Facturación"
+                     class="logo-recover"
+                     onerror="this.src='https://via.placeholder.com/90?text=R'">
+                <h1 class="h3"><i class="fas fa-key" aria-hidden="true"></i> Recuperar Contraseña</h1>
+                <p class="mb-0 mt-2">¿Olvidaste tu acceso? Te ayudamos</p>
+            </div>
+
+            <div class="recover-body">
+                <div class="info-box">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
+                    <strong>Instrucciones:</strong><br>
+                    Ingresa tu nombre de usuario y te enviaremos un enlace para restablecer tu contraseña al correo registrado.
+                </div>
+
+                <form method="POST" aria-label="Formulario de recuperación de contraseña">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-4">
+                        <label for="username" class="form-label"><i class="fas fa-user" aria-hidden="true"></i> Nombre de Usuario</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user" aria-hidden="true"></i></span>
+                            <input type="text" id="username" name="username" class="form-control form-control-recover"
+                                   placeholder="Ej: admin, vendedor1" required autofocus
+                                   autocomplete="username" aria-label="Nombre de usuario">
+                        </div>
+                        <small class="text-muted mt-2 d-block"><i class="fas fa-info-circle" aria-hidden="true"></i> Ingresa el mismo usuario que usas para iniciar sesión</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-recover w-100" aria-label="Enviar enlace de recuperación">
+                        <i class="fas fa-envelope me-2" aria-hidden="true"></i> Enviar enlace de recuperación
+                    </button>
+                </form>
+
+                <div class="back-to-login">
+                    <a href="{{ url_for('login') }}" aria-label="Volver al inicio de sesión">
+                        <i class="fas fa-arrow-left me-1" aria-hidden="true"></i> Volver a Iniciar Sesión
+                    </a>
+                    <p class="mt-3 mb-0 small text-muted">
+                        ¿Recuerdas tu contraseña?
+                        <a href="{{ url_for('login') }}" aria-label="Iniciar sesión">Inicia sesión aquí</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <small class="text-muted">
+                <i class="fas fa-shield-alt" aria-hidden="true"></i> Sistema seguro de Ferretería Renaven<br>
+                Si no recibes el correo en 5 minutos, contacta al administrador.
+            </small>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== CARGA DE TEMA GUARDADO Y CONFIGURACIÓN DE FUENTE ==========
+    document.addEventListener('DOMContentLoaded', function() {
+        // ---- Temas pastel ----
+        function applyTheme(themeClass) {
+            document.body.classList.remove('theme-rosa', 'theme-celeste', 'theme-menta', 'theme-amarillo', 'theme-lila', 'theme-durazno');
+            if (themeClass) {
+                document.body.classList.add(themeClass);
+            }
+            localStorage.setItem('selectedTheme', themeClass || '');
+        }
+
+        const savedTheme = localStorage.getItem('selectedTheme');
+        if (savedTheme) {
+            applyTheme(savedTheme);
+        }
+
+        // ---- Fondo de pantalla ----
+        const savedBg = localStorage.getItem('backgroundMode');
+        if (savedBg === 'black') {
+            document.body.className = 'bg-black-solid';
+        } else if (savedBg === 'white') {
+            document.body.className = 'bg-white-solid';
+        } else {
+            document.body.className = 'bg-image-default';
+        }
+
+        // ---- Tamaño de fuente (base 13px) ----
+        let currentFontSize = parseInt(localStorage.getItem('fontSize') || '100');
+        function applyFontSize() {
+            document.body.style.fontSize = (13 * currentFontSize / 100) + 'px';
+            localStorage.setItem('fontSize', currentFontSize);
+        }
+        // Aplicar el tamaño guardado
+        applyFontSize();
+
+        // Auto cerrar mensajes después de 5 segundos
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                alert.style.transition = 'opacity 0.5s ease';
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
+            }, 5000);
+        });
+
+        // Si hay parámetro de éxito en la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('sent') === 'true') {
+            const successMsg = document.createElement('div');
+            successMsg.className = 'alert alert-success alert-dismissible fade show';
+            successMsg.setAttribute('role', 'alert');
+            successMsg.innerHTML = `
+                <i class="fas fa-check-circle me-2" aria-hidden="true"></i>
+                ✅ Se ha enviado un enlace de recuperación a tu correo electrónico.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar mensaje"></button>
+            `;
+            const container = document.querySelector('.recover-container .col-md-5');
+            if (container) {
+                container.insertBefore(successMsg, document.querySelector('.recover-card'));
+            }
+        }
+    });
+
+    // Validar que el campo no esté vacío antes de enviar
+    document.querySelector('form')?.addEventListener('submit', function(e) {
+        const username = document.querySelector('input[name="username"]').value.trim();
+        if (!username) {
+            e.preventDefault();
+            alert('⚠️ Por favor, ingresa tu nombre de usuario');
+        }
+    });
+</script>
+
+{% endblock %}
