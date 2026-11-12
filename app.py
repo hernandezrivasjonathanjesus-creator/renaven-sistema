@@ -3616,6 +3616,10 @@ with app.app_context():
 # ==============================================================================
 @app.route('/limpiar_bd_definitivo')
 def limpiar_bd_definitivo():
+    # 🛡️ SEGURIDAD: Solo el Dueño logueado puede usar esto
+    if session.get('role') != 'Dueño':
+        return "⛔ Acceso denegado. Debes iniciar sesión como Dueño para usar esta función.", 403
+
     try:
         # Nombres de las tablas reales de tu app.py
         tablas = ['sales', 'products', 'clientes_frecuentes', 'movimientos_caja', 'cash_closures', 'returns', 'notas_credito', 'movimientos_devolucion']
