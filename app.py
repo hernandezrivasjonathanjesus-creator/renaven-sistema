@@ -3617,22 +3617,25 @@ with app.app_context():
 @app.route('/limpiar_bd_definitivo')
 def limpiar_bd_definitivo():
     try:
-        with app.app_context():
-            # Nombres de las tablas a vaciar
-            tablas = ['detalle_ventas', 'ventas', 'productos', 'clientes', 'movimientos_caja', 'cierres_caja', 'historial_devoluciones']
-            mensajes = []
-            
-            for t in tablas:
-                try:
-                    # Usamos db.text en lugar de text
-                    db.session.execute(db.text(f"TRUNCATE TABLE {t} RESTART IDENTITY CASCADE;"))
-                    db.session.commit() # Guardamos el cambio de esta tabla inmediatamente
-                    mensajes.append(f"✅ Tabla {t} vaciada.")
-                except Exception as e:
-                    db.session.rollback() # Si falla (ej. tabla no existe), deshacemos el error y seguimos
-                    mensajes.append(f"⚠️ Tabla {t} omitida (no existe o error).")
-            
-            return "<br>".join(mensajes) + "<br><br>🎉 ¡Limpieza Terminada!"
+        # Nombres de las tablas reales de tu app.py
+        tablas = ['sales', 'products', 'clientes_frecuentes', 'movimientos_caja', 'cash_closures', 'returns', 'notas_credito', 'movimientos_devolucion']
+        mensajes = []
+        
+        for t in tablas:
+            try:
+                # Usamos execute_query que es la función real de tu app
+                execute_query(f"TRUNCATE TABLE {t} RESTART IDENTITY CASCADE;", commit=True)
+                mensajes.append(f"✅ Tabla {t} vaciada.")
+            except Exception as e:
+                # Si la tabla no existe o falla, lo ignoramos y seguimos
+                mensajes.append(f"⚠️ Tabla {t} omitida (error: {str(e)[:50]}).")
+        
+        # Reiniciamos el contador de facturas y saldo de caja
+        execute_query("UPDATE config SET value = '1' WHERE key_name = 'next_invoice'", commit=True)
+        execute_query("UPDATE config SET value = '1' WHERE key_name = 'next_return'", commit=True)
+        execute_query("UPDATE saldo_caja SET saldo_bs = 0, saldo_usd = 0 WHERE id = 1", commit=True)
+        
+        return "<br>".join(mensajes) + "<br><br>🎉 ¡Limpieza Terminada! Reiniciamos el número de factura a 1."
     except Exception as e:
         return f"❌ Error general: {e}"
 # ==================== INICIO ====================
