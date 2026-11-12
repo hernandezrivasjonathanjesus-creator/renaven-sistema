@@ -316,16 +316,54 @@
             top: 0;
         }
 
+        /* ========== ESTILOS DE IMPRESIÓN ========== */
+        /* Ocultar elementos de interfaz al imprimir */
         @media print {
-            body { background: white; }
-            .sidebar, .no-print, .btn-pagar-header, .btn-guardar, .btn-catalogo, 
-            .btn-presupuesto, .btn-devolucion, .modal, .cash-info, .btn-finalizar, .btn-close,
-            .saldo-card {
+            body * { visibility: hidden; }
+            #ticket-print-area, #ticket-print-area * { visibility: visible; }
+            #ticket-print-area {
+                position: absolute; left: 0; top: 0;
+                width: 100%;
+            }
+            .no-print, .sidebar, .modal, .btn, .btn-pagar-header, .btn-guardar,
+            .btn-catalogo, .btn-presupuesto, .btn-devolucion, .btn-finalizar,
+            .btn-close, .saldo-card, .cash-info, .exchange-rate-info {
                 display: none !important;
             }
-            .col-md-10 { width: 100% !important; }
+            @page { margin: 0; }
         }
 
+        /* ========== ESTILOS DE TICKET (TICKETERA Y CARTA) ========== */
+        .ticket-58 { width: 58mm; font-family: 'Courier New', monospace; font-size: 10px; padding: 2mm; color: #000 !important; }
+        .ticket-80 { width: 80mm; font-family: 'Courier New', monospace; font-size: 12px; padding: 3mm; color: #000 !important; }
+        .ticket-carta { width: 100%; max-width: 190mm; font-family: Arial, sans-serif; font-size: 12px; padding: 10mm; color: #000 !important; }
+
+        .ticket-58 .t-center, .ticket-80 .t-center, .ticket-carta .t-center { text-align: center; }
+        .ticket-58 .t-right,  .ticket-80 .t-right,  .ticket-carta .t-right  { text-align: right; }
+        .ticket-58 .t-left,   .ticket-80 .t-left,   .ticket-carta .t-left   { text-align: left; }
+
+        .ticket-58 .t-line, .ticket-80 .t-line, .ticket-carta .t-line {
+            border-top: 1px dashed #000;
+            margin: 4px 0;
+        }
+        .ticket-58 .t-table, .ticket-80 .t-table, .ticket-carta .t-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .ticket-58 .t-table td, .ticket-80 .t-table td, .ticket-carta .t-table td {
+            padding: 1px 0;
+            vertical-align: top;
+        }
+        .ticket-58 .t-bold, .ticket-80 .t-bold, .ticket-carta .t-bold { font-weight: bold; }
+
+        .ticket-58 .t-logo, .ticket-80 .t-logo, .ticket-carta .t-logo {
+            max-width: 40mm; display: block; margin: 0 auto 2mm;
+        }
+        .ticket-58 .t-negocio, .ticket-80 .t-negocio, .ticket-carta .t-negocio {
+            font-size: 1.1em; font-weight: bold; text-align: center;
+        }
+
+        /* ========== ESTILOS GENERALES ========== */
         .exchange-rate-info {
             background: var(--renaven-blanco);
             border: 2px solid var(--renaven-borde);
@@ -1158,6 +1196,43 @@
             </div>
         </div>
     </div>
+
+    <!-- MODAL DE ÉXITO CON OPCIONES DE IMPRESIÓN -->
+    <div class="modal fade" id="modalExitoVenta" tabindex="-1" data-bs-backdrop="static" aria-labelledby="modalExitoVentaTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border: 3px solid var(--renaven-verde);">
+                <div class="modal-header" style="background: var(--renaven-verde); color: white;">
+                    <h5 class="modal-title" id="modalExitoVentaTitle"><i class="fas fa-check-circle"></i> ¡Venta Registrada!</h5>
+                </div>
+                <div class="modal-body text-center">
+                    <p class="mb-3"><strong>La venta se ha registrado correctamente y el dinero ha ingresado al sistema.</strong></p>
+                    <div class="d-grid gap-2">
+                        <button class="btn w-100" style="background: var(--renaven-azul-cielo); border: 2px solid var(--renaven-borde); border-radius: 50px; font-weight: bold;" onclick="imprimirTicketGuardado('80')">
+                            <i class="fas fa-receipt"></i> Imprimir Ticket (80mm)
+                        </button>
+                        <button class="btn w-100" style="background: var(--renaven-azul-cielo); border: 2px solid var(--renaven-borde); border-radius: 50px; font-weight: bold;" onclick="imprimirTicketGuardado('58')">
+                            <i class="fas fa-receipt"></i> Imprimir Ticket (58mm)
+                        </button>
+                        <button class="btn w-100" style="background: var(--renaven-oro); border: 2px solid var(--renaven-borde); border-radius: 50px; font-weight: bold;" onclick="imprimirTicketGuardado('carta')">
+                            <i class="fas fa-file-invoice"></i> Imprimir Factura (Carta/A4)
+                        </button>
+                        <hr>
+                        <button class="btn w-100" style="background: var(--renaven-gris-claro); border: 2px solid var(--renaven-borde); border-radius: 50px; font-weight: bold;" onclick="cerrarExitoVenta()">
+                            <i class="fas fa-times"></i> Cerrar y Continuar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR OCULTO PARA IMPRESIÓN DEL TICKET -->
+    <div id="ticket-print-area" style="display:none;">
+        <div id="ticket-content" class="ticket-80">
+            <!-- Aquí se inyecta el ticket dinámicamente -->
+        </div>
+    </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     // ========== CARGA DE TEMA GUARDADO Y CONFIGURACIÓN DE FUENTE ==========
@@ -1723,7 +1798,9 @@
         verificarPagoCompleto(); 
     }
     
-    // ========== FINALIZAR VENTA ==========
+    // ================================================================
+    //   FINALIZAR VENTA + IMPRESIÓN (TICKET / FACTURA)
+    // ================================================================
     function finalizarVenta() {
         let clientId = document.getElementById('client_id').value.trim();
         let clientName = document.getElementById('client_name').value.trim();
@@ -1775,39 +1852,251 @@
             }
         });
         
-        let form = document.createElement('form'); 
-        form.method = 'POST'; 
-        form.action = '/checkout';
-        form.style.display = 'none';
-        
-        let campos = ['client_id', 'client_name', 'client_phone', 'client_address'];
-        campos.forEach(id => {
-            let input = document.createElement('input'); 
-            input.type = 'hidden'; 
-            input.name = id; 
-            input.value = document.getElementById(id).value; 
-            form.appendChild(input);
+        // Datos del ticket para imprimir después
+        let ticketData = {
+            invoice_number: 'PENDIENTE', // Se actualizará si el backend devuelve el número
+            date: new Date().toLocaleString('es-VE'),
+            client_name: clientName,
+            client_id: clientId,
+            client_phone: document.getElementById('client_phone').value.trim(),
+            client_address: clientAddress,
+            almacen: document.getElementById('selectAlmacen')?.value || 'General',
+            usuario: '{{ session.get("username", session.get("role", "Usuario")) }}',
+            items: [], // Se llenará desde el carrito
+            pagos: pagosData,
+            subtotal: totalSinDescuento,
+            descuento: descuentoAplicado,
+            total_usd: totalFinal,
+            total_bs: totalBs,
+            exchange_rate: exchangeRate,
+            notas_credito_usadas: pagos.filter(p => p.tipo === 'nota_credito').map(p => ({numero: p.notaCreditoNumero, monto: p.montoUSD})),
+            devoluciones_usadas: pagos.filter(p => p.tipo === 'devolucion').map(p => ({numero: p.returnNumber || p.facturaNumero, monto: p.montoUSD}))
+        };
+
+        // Obtener items del carrito actual para el ticket
+        fetch('/get_cart')
+            .then(r => r.json())
+            .then(cartData => {
+                ticketData.items = cartData.items || [];
+                sessionStorage.setItem('ultima_venta_ticket', JSON.stringify(ticketData));
+                
+                // Enviar al backend
+                let form = document.createElement('form'); 
+                form.method = 'POST'; 
+                form.action = '/checkout';
+                form.style.display = 'none';
+                
+                let campos = ['client_id', 'client_name', 'client_phone', 'client_address'];
+                campos.forEach(id => {
+                    let input = document.createElement('input'); 
+                    input.type = 'hidden'; 
+                    input.name = id; 
+                    input.value = document.getElementById(id).value; 
+                    form.appendChild(input);
+                });
+
+                let selectAlmacen = document.getElementById('selectAlmacen');
+                if (selectAlmacen) {
+                    let inputAlmacen = document.createElement('input');
+                    inputAlmacen.type = 'hidden';
+                    inputAlmacen.name = 'almacen_venta';
+                    inputAlmacen.value = selectAlmacen.value === 'General' ? 'Tienda 1' : selectAlmacen.value; 
+                    form.appendChild(inputAlmacen);
+                }
+                
+                let pagosInput = document.createElement('input'); 
+                pagosInput.type = 'hidden'; 
+                pagosInput.name = 'pagos'; 
+                pagosInput.value = JSON.stringify(pagosData); 
+                form.appendChild(pagosInput);
+                
+                document.body.appendChild(form); 
+                
+                // Mostrar modal de éxito antes de enviar (o enviar y luego mostrar)
+                // Para no romper el flujo, mostramos el modal de éxito y al cerrar enviamos el form.
+                // Pero como necesitamos que el backend registre, enviamos primero y mostramos modal.
+                // Usamos fetch para enviar y luego mostrar modal sin recargar.
+                
+                fetch('/checkout', {
+                    method: 'POST',
+                    body: new URLSearchParams(new FormData(form))
+                })
+                .then(response => {
+                    // Si el backend redirige (302), response.redirected será true
+                    // No podemos leer el JSON si redirige, así que mostramos el modal igual.
+                    document.getElementById('modalPago').classList.add('d-none'); // Ocultar modal de pago
+                    new bootstrap.Modal(document.getElementById('modalExitoVenta')).show();
+                })
+                .catch(err => {
+                    console.error('Error en checkout:', err);
+                    // Aun así mostramos el modal para imprimir
+                    new bootstrap.Modal(document.getElementById('modalExitoVenta')).show();
+                });
+            })
+            .catch(err => {
+                console.error('Error obteniendo carrito para ticket:', err);
+                alert('Error al preparar el ticket. La venta se enviará igual.');
+                // Fallback: enviar form directamente
+                let form = document.createElement('form'); 
+                form.method = 'POST'; 
+                form.action = '/checkout';
+                form.style.display = 'none';
+                let campos = ['client_id', 'client_name', 'client_phone', 'client_address'];
+                campos.forEach(id => {
+                    let input = document.createElement('input'); 
+                    input.type = 'hidden'; 
+                    input.name = id; 
+                    input.value = document.getElementById(id).value; 
+                    form.appendChild(input);
+                });
+                let selectAlmacen = document.getElementById('selectAlmacen');
+                if (selectAlmacen) {
+                    let inputAlmacen = document.createElement('input');
+                    inputAlmacen.type = 'hidden';
+                    inputAlmacen.name = 'almacen_venta';
+                    inputAlmacen.value = selectAlmacen.value === 'General' ? 'Tienda 1' : selectAlmacen.value; 
+                    form.appendChild(inputAlmacen);
+                }
+                let pagosInput = document.createElement('input'); 
+                pagosInput.type = 'hidden'; 
+                pagosInput.name = 'pagos'; 
+                pagosInput.value = JSON.stringify(pagosData); 
+                form.appendChild(pagosInput);
+                document.body.appendChild(form); 
+                form.submit();
+            });
+    }
+    
+    // ========== FUNCIONES DE IMPRESIÓN ==========
+    function generarTicketHTML(venta) {
+        const fmtUSD = n => '$' + Number(n||0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+        const fmtBS  = n => 'Bs. ' + Number(n||0).toLocaleString('es-VE', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+        let itemsHTML = '';
+        (venta.items || []).forEach(it => {
+            const cant = it.sale_type === 'weight' ? it.quantity + ' Kg' : it.quantity;
+            itemsHTML += `
+                <tr>
+                    <td class="t-left">${it.name}</td>
+                    <td class="t-center">${cant}</td>
+                    <td class="t-right">${fmtUSD(it.price)}</td>
+                    <td class="t-right">${fmtUSD(it.price * it.quantity)}</td>
+                </tr>`;
         });
 
-        // NUEVO: Enviar el almacén seleccionado
-        let selectAlmacen = document.getElementById('selectAlmacen');
-        if (selectAlmacen) {
-            let inputAlmacen = document.createElement('input');
-            inputAlmacen.type = 'hidden';
-            inputAlmacen.name = 'almacen_venta';
-            // Si es General, guardamos 'Tienda 1' por defecto en la DB
-            inputAlmacen.value = selectAlmacen.value === 'General' ? 'Tienda 1' : selectAlmacen.value; 
-            form.appendChild(inputAlmacen);
+        let pagosHTML = '';
+        const p = venta.pagos || {};
+        const nombresPago = {
+            efectivo_bs: 'Efectivo Bs',
+            efectivo_usd: 'Efectivo USD',
+            zelle: 'Zelle',
+            binance: 'Binance',
+            movil: 'Pago Movil',
+            transferencia: 'Transferencia',
+            tarjeta: 'Tarjeta',
+            devolucion: 'Devolucion',
+            nota_credito: 'Nota Credito'
+        };
+        Object.keys(nombresPago).forEach(k => {
+            if (p[k] && p[k] > 0) {
+                const moneda = ['efectivo_usd','zelle','binance','nota_credito','devolucion'].includes(k) ? 'USD' : 'BS';
+                const valor = moneda === 'USD' ? fmtUSD(p[k]) : fmtBS(p[k]);
+                pagosHTML += `<tr><td class="t-left">${nombresPago[k]}</td><td class="t-right">${valor}</td></tr>`;
+            }
+        });
+
+        let notasHTML = '';
+        if (venta.notas_credito_usadas && venta.notas_credito_usadas.length > 0) {
+            notasHTML += '<div class="t-line"></div><div class="t-bold">NOTAS DE CREDITO USADAS:</div>';
+            venta.notas_credito_usadas.forEach(nc => {
+                notasHTML += `<div>NC #${nc.numero}: ${fmtUSD(nc.monto)}</div>`;
+            });
         }
-        
-        let pagosInput = document.createElement('input'); 
-        pagosInput.type = 'hidden'; 
-        pagosInput.name = 'pagos'; 
-        pagosInput.value = JSON.stringify(pagosData); 
-        form.appendChild(pagosInput);
-        
-        document.body.appendChild(form); 
-        form.submit();
+        if (venta.devoluciones_usadas && venta.devoluciones_usadas.length > 0) {
+            notasHTML += '<div class="t-line"></div><div class="t-bold">DEVOLUCIONES USADAS:</div>';
+            venta.devoluciones_usadas.forEach(d => {
+                notasHTML += `<div>Dev #${d.numero}: ${fmtUSD(d.monto)}</div>`;
+            });
+        }
+
+        return `
+            <div class="t-center">
+                <div class="t-negocio">RENAVEN OAKMONT, C.A.</div>
+                <div>RIF: J-41323725-3</div>
+                <div>CALLE 1 ANDRES BELLO N°01-06</div>
+                <div>SECTOR FRANCISCO DE MIRANDA II</div>
+                <div>PUNTA CARDON, PUNTO FIJO</div>
+                <div>Tel: 0412-2520053</div>
+            </div>
+            <div class="t-line"></div>
+
+            <div class="t-bold t-center">NOTA DE ENTREGA</div>
+            <div class="t-center">N° ${venta.invoice_number}</div>
+            <div class="t-center">${venta.date}</div>
+            <div class="t-line"></div>
+
+            <table class="t-table">
+                <tr><td class="t-left">Cliente:</td><td class="t-right">${venta.client_name}</td></tr>
+                <tr><td class="t-left">C.I/RIF:</td><td class="t-right">${venta.client_id}</td></tr>
+                <tr><td class="t-left">Direccion:</td><td class="t-right">${venta.client_address || '-'}</td></tr>
+                <tr><td class="t-left">Almacen:</td><td class="t-right">${venta.almacen || 'General'}</td></tr>
+                <tr><td class="t-left">Cajero:</td><td class="t-right">${venta.usuario || ''}</td></tr>
+            </table>
+            <div class="t-line"></div>
+
+            <table class="t-table">
+                <thead>
+                    <tr>
+                        <td class="t-left t-bold">Producto</td>
+                        <td class="t-center t-bold">Cant</td>
+                        <td class="t-right t-bold">P/U</td>
+                        <td class="t-right t-bold">Total</td>
+                    </tr>
+                </thead>
+                <tbody>${itemsHTML}</tbody>
+            </table>
+            <div class="t-line"></div>
+
+            <table class="t-table">
+                <tr><td class="t-left">Subtotal:</td><td class="t-right">${fmtUSD(venta.subtotal)}</td></tr>
+                ${venta.descuento > 0 ? `<tr><td class="t-left">Descuento:</td><td class="t-right">-${fmtUSD(venta.descuento)}</td></tr>` : ''}
+                <tr><td class="t-left t-bold">TOTAL USD:</td><td class="t-right t-bold">${fmtUSD(venta.total_usd)}</td></tr>
+                <tr><td class="t-left t-bold">TOTAL BS:</td><td class="t-right t-bold">${fmtBS(venta.total_bs)}</td></tr>
+                <tr><td class="t-left">Tasa:</td><td class="t-right">${fmtBS(venta.exchange_rate)} / USD</td></tr>
+            </table>
+            <div class="t-line"></div>
+
+            <div class="t-bold">PAGOS RECIBIDOS:</div>
+            <table class="t-table">${pagosHTML}</table>
+            ${notasHTML}
+            <div class="t-line"></div>
+
+            <div class="t-center">¡Gracias por su compra!</div>
+            <div class="t-center">${new Date().toLocaleString('es-VE')}</div>
+        `;
+    }
+
+    function imprimirTicketGuardado(tamano = '80') {
+        let ticketJSON = sessionStorage.getItem('ultima_venta_ticket');
+        if (!ticketJSON) {
+            alert('No hay datos de ticket para imprimir. Realice una venta primero.');
+            return;
+        }
+        let venta = JSON.parse(ticketJSON);
+        const area = document.getElementById('ticket-print-area');
+        const content = document.getElementById('ticket-content');
+        content.className = 'ticket-' + tamano;
+        content.innerHTML = generarTicketHTML(venta);
+        area.style.display = 'block';
+        window.print();
+        setTimeout(() => { area.style.display = 'none'; }, 500);
+    }
+
+    function cerrarExitoVenta() {
+        let modal = bootstrap.Modal.getInstance(document.getElementById('modalExitoVenta'));
+        if (modal) modal.hide();
+        // Opcional: recargar para limpiar carrito
+        setTimeout(() => { window.location.reload(); }, 300);
     }
     
     // ========== FUNCIONES DE CLIENTES ==========
