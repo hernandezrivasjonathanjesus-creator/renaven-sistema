@@ -3614,7 +3614,26 @@ with app.app_context():
     except Exception as e:
         print(f"Error al inicializar la base de datos: {e}")
 # ==============================================================================
-
+@app.route('/limpiar_bd_definitivo')
+def limpiar_bd_definitivo():
+    # Usamos el objeto de base de datos de tu app
+    try:
+        from sqlalchemy import text
+        with app.app_context():
+            # Nombres de las tablas a vaciar
+            tablas = ['detalle_ventas', 'ventas', 'productos', 'clientes', 'movimientos_caja', 'cierres_caja', 'historial_devoluciones']
+            mensajes = []
+            for t in tablas:
+                try:
+                    db.session.execute(text(f"TRUNCATE TABLE {t} RESTART IDENTITY CASCADE;"))
+                    mensajes.append(f"✅ Tabla {t} vaciada.")
+                except Exception as e:
+                    mensajes.append(f"⚠️ Tabla {t} omitida (no existe).")
+                    db.session.rollback()
+            db.session.commit()
+            return "<br>".join(mensajes) + "<br><br>🎉 ¡Limpieza Terminada!"
+    except Exception as e:
+        return f"❌ Error: {e}"
 # ==================== INICIO ====================
 if __name__ == '__main__':
     import webbrowser
@@ -3668,3 +3687,5 @@ if __name__ == '__main__':
         traceback.print_exc()
         sys.exit(1)
     app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False, threaded=True)
+
+    
