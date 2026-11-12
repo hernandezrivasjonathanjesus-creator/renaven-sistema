@@ -1,17 +1,17 @@
 {
   "HTML-001": {
-    "occurrences": 1639,
+    "occurrences": 1692,
     "confidence": 1,
     "mastered_explicitly": false,
     "first_seen": "2026-06-29T22:39:59.468Z",
-    "last_seen": "2026-11-12T03:06:55.990Z"
+    "last_seen": "2026-11-12T03:17:15.473Z"
   },
   "SEC-004": {
-    "occurrences": 1741,
+    "occurrences": 1808,
     "confidence": 1,
     "mastered_explicitly": false,
     "first_seen": "2026-06-29T22:40:00.074Z",
-    "last_seen": "2026-11-12T03:01:21.509Z"
+    "last_seen": "2026-11-12T03:17:15.506Z"
   },
   "CC-004": {
     "occurrences": 1,
