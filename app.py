@@ -1923,6 +1923,38 @@ def api_facturas():
         logger.error(f"Error en api_facturas: {e}")
         return jsonify({'error': str(e)}), 500
 
+# ==================== IMPRIMIR TICKET DE NOTA DE ENTREGA ====================
+@app.route('/imprimir_ticket', methods=['POST'])
+@login_required
+@permission_required('sell')
+def imprimir_ticket():
+    try:
+        # Recibimos los datos que manda el JavaScript desde facturacion.html
+        data = request.get_json()
+        
+        # Aquí armamos el objeto 'nota' con los datos que nos manda la pantalla
+        nota = {
+            'numero': data.get('numero', 'NE-000000'),
+            'fecha': data.get('fecha', ''),
+            'cliente': {
+                'nombre': data.get('cliente_nombre', 'Cliente Genérico'),
+                'telefono': data.get('cliente_telefono', '')
+            },
+            'items': data.get('items', []),
+            'total': data.get('total', '0.00'),
+            'observaciones': data.get('observaciones', '')
+        }
+        
+        # Traemos los datos de la empresa de la base de datos para el encabezado
+        company = execute_query("SELECT * FROM company WHERE id = 1", fetch_one=True)
+        
+        # Renderizamos el HTML del ticket
+        return render_template('nota_entrega_ticket.html', nota=nota, empresa=company)
+        
+    except Exception as e:
+        logger.error(f"Error al generar ticket: {e}")
+        return jsonify({'error': str(e)}), 500
+        
 # ==================== CLIENTES FRECUENTES ====================
 def buscar_clientes():
     search = request.args.get('search', '')
