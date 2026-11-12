@@ -18052,3 +18052,26 @@ werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'daily_
 {"timestamp": "2026-10-29 16:37:41", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:3487", "message": "[SCHEDULER] Scheduler de tasa BCV iniciado (cada 6 horas)"}
 {"timestamp": "2026-10-29 16:38:00", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:284", "message": "Cache actualizado: tasa = 889.2553"}
 {"timestamp": "2026-10-29 16:38:11", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:843", "message": "[TELEGRAM] Mensaje enviado correctamente"}
+{"timestamp": "2026-11-11 22:18:31", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:186", "message": "[OK] Pool de conexiones PostgreSQL (Local) iniciado"}
+{"timestamp": "2026-11-11 22:18:31", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:1384", "message": "Las tablas ya existen, omitiendo creación..."}
+{"timestamp": "2026-11-11 22:18:32", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:1039", "message": "[TELEGRAM] Iniciando escucha de comandos..."}
+{"timestamp": "2026-11-11 22:18:32", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:186", "message": "[OK] Pool de conexiones PostgreSQL (Local) iniciado"}
+{"timestamp": "2026-11-11 22:18:32", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:1137", "message": "Base de datos ya estaba inicializada, omitiendo..."}
+{"timestamp": "2026-11-11 22:18:34", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:363", "message": "[OK] Tasa BCV obtenida: 904.4485 Bs/USD - Fecha: None"}
+{"timestamp": "2026-11-11 22:18:34", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:3566", "message": "[SCHEDULER] Scheduler de tasa BCV iniciado (cada 6 horas)"}
+{"timestamp": "2026-11-11 22:18:51", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:299", "message": "Cache actualizado: tasa = 904.4485"}
+{"timestamp": "2026-11-11 22:18:51", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:867", "message": "[TELEGRAM] Mensaje enviado correctamente"}
+{"timestamp": "2026-11-11 22:38:24", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:299", "message": "Cache actualizado: tasa = 904.4485"}
+{"timestamp": "2026-11-11 22:39:26", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:299", "message": "Cache actualizado: tasa = 904.4485"}
+{"timestamp": "2026-11-11 22:40:51", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:299", "message": "Cache actualizado: tasa = 904.4485"}
+{"timestamp": "2026-11-11 22:42:52", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:299", "message": "Cache actualizado: tasa = 904.4485"}
+{"timestamp": "2026-11-11 22:44:52", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:299", "message": "Cache actualizado: tasa = 904.4485"}
+{"timestamp": "2026-11-11 22:45:52", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:299", "message": "Cache actualizado: tasa = 904.4485"}
+{"timestamp": "2026-11-11 22:46:52", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:299", "message": "Cache actualizado: tasa = 904.4485"}
+{"timestamp": "2026-11-11 22:47:52", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:299", "message": "Cache actualizado: tasa = 904.4485"}
+{"timestamp": "2026-11-11 22:49:52", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:299", "message": "Cache actualizado: tasa = 904.4485"}
+{"timestamp": "2026-11-11 22:50:52", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:299", "message": "Cache actualizado: tasa = 904.4485"}
+{"timestamp": "2026-11-11 22:51:56", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:299", "message": "Cache actualizado: tasa = 904.4485"}
+{"timestamp": "2026-11-11 22:52:56", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:299", "message": "Cache actualizado: tasa = 904.4485"}
+{"timestamp": "2026-11-11 22:54:52", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:299", "message": "Cache actualizado: tasa = 904.4485"}
+{"timestamp": "2026-11-11 22:55:52", "level": "INFO", "path": "C:/Users/Jonathan/Desktop/proyecto 22-05/app.py:299", "message": "Cache actualizado: tasa = 904.4485"}
