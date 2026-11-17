@@ -526,6 +526,7 @@
                                             data-id="{{ product.id }}"
                                             data-name="{{ product.name|default('')|replace("'", "\\'") }}"
                                             data-cost="{{ product.cost|default(0) }}"
+                                            data-price="{{ product.price|default(0) }}"
                                             data-margin="{{ product.margin|default(0) }}"
                                             data-stock="{{ stock }}"
                                             data-barcode="{{ product.barcode|default('') }}"
@@ -624,12 +625,22 @@
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label"><i class="fas fa-chart-line"></i> Costo ($) <span id="cost_unit_label">por unidad</span></label>
-                                <input type="number" step="0.01" name="cost" class="form-control" required>
+                                <label class="form-label"><i class="fas fa-truck"></i> Costo (Precio de Camión) ($) <span id="cost_unit_label">por unidad</span></label>
+                                <input type="number" step="0.01" name="cost" id="add_cost" class="form-control" required
+                                       oninput="calcularMargenAdd()">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label"><i class="fas fa-chart-simple"></i> Margen (%)</label>
-                                <input type="number" step="0.01" name="margin" class="form-control" required>
+                                <label class="form-label"><i class="fas fa-tag"></i> Precio de Venta al Público ($)</label>
+                                <input type="number" step="0.01" name="price" id="add_price" class="form-control" required
+                                       oninput="calcularMargenAdd()">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><i class="fas fa-chart-simple"></i> Margen de Ganancia (%)</label>
+                                <input type="number" step="0.01" name="margin" id="add_margin" class="form-control" readonly
+                                       style="background:#eef4ff; font-weight:bold;">
+                                <small class="text-muted">Se calcula automáticamente</small>
                             </div>
                         </div>
                         <div class="row">
@@ -767,12 +778,21 @@
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label"><i class="fas fa-chart-line"></i> Costo ($)</label>
-                                <input type="number" step="0.01" id="edit_cost" name="cost" class="form-control" required>
+                                <label class="form-label"><i class="fas fa-truck"></i> Costo (Precio de Camión) ($)</label>
+                                <input type="number" step="0.01" id="edit_cost" name="cost" class="form-control" required
+                                       oninput="calcularMargenEdit()">
                             </div>
                             <div class="col-md-6 mb-3">
+                                <label class="form-label"><i class="fas fa-tag"></i> Precio de Venta al Público ($)</label>
+                                <input type="number" step="0.01" id="edit_price" name="price" class="form-control" required
+                                       oninput="calcularMargenEdit()">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label"><i class="fas fa-chart-simple"></i> Margen (%)</label>
-                                <input type="number" step="0.01" id="edit_margin" name="margin" class="form-control" required>
+                                <input type="number" step="0.01" id="edit_margin" name="margin" class="form-control" readonly
+                                       style="background:#eef4ff; font-weight:bold;">
                             </div>
                         </div>
                         <div class="row">
@@ -834,6 +854,32 @@
             }
         }
 
+        // ========== CÁLCULO AUTOMÁTICO DE MARGEN ==========
+        function calcularMargenAdd() {
+            const costo = parseFloat(document.getElementById('add_cost').value) || 0;
+            const precio = parseFloat(document.getElementById('add_price').value) || 0;
+            const margenInput = document.getElementById('add_margin');
+
+            if (costo > 0 && precio > 0) {
+                const margen = ((precio - costo) / costo) * 100;
+                margenInput.value = margen.toFixed(2);
+            } else {
+                margenInput.value = '';
+            }
+        }
+
+        function calcularMargenEdit() {
+            const costo = parseFloat(document.getElementById('edit_cost').value) || 0;
+            const precio = parseFloat(document.getElementById('edit_price').value) || 0;
+            const margenInput = document.getElementById('edit_margin');
+
+            if (costo > 0 && precio > 0) {
+                margenInput.value = (((precio - costo) / costo) * 100).toFixed(2);
+            } else {
+                margenInput.value = '';
+            }
+        }
+
         document.querySelectorAll('.btn-eliminar').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 document.getElementById('delete_product_id').value = this.getAttribute('data-id');
@@ -847,6 +893,7 @@
                 document.getElementById('edit_product_id').value = this.getAttribute('data-id');
                 document.getElementById('edit_name').value = this.getAttribute('data-name');
                 document.getElementById('edit_cost').value = this.getAttribute('data-cost');
+                document.getElementById('edit_price').value = this.getAttribute('data-price') || '';
                 document.getElementById('edit_margin').value = this.getAttribute('data-margin');
                 document.getElementById('edit_stock').value = this.getAttribute('data-stock');
                 document.getElementById('edit_barcode').value = this.getAttribute('data-barcode');
@@ -855,6 +902,7 @@
                 document.getElementById('edit_unit').value = this.getAttribute('data-unit');
                 document.getElementById('edit_sale_type').value = this.getAttribute('data-sale-type') || 'unit';
                 document.getElementById('edit_arrival_date').value = this.getAttribute('data-date');
+                calcularMargenEdit();
                 new bootstrap.Modal(document.getElementById('editProductModal')).show();
             });
         });
