@@ -157,7 +157,7 @@ def caja_context():
 # ==================== COMPRESIÓN GZIP ====================
 Compress(app)
 
-# ==================== CONFIGURACIÓN DE POSTGRESQL ====================
+# ==================== CONFIGURACIÓN DE POSTGRESQL (CONEXIÓN DIRECTA) ====================
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 DB_CONFIG = {
@@ -167,27 +167,21 @@ DB_CONFIG = {
     'user': os.getenv('DB_USER'),
     'password': os.getenv('DB_PASSWORD'),
     'connect_timeout': 30,
+    'sslmode': 'disable',
 }
+
+# Ya no usamos un pool global. Cada consulta abre y cierra su propia conexión.
 connection_pool = None
 
 def ensure_database_exists():
     pass
 
 def init_connection_pool():
+    # Esta función ya no es necesaria, pero la dejamos por compatibilidad
     global connection_pool
-    try:
-        if DATABASE_URL:
-            db_url = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-            connection_pool = pool.ThreadedConnectionPool(1, 20, dsn=db_url)
-            logger.info("[OK] Pool de conexiones PostgreSQL (URL) iniciado")
-            print("[OK] Pool de conexiones PostgreSQL (URL) iniciado")
-        else:
-            connection_pool = pool.ThreadedConnectionPool(1, 20, **DB_CONFIG)
-            logger.info("[OK] Pool de conexiones PostgreSQL (Local) iniciado")
-            print("[OK] Pool de conexiones PostgreSQL (Local) iniciado")
-    except Exception as e:
-        logger.error(f"Error al crear pool: {e}")
-        raise
+    connection_pool = True
+    logger.info("[OK] Modo de conexión directa (sin pool) activado")
+    print("[OK] Modo de conexión directa (sin pool) activado")
 
 def _mysql_to_pg(query):
     query = query.replace('`', '')
@@ -228,11 +222,18 @@ def _mysql_to_pg(query):
     return query
 
 def get_db():
-    global connection_pool
-    if connection_pool is None:
-        init_connection_pool()
+    # Abre una conexión NUEVA cada vez. Sin pool, sin herencia, sin SSL corrupto.
     try:
-        conn = connection_pool.getconn()
+        if DATABASE_URL:
+            db_url = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+            if '?' not in db_url:
+                db_url += '?sslmode=disable'
+            elif 'sslmode' not in db_url:
+                db_url += '&sslmode=disable'
+            conn = psycopg2.connect(dsn=db_url)
+        else:
+            conn = psycopg2.connect(**DB_CONFIG)
+        
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         _orig = cursor.execute
         def _patched(q, p=None):
@@ -281,7 +282,7 @@ def execute_query(query, params=None, fetch_one=False, fetch_all=False, commit=F
                 pass
         if conn:
             try:
-                connection_pool.putconn(conn)
+                conn.close()  # Cierra la conexión directamente
             except Exception:
                 pass
 
@@ -623,7 +624,7 @@ def health_check():
         conn, cursor = get_db()
         cursor.execute("SELECT 1")
         cursor.close()
-        connection_pool.putconn(conn)
+        conn.close()
         db_status = "healthy"
     except Exception as e:
         logger.error(f"Health check DB error: {e}")
@@ -662,8 +663,8 @@ def metrics():
                 'total_intentos_activos': sum(len(attempts) for attempts in _login_attempts.values())
             },
             'base_datos': {
-                'pool_conexiones': 10,
-                'pool_activo': connection_pool is not None
+                'pool_conexiones': 0,
+                'pool_activo': False
             },
             'rendimiento': {
                 'memoria_uso_porcentaje': memoria.percent,
@@ -1420,7 +1421,7 @@ def init_db():
                 pass
         if conn:
             try:
-                connection_pool.putconn(conn)
+                conn.close()  # Cierra la conexión directamente
             except Exception:
                 pass
 
