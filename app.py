@@ -236,13 +236,19 @@ def _mysql_to_pg(query):
     if re.search(r'ON\s+DUPLICATE\s+KEY\s+UPDATE', query, re.IGNORECASE):
         query = re.sub(r'ON\s+DUPLICATE\s+KEY\s+UPDATE\s+\w+\s*=\s*[\w\d]+', 'ON CONFLICT DO NOTHING', query, flags=re.IGNORECASE)
     return query
-
 def get_db():
     global connection_pool
     if connection_pool is None:
         init_connection_pool()
     try:
         conn = connection_pool.getconn()
+        
+        # Verificar si la conexión está cerrada (heredada de otro proceso)
+        if conn.closed != 0: 
+            # Descartar la conexión corrupta y pedir una nueva
+            connection_pool.putconn(conn, close=True)
+            conn = connection_pool.getconn()
+            
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         _orig = cursor.execute
         def _patched(q, p=None):
