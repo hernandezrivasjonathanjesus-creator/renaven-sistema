@@ -2767,33 +2767,72 @@ def presupuesto():
 def presupuesto_route():
     return presupuesto()
 
+# ==================== HELPER VALIDACIÓN DUEÑO / SUPERVISOR ====================
+def verificar_clave_autorizada(password):
+    clave = (password or '').strip()
+    if not clave:
+        return None
+    autorizados = execute_query(
+        "SELECT * FROM users WHERE role IN ('Dueño', 'Supervisor')", fetch_all=True
+    ) or []
+    for u in autorizados:
+        hash_guardado = u.get('password') or ''
+        try:
+            if isinstance(hash_guardado, str) and hash_guardado.startswith(('$2a$', '$2b$', '$2y$')):
+                if bcrypt.checkpw(clave.encode('utf-8'), hash_guardado.encode('utf-8')):
+                    return u
+            elif clave == hash_guardado:
+                return u
+        except Exception as e:
+            logger.error(f"Error verificando clave para usuario {u.get('username')}: {e}")
+    return None
+
 # ==================== APERTURA DE CAJA ====================
 @app.route('/opening_balance', methods=['GET', 'POST'])
 @login_required
 def opening_balance():
     if request.method == 'POST':
-        monto = float(request.form.get('monto', 0))
+        try:
+            monto = float(request.form.get('monto', 0) or 0)
+        except (ValueError, TypeError):
+            flash('[ERROR] El monto ingresado no es válido', 'danger')
+            return redirect(url_for('opening_balance'))
+
         password = request.form.get('supervisor_password', '')
         if monto < 0:
             flash('[ERROR] El monto no puede ser negativo', 'danger')
             return redirect(url_for('opening_balance'))
-        if not password:
+        if not password or not password.strip():
             flash('[ERROR] Se requiere contraseña de supervisor', 'danger')
             return redirect(url_for('opening_balance'))
         try:
-            autorizado = execute_query("SELECT * FROM users WHERE role IN ('Dueño', 'Supervisor')", fetch_one=True)
-            if not autorizado or not bcrypt.checkpw(password.encode(), autorizado['password'].encode()):
+            autorizado = verificar_clave_autorizada(password)
+            if not autorizado:
                 flash('Contraseña incorrecta. Solo Dueño o Supervisor pueden abrir caja', 'danger')
                 return redirect(url_for('opening_balance'))
+
             today = datetime.now().strftime('%Y-%m-%d')
-            cierre_hoy = execute_query("SELECT id FROM cash_closures WHERE closure_date LIKE %s LIMIT 1", (today+'%',), fetch_one=True)
-            opening_result = execute_query("SELECT value FROM config WHERE key_name = 'opening_balance'", fetch_one=True)
+            cierre_hoy = execute_query(
+                "SELECT id FROM cash_closures WHERE CAST(closure_date AS TEXT) LIKE %s LIMIT 1",
+                (today + '%',), fetch_one=True
+            )
+            opening_result = execute_query(
+                "SELECT value FROM config WHERE key_name = 'opening_balance'", fetch_one=True
+            )
             current_balance = float(opening_result['value']) if opening_result else 0
             if current_balance > 0 and not cierre_hoy:
                 flash(f'[WARN] Ya hay un fondo activo de Bs. {current_balance:.2f}. Debe cerrar la caja primero.', 'warning')
                 return redirect(url_for('opening_balance'))
-            execute_query("UPDATE config SET value = %s WHERE key_name = 'opening_balance'", (str(monto),), commit=True)
-            execute_query("INSERT INTO cash_opening (opening_date, user_id, user_name, opening_balance, notes) VALUES (%s, %s, %s, %s, %s)", (datetime.now().isoformat(), session['user_id'], session['username'], monto, "Apertura de caja"), commit=True)
+
+            execute_query(
+                "UPDATE config SET value = %s WHERE key_name = 'opening_balance'",
+                (str(monto),), commit=True
+            )
+            execute_query(
+                "INSERT INTO cash_opening (opening_date, user_id, user_name, opening_balance, notes) VALUES (%s, %s, %s, %s, %s)",
+                (datetime.now().isoformat(), session['user_id'], session['username'], monto, "Apertura de caja"),
+                commit=True
+            )
             registrar_movimiento_caja(
                 tipo='ingreso', monto_bs=monto, monto_usd=0,
                 concepto='Apertura de caja', referencia_tipo='apertura', referencia_id=0,
@@ -2807,12 +2846,16 @@ def opening_balance():
             logger.error(f"Error en opening_balance POST: {e}")
             flash(f'[ERROR] Error al abrir caja: {str(e)}', 'danger')
         return redirect(url_for('dashboard'))
+
     try:
         opening_result = execute_query("SELECT value FROM config WHERE key_name = 'opening_balance'", fetch_one=True)
         current_balance = float(opening_result['value']) if opening_result else 0
         company = execute_query("SELECT * FROM company WHERE id = 1", fetch_one=True)
         today = datetime.now().strftime('%Y-%m-%d')
-        cierre_hoy = execute_query("SELECT id FROM cash_closures WHERE closure_date LIKE %s LIMIT 1", (today+'%',), fetch_one=True)
+        cierre_hoy = execute_query(
+            "SELECT id FROM cash_closures WHERE CAST(closure_date AS TEXT) LIKE %s LIMIT 1",
+            (today + '%',), fetch_one=True
+        )
         puede_abrir = (current_balance == 0) or (cierre_hoy is not None)
         saldo = obtener_saldo_actual()
     except Exception as e:
@@ -2821,8 +2864,11 @@ def opening_balance():
         company = None
         puede_abrir = True
         saldo = {'bs': 0, 'usd': 0}
-    return render_template('opening_balance.html', current_balance=current_balance, company=company,
-                          puede_abrir=puede_abrir, datetime=datetime, saldo_bs=saldo['bs'], saldo_usd=saldo['usd'])
+
+    return render_template(
+        'opening_balance.html', current_balance=current_balance, company=company,
+        puede_abrir=puede_abrir, datetime=datetime, saldo_bs=saldo['bs'], saldo_usd=saldo['usd']
+    )
 
 @app.route('/cash_closure', methods=['GET', 'POST'])
 @login_required
@@ -2835,33 +2881,38 @@ def cash_closure():
 @permission_required('reports')
 def daily_closure():
     today_str = datetime.now().strftime('%Y-%m-%d')
-    cierre_realizado = False
     cierre_hoy = execute_query(
-        "SELECT id FROM cash_closures WHERE closure_date LIKE %s LIMIT 1",
+        "SELECT id FROM cash_closures WHERE CAST(closure_date AS TEXT) LIKE %s LIMIT 1",
         (today_str + '%',), fetch_one=True
     )
-    if cierre_hoy:
-        cierre_realizado = True
+    cierre_realizado = bool(cierre_hoy)
+
     if request.method == 'POST':
         if cierre_realizado:
             flash('[WARN] Ya se realizó el cierre de caja hoy.', 'warning')
             return redirect(url_for('daily_closure'))
+
         password = request.form.get('supervisor_password')
-        if not password:
+        if not password or not password.strip():
             flash('[ERROR] Se requiere contraseña para cerrar caja', 'danger')
             return redirect(url_for('daily_closure'))
-        autorizado = execute_query(
-            "SELECT * FROM users WHERE role IN ('Dueño', 'Supervisor')", fetch_one=True
-        )
-        if not autorizado or not bcrypt.checkpw(password.encode(), autorizado['password'].encode()):
+
+        autorizado = verificar_clave_autorizada(password)
+        if not autorizado:
             flash('Contraseña incorrecta. Solo Dueño o Supervisor pueden cerrar caja', 'danger')
             return redirect(url_for('daily_closure'))
+
         rate = get_cached_exchange_rate()
         opening_row = execute_query("SELECT value FROM config WHERE key_name = 'opening_balance'", fetch_one=True)
         opening_balance = float(opening_row['value']) if opening_row else 0
-        ventas = execute_query("SELECT * FROM sales WHERE date LIKE %s AND invoice_number > 0", (today_str + '%',), fetch_all=True)
+
+        ventas = execute_query(
+            "SELECT * FROM sales WHERE CAST(date AS TEXT) LIKE %s AND invoice_number > 0",
+            (today_str + '%',), fetch_all=True
+        )
         total_bs = sum(float(v['total_bs']) for v in ventas) if ventas else 0
         total_usd = sum(float(v['total_usd']) for v in ventas) if ventas else 0
+
         metodos = execute_query("""
             SELECT
                 COALESCE(SUM(pago_efectivo_bs),0) as efectivo_bs,
@@ -2870,28 +2921,35 @@ def daily_closure():
                 COALESCE(SUM(pago_movil),0) as movil,
                 COALESCE(SUM(pago_transferencia),0) as transferencia,
                 COALESCE(SUM(pago_tarjeta),0) as tarjeta
-            FROM sales WHERE date LIKE %s AND invoice_number > 0
+            FROM sales WHERE CAST(date AS TEXT) LIKE %s AND invoice_number > 0
         """, (today_str + '%',), fetch_one=True) or {}
+
         total_efectivo_bs = float(metodos.get('efectivo_bs', 0))
         total_efectivo_usd = float(metodos.get('efectivo_usd', 0))
         total_zelle = float(metodos.get('zelle', 0))
         total_pago_movil = float(metodos.get('movil', 0))
         total_transferencia = float(metodos.get('transferencia', 0))
         total_tarjeta = float(metodos.get('tarjeta', 0))
+
         devoluciones_bs = float(request.form.get('devoluciones_bs', 0) or 0)
         devoluciones_usd = float(request.form.get('devoluciones_usd', 0) or 0)
         total_devoluciones_bs = devoluciones_bs + (devoluciones_usd * rate)
         expected_cash = opening_balance + total_bs - total_devoluciones_bs
+
         entregado_efectivo_bs = float(request.form.get('cash_bs_delivered', 0) or 0)
         entregado_efectivo_usd = float(request.form.get('cash_usd_delivered', 0) or 0)
         entregado_zelle = float(request.form.get('zelle_delivered', 0) or 0)
         entregado_movil = float(request.form.get('pago_movil_delivered', 0) or 0)
         entregado_transferencia = float(request.form.get('transferencia_delivered', 0) or 0)
         entregado_tarjeta = float(request.form.get('tarjeta_delivered', 0) or 0)
-        total_entregado = (entregado_efectivo_bs + (entregado_efectivo_usd * rate) +
-                          (entregado_zelle * rate) + entregado_movil +
-                          entregado_transferencia + entregado_tarjeta)
+
+        total_entregado = (
+            entregado_efectivo_bs + (entregado_efectivo_usd * rate) +
+            (entregado_zelle * rate) + entregado_movil +
+            entregado_transferencia + entregado_tarjeta
+        )
         difference = total_entregado - expected_cash
+
         if difference > 0.01:
             resultado = f"SOBRANTE: +{difference:.2f} Bs"
             tipo_flash = 'warning'
@@ -2901,6 +2959,7 @@ def daily_closure():
         else:
             resultado = "CUADRADO PERFECTO"
             tipo_flash = 'success'
+
         notes = request.form.get('notes', '')
         execute_query("""
             INSERT INTO cash_closures
@@ -2918,6 +2977,7 @@ def daily_closure():
             devoluciones_bs, devoluciones_usd, difference,
             f"{resultado}\n{notes}" if notes else resultado
         ), commit=True)
+
         execute_query("UPDATE config SET value = '0' WHERE key_name = 'opening_balance'", commit=True)
         execute_query("UPDATE saldo_caja SET saldo_bs = 0, saldo_usd = 0 WHERE id = 1", commit=True)
 
@@ -2947,14 +3007,19 @@ def daily_closure():
                 metodo='efectivo', usuario=session.get('username', 'SISTEMA'),
                 nota=f"Cierre de caja - {resultado}", tasa=rate
             )
+
         log_action(session['user_id'], session['username'], 'CASH_CLOSURE', f"Resultado: {resultado} - Fondo reiniciado a CERO")
         flash(f'[OK] Cierre de caja completado. {resultado} Fondo de caja reiniciado a CERO (Bs. 0.00).', tipo_flash)
         return redirect(url_for('daily_closure'))
+
     try:
         rate = get_cached_exchange_rate()
         opening_row = execute_query("SELECT value FROM config WHERE key_name = 'opening_balance'", fetch_one=True)
         opening_balance = float(opening_row['value']) if opening_row else 0
-        sales = execute_query("SELECT * FROM sales WHERE date LIKE %s AND invoice_number > 0 ORDER BY date DESC", (today_str + '%',), fetch_all=True) or []
+        sales = execute_query(
+            "SELECT * FROM sales WHERE CAST(date AS TEXT) LIKE %s AND invoice_number > 0 ORDER BY date DESC",
+            (today_str + '%',), fetch_all=True
+        ) or []
         metodos = execute_query("""
             SELECT
                 COALESCE(SUM(pago_efectivo_bs),0) as efectivo_bs,
@@ -2965,8 +3030,9 @@ def daily_closure():
                 COALESCE(SUM(pago_tarjeta),0) as tarjeta,
                 COALESCE(SUM(total_bs),0) as total_bs,
                 COALESCE(SUM(total_usd),0) as total_usd
-            FROM sales WHERE date LIKE %s AND invoice_number > 0
+            FROM sales WHERE CAST(date AS TEXT) LIKE %s AND invoice_number > 0
         """, (today_str + '%',), fetch_one=True) or {}
+
         total_bs = float(metodos.get('total_bs', 0))
         total_usd = float(metodos.get('total_usd', 0))
         total_efectivo_bs = float(metodos.get('efectivo_bs', 0))
@@ -3001,7 +3067,9 @@ def daily_closure():
         saldo = {'bs': 0, 'usd': 0}
         opening_balance_cero = total_bs_cero = total_usd_cero = 0
         total_efectivo_bs_cero = total_efectivo_usd_cero = total_zelle_cero = total_pago_movil_cero = total_transferencia_cero = total_tarjeta_cero = 0
-    return render_template('daily_closure_unified.html',
+
+    return render_template(
+        'daily_closure_unified.html',
         sales=sales, total_ventas=len(sales), total_usd=total_usd, total_bs=total_bs,
         total_efectivo_bs=total_efectivo_bs, total_efectivo_usd=total_efectivo_usd,
         total_zelle=total_zelle, total_pago_movil=total_pago_movil,
@@ -3013,7 +3081,8 @@ def daily_closure():
         total_efectivo_bs_cero=total_efectivo_bs_cero, total_efectivo_usd_cero=total_efectivo_usd_cero,
         total_zelle_cero=total_zelle_cero, total_pago_movil_cero=total_pago_movil_cero,
         total_transferencia_cero=total_transferencia_cero, total_tarjeta_cero=total_tarjeta_cero,
-        now=datetime.now())
+        now=datetime.now()
+    )
 
 # ==================== VENTAS DEL MES ====================
 @app.route('/ventas_mes')
