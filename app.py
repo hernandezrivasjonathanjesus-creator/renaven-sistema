@@ -176,6 +176,9 @@ def ensure_database_exists():
 def init_connection_pool():
     global connection_pool
     try:
+        # Importamos NullPool
+        from psycopg2.pool import NullPool
+        
         if DATABASE_URL:
             # 1. Convertimos el protocolo si es necesario
             db_url = DATABASE_URL.replace("postgres://", "postgresql://", 1)
@@ -186,15 +189,15 @@ def init_connection_pool():
             elif 'sslmode' not in db_url:
                 db_url += '&sslmode=disable'
                 
-            # 3. Creamos el pool con la URL corregida
-            connection_pool = pool.ThreadedConnectionPool(1, 20, dsn=db_url)
-            logger.info("[OK] Pool de conexiones PostgreSQL (URL) iniciado (SSL desactivado)")
-            print("[OK] Pool de conexiones PostgreSQL (URL) iniciado (SSL desactivado)")
+            # 3. Creamos el NullPool: no reutiliza conexiones, abre una nueva cada vez
+            connection_pool = NullPool(dsn=db_url)
+            logger.info("[OK] Pool de conexiones PostgreSQL (NullPool) iniciado")
+            print("[OK] Pool de conexiones PostgreSQL (NullPool) iniciado")
         else:
-            # Para entorno local (usando las variables DB_HOST, etc.)
-            connection_pool = pool.ThreadedConnectionPool(1, 20, **DB_CONFIG)
-            logger.info("[OK] Pool de conexiones PostgreSQL (Local) iniciado (SSL desactivado)")
-            print("[OK] Pool de conexiones PostgreSQL (Local) iniciado (SSL desactivado)")
+            # Para entorno local
+            connection_pool = NullPool(**DB_CONFIG)
+            logger.info("[OK] Pool de conexiones PostgreSQL Local (NullPool) iniciado")
+            print("[OK] Pool de conexiones PostgreSQL Local (NullPool) iniciado")
     except Exception as e:
         logger.error(f"Error al crear pool: {e}")
         raise
@@ -236,29 +239,14 @@ def _mysql_to_pg(query):
     if re.search(r'ON\s+DUPLICATE\s+KEY\s+UPDATE', query, re.IGNORECASE):
         query = re.sub(r'ON\s+DUPLICATE\s+KEY\s+UPDATE\s+\w+\s*=\s*[\w\d]+', 'ON CONFLICT DO NOTHING', query, flags=re.IGNORECASE)
     return query
+
 def get_db():
     global connection_pool
     if connection_pool is None:
         init_connection_pool()
     try:
+        # Con NullPool, getconn() siempre crea una conexión nueva y limpia
         conn = connection_pool.getconn()
-        
-        # 1. Verificar si la conexión está cerrada
-        if conn.closed != 0: 
-            connection_pool.putconn(conn, close=True)
-            conn = connection_pool.getconn()
-            
-        # 2. PING DE VALIDACIÓN: Probar que la conexión responde (esto es lo que faltaba)
-        try:
-            cur_test = conn.cursor()
-            cur_test.execute("SELECT 1")
-            cur_test.close()
-        except Exception:
-            # Si falla el ping, está corrupta. La descartamos y pedimos otra.
-            connection_pool.putconn(conn, close=True)
-            conn = connection_pool.getconn()
-
-        # 3. Crear el cursor real
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         _orig = cursor.execute
         def _patched(q, p=None):
@@ -307,6 +295,7 @@ def execute_query(query, params=None, fetch_one=False, fetch_all=False, commit=F
                 pass
         if conn:
             try:
+                # Con NullPool, putconn cierra la conexión en lugar de devolverla al pool
                 connection_pool.putconn(conn)
             except Exception:
                 pass
