@@ -156,6 +156,7 @@ def caja_context():
 
 # ==================== COMPRESIÓN GZIP ====================
 Compress(app)
+
 # ==================== CONFIGURACIÓN DE POSTGRESQL ====================
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
@@ -166,7 +167,6 @@ DB_CONFIG = {
     'user': os.getenv('DB_USER'),
     'password': os.getenv('DB_PASSWORD'),
     'connect_timeout': 30,
-    'sslmode': 'disable', # SSL desactivado también para entorno local
 }
 connection_pool = None
 
@@ -176,28 +176,15 @@ def ensure_database_exists():
 def init_connection_pool():
     global connection_pool
     try:
-        # Importamos NullPool
-        from psycopg2.pool import NullPool
-        
         if DATABASE_URL:
-            # 1. Convertimos el protocolo si es necesario
             db_url = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-            
-            # 2. Forzamos sslmode=disable en la URL para que psycopg2 no intente SSL
-            if '?' not in db_url:
-                db_url += '?sslmode=disable'
-            elif 'sslmode' not in db_url:
-                db_url += '&sslmode=disable'
-                
-            # 3. Creamos el NullPool: no reutiliza conexiones, abre una nueva cada vez
-            connection_pool = NullPool(dsn=db_url)
-            logger.info("[OK] Pool de conexiones PostgreSQL (NullPool) iniciado")
-            print("[OK] Pool de conexiones PostgreSQL (NullPool) iniciado")
+            connection_pool = pool.ThreadedConnectionPool(1, 20, dsn=db_url)
+            logger.info("[OK] Pool de conexiones PostgreSQL (URL) iniciado")
+            print("[OK] Pool de conexiones PostgreSQL (URL) iniciado")
         else:
-            # Para entorno local
-            connection_pool = NullPool(**DB_CONFIG)
-            logger.info("[OK] Pool de conexiones PostgreSQL Local (NullPool) iniciado")
-            print("[OK] Pool de conexiones PostgreSQL Local (NullPool) iniciado")
+            connection_pool = pool.ThreadedConnectionPool(1, 20, **DB_CONFIG)
+            logger.info("[OK] Pool de conexiones PostgreSQL (Local) iniciado")
+            print("[OK] Pool de conexiones PostgreSQL (Local) iniciado")
     except Exception as e:
         logger.error(f"Error al crear pool: {e}")
         raise
@@ -245,7 +232,6 @@ def get_db():
     if connection_pool is None:
         init_connection_pool()
     try:
-        # Con NullPool, getconn() siempre crea una conexión nueva y limpia
         conn = connection_pool.getconn()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         _orig = cursor.execute
@@ -295,7 +281,6 @@ def execute_query(query, params=None, fetch_one=False, fetch_all=False, commit=F
                 pass
         if conn:
             try:
-                # Con NullPool, putconn cierra la conexión en lugar de devolverla al pool
                 connection_pool.putconn(conn)
             except Exception:
                 pass
