@@ -156,7 +156,6 @@ def caja_context():
 
 # ==================== COMPRESIÓN GZIP ====================
 Compress(app)
-
 # ==================== CONFIGURACIÓN DE POSTGRESQL ====================
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
@@ -167,6 +166,7 @@ DB_CONFIG = {
     'user': os.getenv('DB_USER'),
     'password': os.getenv('DB_PASSWORD'),
     'connect_timeout': 30,
+    'sslmode': 'disable', # SSL desactivado también para entorno local
 }
 connection_pool = None
 
@@ -177,14 +177,24 @@ def init_connection_pool():
     global connection_pool
     try:
         if DATABASE_URL:
+            # 1. Convertimos el protocolo si es necesario
             db_url = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+            
+            # 2. Forzamos sslmode=disable en la URL para que psycopg2 no intente SSL
+            if '?' not in db_url:
+                db_url += '?sslmode=disable'
+            elif 'sslmode' not in db_url:
+                db_url += '&sslmode=disable'
+                
+            # 3. Creamos el pool con la URL corregida
             connection_pool = pool.ThreadedConnectionPool(1, 20, dsn=db_url)
-            logger.info("[OK] Pool de conexiones PostgreSQL (URL) iniciado")
-            print("[OK] Pool de conexiones PostgreSQL (URL) iniciado")
+            logger.info("[OK] Pool de conexiones PostgreSQL (URL) iniciado (SSL desactivado)")
+            print("[OK] Pool de conexiones PostgreSQL (URL) iniciado (SSL desactivado)")
         else:
+            # Para entorno local (usando las variables DB_HOST, etc.)
             connection_pool = pool.ThreadedConnectionPool(1, 20, **DB_CONFIG)
-            logger.info("[OK] Pool de conexiones PostgreSQL (Local) iniciado")
-            print("[OK] Pool de conexiones PostgreSQL (Local) iniciado")
+            logger.info("[OK] Pool de conexiones PostgreSQL (Local) iniciado (SSL desactivado)")
+            print("[OK] Pool de conexiones PostgreSQL (Local) iniciado (SSL desactivado)")
     except Exception as e:
         logger.error(f"Error al crear pool: {e}")
         raise
