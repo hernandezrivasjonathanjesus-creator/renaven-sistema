@@ -243,12 +243,22 @@ def get_db():
     try:
         conn = connection_pool.getconn()
         
-        # Verificar si la conexión está cerrada (heredada de otro proceso)
+        # 1. Verificar si la conexión está cerrada
         if conn.closed != 0: 
-            # Descartar la conexión corrupta y pedir una nueva
             connection_pool.putconn(conn, close=True)
             conn = connection_pool.getconn()
             
+        # 2. PING DE VALIDACIÓN: Probar que la conexión responde (esto es lo que faltaba)
+        try:
+            cur_test = conn.cursor()
+            cur_test.execute("SELECT 1")
+            cur_test.close()
+        except Exception:
+            # Si falla el ping, está corrupta. La descartamos y pedimos otra.
+            connection_pool.putconn(conn, close=True)
+            conn = connection_pool.getconn()
+
+        # 3. Crear el cursor real
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         _orig = cursor.execute
         def _patched(q, p=None):
