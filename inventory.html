@@ -407,6 +407,9 @@
                             <option value="todas">📁 Todas las Categorías</option>
                         </select>
 
+                        <!-- NUEVO BUSCADOR -->
+                        <input type="text" id="buscadorInventario" class="form-control" placeholder="🔍 Buscar producto o código..." style="width: auto; max-width: 250px; border-radius: 50px !important; padding: 8px 20px !important; border: 2px solid var(--renaven-borde) !important; background: var(--renaven-blanco);" aria-label="Buscar producto">
+
                         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addProductModal">
                             <i class="fas fa-plus me-2"></i> Nuevo Producto
                         </button>
@@ -911,11 +914,13 @@
             if (document.getElementById('sale_type')) toggleUnitField();
         });
 
-        // ========== LÓGICA DE FILTRADO (ALMACÉN Y CATEGORÍA) ==========
+        // ========== LÓGICA DE FILTRADO (ALMACÉN, CATEGORÍA Y BÚSQUEDA) ==========
         document.addEventListener("DOMContentLoaded", function() {
             cargarCategoriasEnFiltro();
             document.getElementById('filtroCategoria').addEventListener('change', filtrarTabla);
             document.getElementById('filtroAlmacen').addEventListener('change', filtrarTabla);
+            // Evento para el buscador en tiempo real
+            document.getElementById('buscadorInventario').addEventListener('input', filtrarTabla);
         });
 
         function cargarCategoriasEnFiltro() {
@@ -938,16 +943,19 @@
         function filtrarTabla() {
             const catSeleccionada = document.getElementById('filtroCategoria').value.toLowerCase();
             const almSeleccionado = document.getElementById('filtroAlmacen').value.toLowerCase();
+            const textoBusqueda = document.getElementById('buscadorInventario').value.toLowerCase().trim();
             const filas = document.querySelectorAll('#tablaInventario tbody tr[data-categoria]');
 
             filas.forEach(fila => {
                 const catFila = fila.getAttribute('data-categoria').toLowerCase();
                 const almFila = fila.getAttribute('data-almacen').toLowerCase();
+                const textoFila = fila.textContent.toLowerCase();
                 
                 const coincideCat = (catSeleccionada === 'todas' || catFila === catSeleccionada);
                 const coincideAlm = (almSeleccionado === 'todos' || almFila === almSeleccionado);
+                const coincideBusqueda = (textoBusqueda === '' || textoFila.includes(textoBusqueda));
 
-                if (coincideCat && coincideAlm) {
+                if (coincideCat && coincideAlm && coincideBusqueda) {
                     fila.style.display = ''; 
                 } else {
                     fila.style.display = 'none'; 
